@@ -534,6 +534,7 @@ export default function App() {
       if (isUnitManager) return <ManagerWork key={managerScopeKey} me={me} openItem={openItem} goAssign={startAssignment} />;
       return <Work key={managerScopeKey} me={me} isManager={false} openItem={openItem} />;
     }
+    if (tab === "personal-calendar") return <StaffCalendar key={window.location.search} me={me} openItem={openItem} openMeeting={openMeeting} initialDate={new URLSearchParams(window.location.search).get("date")} />;
     if (tab === "staff-calendar" && isStaff) return <StaffCalendar me={me} openItem={openItem} openMeeting={openMeeting} initialDate={calendarFocusDate} onFocusHandled={()=>setCalendarFocusDate(null)} />;
     if (tab === "messages") return <Inbox
       key={`${me.org_id}:${me.id}`}

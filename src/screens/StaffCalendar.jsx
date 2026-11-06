@@ -52,6 +52,10 @@ export default function StaffCalendar({me,openItem,openMeeting,statusLabel="Staf
   const [selectedDate,setSelectedDate]=useState(selectedInitial);
   useEffect(()=>{if(initialDate)onFocusHandled?.();},[]);
   const [events,setEvents]=useState([]);
+  const focusedEvent=new URLSearchParams(window.location.search).get("event");
+  useEffect(()=>{if(!focusedEvent || !/^[0-9a-f-]{36}$/i.test(focusedEvent))return;
+    document.querySelector('[data-calendar-event="'+focusedEvent+'"]')?.scrollIntoView({block:"nearest"});
+  },[events,focusedEvent]);
   const [personalTasks,setPersonalTasks]=useState([]);
   const [dayNotes,setDayNotes]=useState([]);
   const [checklistRows,setChecklistRows]=useState([]);
@@ -394,7 +398,7 @@ export default function StaffCalendar({me,openItem,openMeeting,statusLabel="Staf
           {dayTab==="schedule"?<div className="phase6-day-task-view phase6-day-schedule-view">
             <section className="phase6-day-block">
               <div className="phase6-day-block-head"><h3>Schedule</h3><span>{selectedSchedule.length}</span></div>
-              {selectedSchedule.length?<div className="phase6-schedule-rail">{selectedSchedule.map(event=><div key={event.id} className={`phase6-schedule-row is-${event.kind}`}><time>{event.time||"—"}</time><span className="phase6-schedule-line" aria-hidden="true"/><button type="button" onClick={()=>open(event)} disabled={!event.itemId&&!event.meetingId&&!event.privateEventId}><span className={`phase6-day-kind is-${event.kind}`}>{event.routineState?"routine":event.personalType==="event"?"private event":event.kind}</span><span><strong>{event.title}</strong><small>{event.meta||"Recorded CEAC commitment"}</small></span></button></div>)}</div>:<p className="phase6-day-empty">No shared or private schedule item is recorded for this day.</p>}
+              {selectedSchedule.length?<div className="phase6-schedule-rail">{selectedSchedule.map(event=><div key={event.id} data-calendar-event={event.privateEventId || event.id} className={`phase6-schedule-row is-${event.kind}`}><time>{event.time||"—"}</time><span className="phase6-schedule-line" aria-hidden="true"/><button type="button" onClick={()=>open(event)} disabled={!event.itemId&&!event.meetingId&&!event.privateEventId}><span className={`phase6-day-kind is-${event.kind}`}>{event.routineState?"routine":event.personalType==="event"?"private event":event.kind}</span><span><strong>{event.title}</strong><small>{event.meta||"Recorded CEAC commitment"}</small></span></button></div>)}</div>:<p className="phase6-day-empty">No shared or private schedule item is recorded for this day.</p>}
             </section>
           </div>:dayTab==="tasks"?<div className="phase6-day-task-view">
             <section className="phase6-day-block">

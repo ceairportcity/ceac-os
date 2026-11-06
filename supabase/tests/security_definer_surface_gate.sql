@@ -229,6 +229,9 @@ insert into s2_expected_authenticated_definers(signature) values
 -- migration contract. Raw event tables remain inaccessible to browsers.
 insert into s2_expected_authenticated_definers(signature) values
  ('public.my_ceac_notifications()'),
+ ('public.my_ceac_notification_snapshot()'),
+ ('public.my_ceac_notification_history(p_before timestamp with time zone, p_before_id uuid)'),
+ ('public.set_memo_preview_privacy(p_id uuid, p_confidential boolean, p_expected_updated_at timestamp with time zone)'),
  ('public.mark_ceac_notification_read(p_id uuid)');
 
 -- The redesign adds three Executive-only, tenant-scoped, read-only projections.

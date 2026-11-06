@@ -22,13 +22,17 @@ async function pushRequest(action, method = "GET", body) {
   if (error || !data.session?.access_token) throw new Error("Please sign in again to manage device notifications.");
   const requestUrl = new URL(endpoint());
   requestUrl.searchParams.set("action", action);
-  const response = await fetch(requestUrl, {
+  const controller=new AbortController();
+  const deadline=window.setTimeout(()=>controller.abort(),12000);
+  let response;
+  try{response = await fetch(requestUrl, {
+    signal:controller.signal,
     method,
     headers: { Authorization: `Bearer ${data.session.access_token}`,
       ...(body ? { "Content-Type": "application/json" } : {}) },
     ...(body ? { body: JSON.stringify(body) } : {}),
     cache: "no-store",
-  });
+  });}finally{window.clearTimeout(deadline);}
   let result;
   try { result = await response.json(); } catch { result = {}; }
   if (!response.ok) throw new Error(result.message || "Device notifications are unavailable. Try again later.");
@@ -39,7 +43,8 @@ async function pushRequest(action, method = "GET", body) {
 
 export async function loadPushConfiguration() {
   if (pushSupport() !== "supported") return null;
-  const registration = await navigator.serviceWorker.ready;
+  let deadline;
+  const registration=await Promise.race([navigator.serviceWorker.ready,new Promise((_,reject)=>{deadline=window.setTimeout(()=>reject(new Error("Device notifications are still starting. Please refresh and retry.")),10000);})]).finally(()=>window.clearTimeout(deadline));
   const result = await pushRequest("config");
   if (!result.enabled || !/^[A-Za-z0-9_-]{80,120}$/.test(result.publicKey || "")) return null;
   const subscription = await registration.pushManager.getSubscription();
@@ -47,6 +52,7 @@ export async function loadPushConfiguration() {
     { endpoint: subscription.endpoint }) : { enabled:false, preview:false };
   return { publicKey: result.publicKey, registration,
     subscription: serverStatus.enabled ? subscription : null,
+    preferences: serverStatus.preferences || {categories:{messages:true,work:true,calendar:true,rooms:false},quietStart:null,quietEnd:null,reminderMinutes:30},
     preview: serverStatus.preview === true };
 }
 
@@ -54,7 +60,7 @@ export async function enableDevicePush(config, showPreview = false) {
   if (!config?.registration || !config.publicKey) throw new Error("Device notifications are not ready.");
   // requestPermission stays in the direct user action path, never an effect.
   const permission = await Notification.requestPermission();
-  if (permission !== "granted") throw new Error("Notifications are blocked. Enable them in your device settings.");
+  if (permission !== "granted") throw new Error(permission==="denied"?"Notifications are blocked. Enable them in your device settings.":"Notifications were not enabled. You can try again when you are ready.");
   let current = await config.registration.pushManager.getSubscription();
   // A browser may still carry a subscription from an earlier signed-in
   // account or a rotated VAPID key. Never reuse an unverified binding.
@@ -113,4 +119,17 @@ export async function disconnectDevicePushOnSignOut(previousAccessToken = null) 
     }); } catch { /* Unsubscribed browser will retire on the next provider expiry. */ }
   }
   await subscription.unsubscribe().catch(() => {});
+}
+
+export async function saveDevicePushPreferences(preferences,showPreview) {
+ const registration=await navigator.serviceWorker.ready;
+ const subscription=await registration.pushManager.getSubscription();
+ if(!subscription)throw new Error("Enable notifications on this device first.");
+ return pushRequest("preferences","POST",{endpoint:subscription.endpoint,preferences,showPreview});
+}
+export async function sendDevicePushTest() {
+ const registration=await navigator.serviceWorker.ready;
+ const subscription=await registration.pushManager.getSubscription();
+ if(!subscription)throw new Error("Enable notifications on this device first.");
+ return pushRequest("test","POST",{endpoint:subscription.endpoint});
 }

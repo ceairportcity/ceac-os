@@ -35,6 +35,8 @@ export function useCeacUnreadNotifications(me) {
     let lastAttemptAt=0;
     let consecutiveFailures=0;
     let snapshot=null;
+    let pendingNoticeRefresh=false;
+    let eventController=null;
     let preferencesHealthy=true;
     if(changedAccount){setCounts(null);setError("");}
 
@@ -51,6 +53,8 @@ export function useCeacUnreadNotifications(me) {
         workItems:snapshot.works,attentionQueue:snapshot.actions,
         reminders:snapshot.reminders,calendarEvents:snapshot.calendar,now
       });
+      next.unreadItems=buildCeacNotificationBriefing({me,events:snapshot.events}).items;
+      if(Number.isInteger(snapshot.unreadCount))next.count=Math.min(999,snapshot.unreadCount);
       setCounts({...next,scope,roomPreferencesAvailable:preferencesHealthy,
         roomPreferencesError:preferencesHealthy?"":"Room alert preferences could not be loaded."});
       if("setAppBadge" in navigator){
@@ -76,7 +80,7 @@ export function useCeacUnreadNotifications(me) {
         // once for every active browser. This also prevents a request storm
         // when a slow database overlaps with focus and minute timers.
         const tasks=[
-          ()=>supabase.rpc("my_ceac_notifications").abortSignal(signal),
+          ()=>supabase.rpc("my_ceac_notification_snapshot").abortSignal(signal).then(r=>({...r,data:r.data?.events,unreadCount:r.data?.unreadCount})),
           ()=>supabase.from("meeting_sessions").select("id,title,starts_at,ends_at,status,created_by,meeting_participants(profile_id)")
             .gte("starts_at",start).lte("starts_at",ends).limit(100).abortSignal(signal),
           ()=>supabase.from("personal_reminders").select("id,title,remind_at,seen_at")
@@ -112,6 +116,7 @@ export function useCeacUnreadNotifications(me) {
             candidate[keys[i]]=response.data;
           }
         }
+        candidate.unreadCount=Number.isInteger(results[0]?.unreadCount)?results[0].unreadCount:snapshot?.unreadCount;
         // Never claim an empty inbox when its authoritative source has failed.
         if(failures.includes("events")&&!snapshot)throw new Error("No verified personal updates.");
         preferencesHealthy=!failures.includes("prefs");
@@ -202,9 +207,27 @@ export function useCeacUnreadNotifications(me) {
         window.clearTimeout(deadline);
         if(activeController===controller)activeController=null;
         inFlight=false;
+        if(pendingNoticeRefresh){pendingNoticeRefresh=false;void loadEvents();}
       }
     }
+    let eventLoading=false;
+    let changeTimer=null;
+    async function loadEvents(){
+      if(!active || !snapshot || eventLoading || inFlight || document.visibilityState!=="visible")return;
+      eventLoading=true;
+      const controller=new AbortController();eventController=controller;
+      const deadline=window.setTimeout(()=>controller.abort(),12000);
+      try{
+        const {data,error:noticeError}=await supabase.rpc("my_ceac_notification_snapshot").abortSignal(controller.signal);
+        if(!noticeError && Array.isArray(data?.events) && active){
+          const previous=new Map(snapshot.events.map(row=>[row.id,row]));
+          snapshot={...snapshot,events:data.events.map(row=>({...previous.get(row.id),...row})),unreadCount:data.unreadCount};
+          publish();
+        }
+      }catch{/* Preserve the last verified updates; full refresh reports outages. */}finally{window.clearTimeout(deadline);eventController=null;eventLoading=false;}
+    }
     void load();
+    const eventTimer=window.setInterval(()=>void loadEvents(),30000);
     const timer=window.setInterval(()=>{
       publish(Date.now());
       void load();
@@ -215,22 +238,30 @@ export function useCeacUnreadNotifications(me) {
       // A focus and visibilitychange pair must not each trigger a fetch.
       if(Date.now()-lastAttemptAt>=60000)void load();
     };
-    const changed=()=>{
-      if(document.visibilityState!=="visible")return;
-      // Marked-read and new-message events must refresh, without bypassing
-      // the single-flight guard or flooding the server on repeated events.
-      if(Date.now()-lastAttemptAt>=15000){
-        nextFetchAt=0;
-        void load();
+    const changed=(event)=>{
+      const roomId=event?.detail?.roomId;
+      if(snapshot && roomId){
+        snapshot={...snapshot,rooms:snapshot.rooms.map(room=>room.id===roomId?{...room,unread_count:0}:room),reads:[...snapshot.reads.filter(row=>row.room_id!==roomId),{room_id:roomId,last_read_at:new Date().toISOString()}]};
+        publish();
       }
+      window.clearTimeout(changeTimer);
+      changeTimer=window.setTimeout(()=>{if(inFlight)pendingNoticeRefresh=true;else void loadEvents();},250);
     };
+    const pushed=event=>{if(event.data?.type==="CEAC_PUSH_RECEIVED"){
+      changed();window.dispatchEvent(new Event("ceac:push-received"));
+    }};
+    navigator.serviceWorker?.addEventListener?.("message",pushed);
     window.addEventListener("focus",visible);
     document.addEventListener("visibilitychange",visible);
     window.addEventListener("ceac:notifications-changed",changed);
     return()=>{
       active=false;
       activeController?.abort();
+      eventController?.abort();
       window.clearInterval(timer);
+      window.clearInterval(eventTimer);
+      window.clearTimeout(changeTimer);
+      navigator.serviceWorker?.removeEventListener?.("message",pushed);
       window.removeEventListener("focus",visible);
       document.removeEventListener("visibilitychange",visible);
       window.removeEventListener("ceac:notifications-changed",changed);

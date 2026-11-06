@@ -88,19 +88,21 @@ self.addEventListener("push", (event) => {
   try { payload = event.data.json(); } catch { return; }
   if (!pushNotificationId(payload?.notificationId)) return;
   // This content has already been privacy-filtered by the authorised server.
-  const title = pushText(payload.title, 100) || "CEAC";
-  const body = pushText(payload.body, 180) || "A new update is ready in CEAC.";
-  event.waitUntil(self.registration.showNotification(title, {
-    body, tag: "ceac-" + payload.notificationId,
+  const title = pushText(payload.notification?.title || payload.title, 100) || "CEAC";
+  const body = pushText(payload.notification?.body || payload.body, 180) || "A new update is ready in CEAC.";
+  event.waitUntil(Promise.all([self.clients.matchAll({type:"window"}).then(windows=>{
+    for(const client of windows)client.postMessage?.({type:"CEAC_PUSH_RECEIVED"});
+  }),self.registration.showNotification(title, {
+    body, tag: pushText(payload.tag,180) || "ceac-" + payload.notificationId,
     icon: "/ceac-icon-192.png", badge: "/ceac-icon-192.png",
-    data: { notificationId: payload.notificationId },
-  }));
+    data: { notificationId: payload.notificationId, path: payload.path },
+  }), Number.isInteger(payload.unreadCount) && self.navigator && "setAppBadge" in self.navigator ? (payload.unreadCount > 0 ? self.navigator.setAppBadge(payload.unreadCount) : self.navigator.clearAppBadge()).catch(()=>{}) : Promise.resolve()]));
 });
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
   if (!pushNotificationId(event.notification?.data?.notificationId)) return;
-  const destination = new URL("/?tab=messages&updates=1", self.location.origin).href;
+  const destination = safePushDestination(event.notification.data.path);
   event.waitUntil((async () => {
     const windows = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
     const active = windows.find(client => {
@@ -114,3 +116,22 @@ self.addEventListener("notificationclick", (event) => {
     }
   })());
 });
+
+// Only locally recognised, same-origin destinations are accepted. Source records
+// are checked again by the signed-in application's RLS before displaying content.
+function safePushDestination(path) {
+ const fallback=new URL("/?tab=messages&updates=1",self.location.origin).href;
+ try {
+  if(typeof path!=="string" || !path.startsWith("/?"))return fallback;
+  const url=new URL(path,self.location.origin);
+  const tab=url.searchParams.get("tab");
+  const allowed={messages:["memo","room","updates"],work:["item","routineDate"],home:["meeting"],me:["reminder"],"personal-calendar":["date","event"],attendance:["leave"]};
+  if(!allowed[tab] || url.origin!==self.location.origin)return fallback;
+  for(const [key,value] of url.searchParams){
+   if(key==="tab")continue;
+   if(!allowed[tab].includes(key))return fallback;
+   if(["date","routineDate"].includes(key) ? !/^\d{4}-\d{2}-\d{2}$/.test(value) : key==="updates" ? value!=="1" : !pushNotificationId(value))return fallback;
+  }
+  return url.href;
+ }catch{return fallback;}
+}

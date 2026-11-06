@@ -44,6 +44,8 @@ export default function Me({ me, openGoal, openRecord, openPerformance, openWork
   const [myRequests, setMyRequests] = useState([]);
   const [goals, setGoals] = useState([]);
   const [reminders, setReminders] = useState([]);
+  const focusedReminder=new URLSearchParams(window.location.search).get("reminder");
+  useEffect(()=>{if(focusedReminder && /^[0-9a-f-]{36}$/i.test(focusedReminder))document.getElementById("reminder-"+focusedReminder)?.scrollIntoView({block:"center"});},[reminders,focusedReminder]);
   const [engagement, setEngagement] = useState(null);
   const [volunteerNotices, setVolunteerNotices] = useState([]);
   const [details, setDetails] = useState(EMPTY_DETAILS);
@@ -411,12 +413,11 @@ export default function Me({ me, openGoal, openRecord, openPerformance, openWork
         action={<Button variant="secondary" size="sm" onClick={() => setSheet("remind")} disabled={Boolean(datasetErrors.reminders)}>Add reminder</Button>}
       >
         {datasetErrors.reminders ? <div className="ev2pf-partial-error"><StatePanel state="error" title="Reminders could not be loaded" description={datasetErrors.reminders} actionLabel="Try again" onAction={load} icon="error" /></div>
-          : reminders.length ? reminders.map((reminder) => <PersonalRecordRow
-              key={reminder.id}
+          : reminders.length ? reminders.map((reminder) => <div key={reminder.id} id={"reminder-"+reminder.id}><PersonalRecordRow
               title={reminder.title}
               meta={new Date(reminder.remind_at).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}
               action={<Button variant="quiet" size="sm" onClick={(event) => { event.stopPropagation(); markReminderSeen(reminder.id); }}>Done</Button>}
-            />)
+            /></div>)
           : <PersonalEmpty title="No reminders are waiting" description="Add a private reminder when you want CEAC OS to keep something visible for you." />}
       </PersonalSection>
     </> : null}
