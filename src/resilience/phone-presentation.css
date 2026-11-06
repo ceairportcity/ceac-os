@@ -132,10 +132,15 @@
 }
 :root.ceac-physical-phone .ev2s-mobile-nav button span {
   max-width: 100%;
-  white-space: normal;
-  overflow-wrap: anywhere;
+  font-size: var(--ev2-type-label);
+  font-weight: 650;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  overflow-wrap: normal;
+  word-break: normal;
   text-align: center;
-  line-height: 1.05;
+  line-height: 1.1;
 }
 :root.ceac-physical-phone .ev2s-content {
   padding-bottom: calc(var(--ev2s-mobile-nav-height) + env(safe-area-inset-bottom, 0px));
