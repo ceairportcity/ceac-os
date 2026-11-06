@@ -107,7 +107,8 @@ export default function ManagerWork({ me, openItem, goAssign }) {
     : view === "routines" ? routines : view === "created" ? createdByMe
     : view === "completed" ? completedByMe
     : mine.filter((item) => item.status !== "cancelled");
-  const selectedInView = selectedWorkId === "none" ? null : (rows.some(item => item.id === selectedWorkId) ? selectedWorkId : (rows[0]?.id || null));
+  const selectedInView = selectedWorkId && selectedWorkId !== "none" && rows.some(item => item.id === selectedWorkId)
+    ? selectedWorkId : null;
   const groupTitle = view === "given" ? "Work you gave out" : view === "team" ? "Active team work"
     : view === "routines" ? "Repeating responsibilities" : view === "completed" ? "Completed responsibilities"
     : view === "created" ? "Responsibilities created by me" : "My responsibilities";
@@ -129,7 +130,7 @@ export default function ManagerWork({ me, openItem, goAssign }) {
     {!scopedLoading && error && <ProductNotice tone="error" title="Could not load Manager Work">{error}</ProductNotice>}
     {scopedLoading && <LoadingState label="Loading manager work…" />}
 
-    {!scopedLoading && !error && <WorkRegisterLayout me={me}
+    {!scopedLoading && !error && <WorkRegisterLayout me={me} rows={[...mine,...given,...team]} reviews={reviews} role="manager"
       selectedId={view === "reviews" ? null : selectedInView}
       onClose={() => setSelectedWorkId("none")} openItem={openItem}
       recordCount={view === "reviews" ? reviews.length : rows.length}
