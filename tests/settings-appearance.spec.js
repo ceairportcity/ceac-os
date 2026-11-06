@@ -46,10 +46,11 @@ test('production-compiled colours follow manual and automatic appearance',async(
  await expect(panel).toHaveCSS('background-color','rgb(28, 31, 36)');
  await expect(panel).toHaveCSS('color','rgb(232, 236, 241)');
  const actionContrast=await page.evaluate(()=>{
-  const button=document.createElement('button');button.className='btn';button.textContent='Example action';document.body.append(button);
+  const host=document.createElement('div');host.className='app-content';
+  const button=document.createElement('button');button.className='btn';button.textContent='Example action';host.append(button);document.body.append(host);
   const style=getComputedStyle(button);
   const luminance=value=>{const channels=value.match(/[\d.]+/g).slice(0,3).map(Number).map(n=>n/(value.startsWith('color(')?1:255)).map(n=>n<=.04045?n/12.92:((n+.055)/1.055)**2.4);return channels[0]*.2126+channels[1]*.7152+channels[2]*.0722;};
-  const foreground=luminance(style.color),background=luminance(style.backgroundColor);button.remove();return (Math.max(foreground,background)+.05)/(Math.min(foreground,background)+.05);
+  const foreground=luminance(style.color),background=luminance(style.backgroundColor);host.remove();return (Math.max(foreground,background)+.05)/(Math.min(foreground,background)+.05);
  });
  expect(actionContrast,'primary action stays readable in Dark appearance').toBeGreaterThanOrEqual(4.5);
  await page.screenshot({path:'test-artifacts/settings-production-dark.png',fullPage:true});

@@ -65,6 +65,7 @@ for(const width of [390,1440])for(const role of roles)test(`Dark appearance stay
  test.setTimeout(240000);
  const context=await browser.newContext({viewport:{width,height:1000},colorScheme:'dark',reducedMotion:'reduce'});
  const page=await context.newPage();
+ page.setDefaultTimeout(15000);
  const results=[];
  try{
   await page.route('**/*',route=>{const u=new URL(route.request().url());return u.hostname==='127.0.0.1'&&['5173','54321'].includes(u.port)?route.continue():route.abort('blockedbyclient');});
@@ -87,7 +88,10 @@ for(const width of [390,1440])for(const role of roles)test(`Dark appearance stay
    await expect(page.locator('.app')).toBeVisible();
    await inspect(route);
    if(route==='home'){
-    if(width>900){
+    if(width>900&&role.key==='executive'){
+     // The approved Executive top frame deliberately hides the shared Create menu.
+     await expect(page.locator('.ev2s-topbar').getByRole('button',{name:'Create',exact:true})).toBeHidden();
+    }else if(width>900){
      await page.locator('.ev2s-topbar').getByRole('button',{name:'Create',exact:true}).click();
      await expect(page.getByRole('menu')).toBeVisible();
      await inspect('create-menu');
@@ -116,6 +120,6 @@ for(const width of [390,1440])for(const role of roles)test(`Dark appearance stay
   }
  }finally{
   writeFileSync(`test-artifacts/dark-audit-${role.key}-${width}.json`,JSON.stringify(results,null,2));
-  await context.close();
+  await context.close().catch(()=>{});
  }
 });
