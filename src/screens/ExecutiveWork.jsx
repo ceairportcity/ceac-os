@@ -88,7 +88,7 @@ export default function ExecutiveWork({ me, openItem, goAssign }) {
     <WorkPageHeader
       eyebrow="Executive workspace"
       title="Work"
-      description="Plan, record, and finish your work. Keep every contribution connected to the right project."
+      description="See your responsibilities and the decisions waiting for your review."
       actionLabel="Give out work"
       onAction={() => goAssign?.()}
       secondaryActionLabel="Add my work"
