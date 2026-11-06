@@ -75,7 +75,7 @@ export default function Work({ me, isManager = false, openItem }) {
   const [due, setDue] = useState("");
   const [repeat, setRepeat] = useState(initialOrganisationalRepeat);
   const [steps, setSteps] = useState([""]);
-  const [noStepsNeeded, setNoStepsNeeded] = useState(false);
+  const [noStepsNeeded, setNoStepsNeeded] = useState(true);
   const [busy, setBusy] = useState(false);
   // Blocks two synchronous create clicks before React renders the busy state.
   const ownCreatePending = useRef(false);
@@ -262,7 +262,7 @@ export default function Work({ me, isManager = false, openItem }) {
     setDue("");
     setRepeat(initialOrganisationalRepeat());
     setSteps([""]);
-    setNoStepsNeeded(false);
+    setNoStepsNeeded(true);
     setNotice(null);
     setSheet("self");
   }
@@ -489,8 +489,12 @@ export default function Work({ me, isManager = false, openItem }) {
       </p>
 
       <FieldGroup label="Work to carry"><input className="field" placeholder="What are you doing?" value={title} onChange={(event) => setTitle(event.target.value)} /></FieldGroup>
-      <FieldGroup label="Why it matters" hint="Optional context."><textarea className="field" rows={2} placeholder="Why it matters" value={purpose} onChange={(event) => setPurpose(event.target.value)} /></FieldGroup>
       <FieldGroup label="Finished result"><textarea className="field" rows={3} placeholder="What should be true when this is finished?" value={expectedOutcome} onChange={(event) => setExpectedOutcome(event.target.value)} /></FieldGroup>
+
+      <details className="reference-disclosure">
+        <summary>Schedule, project and other details (optional)</summary>
+        <div className="reference-disclosure-body">
+      <FieldGroup label="Why it matters" hint="Optional context."><textarea className="field" rows={2} placeholder="Why it matters" value={purpose} onChange={(event) => setPurpose(event.target.value)} /></FieldGroup>
 
       {createVisibility === "unit" && <FieldGroup label="Linked project (optional)">
         <input className="field" type="search" aria-label="Search authorised projects"
@@ -531,6 +535,8 @@ export default function Work({ me, isManager = false, openItem }) {
       {createVisibility === "unit" && <OrganisationalRepeatFields value={repeat} onChange={setRepeat} disabled={busy} />}
       {!repeat.enabled && <><label className="field-label">Due date (optional)</label>
       <input className="field" type="datetime-local" value={due} onChange={(event) => setDue(event.target.value)} /></>}
+        </div>
+      </details>
 
       <label className="card small no-steps-option">
         <input type="checkbox" checked={noStepsNeeded} onChange={(event) => setNoStepsNeeded(event.target.checked)} />
