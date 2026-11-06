@@ -72,14 +72,14 @@ export default function DevicePushSettings(){
       </label>
       <p style={{fontSize:12,marginTop:8}}>Your phone or computer controls how notifications appear on its lock screen.</p>
     </>}
-    {status==="enabled"&&<fieldset disabled={busy} className="ceac-push-preferences"><legend>Choose your notifications</legend>
-      {[["messages","Memos and messages"],["work","Work and decisions"],["calendar","Meetings and reminders"],["rooms","Other Room activity (off by default)"]].map(([key,label])=><label key={key}>
+    {status==="enabled"&&<fieldset disabled={busy} className="ceac-room-settings-body"><legend>Choose your notifications</legend>
+      {[["messages","Memos and messages"],["work","Work and decisions"],["calendar","Meetings and reminders"],["rooms","Other Room activity (off by default)"]].map(([key,label])=><label className="ceac-room-setting" key={key}>
         <input type="checkbox" checked={key==="rooms"?preferences.categories[key]===true:preferences.categories[key]!==false} onChange={e=>setPreferences(p=>({...p,categories:{...p.categories,[key]:e.target.checked}}))}/>{label}</label>)}
-      <label>Remind me before timed work and meetings<select value={preferences.reminderMinutes||30} onChange={e=>setPreferences(p=>({...p,reminderMinutes:Number(e.target.value)}))}>{[5,15,30,60].map(minutes=><option key={minutes} value={minutes}>{minutes} minutes before</option>)}</select></label>
-      <label><input type="checkbox" checked={preferences.quietStart!==null} onChange={e=>setPreferences(p=>({...p,quietStart:e.target.checked?21:null,quietEnd:e.target.checked?7:null}))}/>Quiet hours · Ghana time</label>
-      {preferences.quietStart!==null&&<div className="ceac-push-hours">{[["quietStart","From"],["quietEnd","Until"]].map(([key,label])=><label key={key}>{label}<select value={preferences[key]} onChange={e=>setPreferences(p=>({...p,[key]:Number(e.target.value)}))}>
+      <label className="ceac-room-setting">Remind me before timed work and meetings<select value={preferences.reminderMinutes||30} onChange={e=>setPreferences(p=>({...p,reminderMinutes:Number(e.target.value)}))}>{[5,15,30,60].map(minutes=><option key={minutes} value={minutes}>{minutes} minutes before</option>)}</select></label>
+      <label className="ceac-room-setting"><input type="checkbox" checked={preferences.quietStart!==null} onChange={e=>setPreferences(p=>({...p,quietStart:e.target.checked?21:null,quietEnd:e.target.checked?7:null}))}/>Quiet hours · Ghana time</label>
+      {preferences.quietStart!==null&&<div className="ceac-room-settings-rows">{[["quietStart","From"],["quietEnd","Until"]].map(([key,label])=><label className="ceac-room-setting" key={key}>{label}<select value={preferences[key]} onChange={e=>setPreferences(p=>({...p,[key]:Number(e.target.value)}))}>
         {Array.from({length:24},(_,hour)=><option key={hour} value={hour}>{String(hour).padStart(2,"0")}:00</option>)}</select></label>)}</div>}
-      <div className="ceac-push-buttons"><button type="button" onClick={()=>void save()}>Save preferences</button><button type="button" onClick={()=>void test()}>Send a test notification</button></div>
+      <div className="ceac-room-settings-body"><button type="button" onClick={()=>void save()}>Save preferences</button><button type="button" onClick={()=>void test()}>Send a test notification</button></div>
     </fieldset>}
     {notice&&<p role="status">{notice}</p>}
     {error&&<p role="alert" className="ceac-updates-error">{error}</p>}

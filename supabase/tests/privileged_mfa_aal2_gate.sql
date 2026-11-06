@@ -59,7 +59,7 @@ begin
   -- security_definer_surface_gate.sql, locks every signature by name.
   -- This is only an independent count regression check: never relax the
   -- anonymous-callability test or the verified-TOTP/AAL2 assertions below.
-  if callable_count<>184 then
+  if callable_count<>187 then
     raise exception 'S1 MFA gate failure: expected 184 independently reviewed authenticated SECURITY DEFINER interfaces; found %.',callable_count;
   end if;
 

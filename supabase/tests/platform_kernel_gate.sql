@@ -69,7 +69,7 @@ $definer_search_path$;
 -- execution grants (attendance correction and performance publication): 145.
 -- The currently reviewed authenticated-definer surface has 184 EXACT
 -- signatures, including three separately checked Executive-only read summaries.
--- security_definer_surface_gate.sql locks the full named 184-signature set,
+-- security_definer_surface_gate.sql locks the full named 187-signature set,
 -- separately from this regression count. The independent anon-denial and
 -- internal-helper revocation tests are retained; count alone is not a security
 -- allowlist, and future grants must be independently reviewed by signature.
@@ -87,9 +87,9 @@ begin
     and p.prosecdef
     and has_function_privilege('authenticated',p.oid,'EXECUTE');
 
-  -- This count must agree with the separately exact-enumerated 184-signature
+  -- This count must agree with the separately exact-enumerated 187-signature
   -- security_definer_surface_gate.sql; never broaden approved EXECUTE grants.
-  if n<>184 then
+  if n<>187 then
     raise exception 'Platform Kernel gate failure: expected 184 individually reviewed authenticated SECURITY DEFINER interfaces (exact signatures checked independently); found %.',n;
   end if;
 

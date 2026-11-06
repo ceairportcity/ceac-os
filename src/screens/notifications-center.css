@@ -18,10 +18,9 @@
 .ceac-room-settings{border:1px solid #dce5ef;background:#f9fbfe;border-radius:13px;padding:14px;margin-top:8px}
 .ceac-room-settings h3{margin:0 0 4px;font-size:15px}.ceac-room-settings-body{display:grid;gap:13px;margin-top:14px}
 .ceac-room-settings .ceac-room-setting-hint{font-size:12px}
-.ceac-room-settings label{display:grid;gap:5px;font-size:12px;font-weight:650}.ceac-room-settings input{border:1px solid #cfdbeb;background:#fff;border-radius:8px;font:inherit;padding:9px 11px;max-width:350px}
+.ceac-room-settings label{display:flex;gap:5px;font-size:12px;font-weight:650}.ceac-room-settings input{border:1px solid #cfdbeb;background:#fff;border-radius:8px;font:inherit;padding:9px 11px;max-width:350px}
 .ceac-room-settings-rows{display:grid;gap:6px}.ceac-room-setting{background:#fff;border:1px solid #e5ecf4;border-radius:9px;display:flex;gap:12px;align-items:center;justify-content:space-between;padding:11px}
 .ceac-room-setting span{min-width:0;display:grid;gap:3px}.ceac-room-setting strong{font-size:13px;color:#263e53;overflow-wrap:anywhere}.ceac-room-setting small{font-size:12px;color:#647990}
 .ceac-room-setting select{border:1px solid #cbdae9;border-radius:8px;padding:9px;color:#31546f;max-width:160px;background:#fff;font-size:12px;min-height:44px}
-@media(max-width:650px){.ceac-updates-page{padding:15px 12px;gap:11px}.ceac-updates-heading h2{font-size:19px}.ceac-updates-entry{padding:10px}.ceac-updates-category{font-size:12px}.ceac-room-setting{align-items:flex-start;gap:7px}.ceac-room-setting select{max-width:145px}}
+@media(max-width:650px){.ceac-updates-page{padding:15px 12px;gap:11px}.ceac-updates-heading h2{font-size:19px}.ceac-updates-entry{padding:10px}.ceac-room-setting{align-items:flex-start;gap:7px}.ceac-room-setting select{max-width:145px}}
 
-.ceac-push-preferences{border:0;padding:12px 0;display:grid;gap:12px}.ceac-push-preferences label{display:flex;align-items:center;gap:10px;min-height:44px}.ceac-push-preferences input[type=checkbox]{width:20px;height:20px}.ceac-push-hours,.ceac-push-buttons{display:flex;gap:12px;flex-wrap:wrap}.ceac-push-hours select{min-height:44px;padding:8px;border:1px solid #cfdbeb;border-radius:8px;background:#fff;color:inherit}.ceac-updates-page :focus-visible{outline:2px solid #257bbb;outline-offset:3px}

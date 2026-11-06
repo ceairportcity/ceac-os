@@ -17,6 +17,7 @@ There are **48** explicit `tab ===` routing cases, plus a separate default `me` 
 | `home` | staff, manager, admin, executive | Signed in; role-selects component | `Home / ManagerHome / AdminHome / ExecutiveHome` | P3 | SOURCE ONLY |
 | `team` | staff, manager | Signed in; role-selects component | `StaffTeam / Team` | P0/P7 | SOURCE ONLY |
 | `work` | staff, manager, admin, executive | Signed in; role-selects component | `Work / ManagerWork / AdminWork / ExecutiveWork` | P4 | SOURCE ONLY |
+| `personal-calendar` | Notification deep link; all signed-in roles | verified App account; own-profile RLS in StaffCalendar | `StaffCalendar` | Notification follow-up | SOURCE ONLY |
 | `staff-calendar` | staff | isStaff | `StaffCalendar` | P4 | SOURCE ONLY |
 | `messages` | staff, manager, admin, executive | Signed in; no additional root guard | `Inbox` | P0/P7 | SOURCE ONLY |
 | `projects` | manager | isUnitManager | `ManagerProjects` | P5 | SOURCE ONLY |
@@ -136,3 +137,7 @@ P0 documents their **source and responsible future acceptance**, not an approval
 ## 30 October 2026 addendum — Executive Projects
 
 The owner-authorised Executive Projects tab (`exec-projects`) is a separate route from the existing `delivery`/Portfolio strategic view. The screen reuses `AdminProjects` and the pre-existing project composer, listing organisation-wide projects and invoking `create_project_with_participants` with a user-selected active lead department. The proposed forward-only RPC update keeps the `create_project` capability, authenticated identity, AAL2 and active-organisation checks; only a confirmed Executive may bypass the manager-owned lead-department condition. Browser/SQL acceptance and production migration are separately required before claiming that project creation works. The duplicate Browse people attendance list has been replaced by the attendance snapshot above it. Source inventory counts now include 48 root tabs and 13 Executive destinations; this addendum does not rewrite historical P0 evidence.
+
+## 6 November 2026 — personal notification destination
+
+The notification-only `personal-calendar` route reuses StaffCalendar for each signed-in person's own events. It adds no navigation destination or access to another person's private planning. The executable source census now has 49 root routes; historical P0 acceptance above remains historical. Browser and SQL acceptance are recorded separately.
