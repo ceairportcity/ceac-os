@@ -233,7 +233,7 @@ test("manager, administration and executive default to truthful My work records 
   }
   const manager=source("src/screens/ManagerWork.jsx");
   const register=source("src/lib/responsibilityRegister.js");
-  for(const label of ["In progress", "Waiting & review", "Upcoming", "Completed"]){
+  for(const label of ["Needs attention", "In progress", "With reviewer or waiting", "Upcoming", "Completed"]){
     assert.ok(register.includes(label),`Missing shared Work group: ${label}`);
   }
   assert.match(manager, /<ResponsibilityRegister/);
