@@ -2,8 +2,9 @@
 // bodies are exposed in the Overview or bell, even when the source includes them.
 const actionableDeadlineStatus = /^(not_started|in_progress|assigned)$/i;
 const cancelledMeeting = /cancelled|canceled|deleted/i;
-const decisions = new Set(["work_submitted","work_returned","leave_requested","case_opened","case_referred","exception_requested","evidence_submitted"]);
+const decisions = new Set(["work_oversight","work_submitted","work_returned","leave_requested","case_opened","case_referred","exception_requested","evidence_submitted"]);
 const headings = {
+  work_oversight:"Shared work needs your attention",
   room_activity:"New Room message",room_mention:"You were mentioned in a Room",meeting_invited:"Meeting invitation",meeting_changed:"Meeting updated",meeting_cancelled:"Meeting cancelled",leave_requested:"Leave request needs your review",leave_decided:"Your leave request has an outcome",
   routine_reviewed:"Your scheduled responsibility was reviewed",
   work_submitted:"Work is awaiting your review",work_returned:"Changes requested",work_approved:"Your work was approved",

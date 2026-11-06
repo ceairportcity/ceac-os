@@ -13,7 +13,8 @@ for (const role of ["Manager","Admin","Executive"]) {
     assert.match(code,/if \(request === readGeneration\.current\)/);
     assert.match(code,/setLoadedScope\(requestedScope\)/);
     assert.match(code,/setAddingMyWork\(false\)/);
-    assert.match(code,/!scopedLoading && !error && <WorkRegisterLayout/);
+    assert.match(code,/!scopedLoading && !error && view !== "oversight" && <WorkRegisterLayout/);
+    assert.match(code,/!scopedLoading && !error && view === "oversight" && <>/);
     assert.match(code,/addingMyWork && !scopedLoading && <SelfWorkComposer/);
   });
 }

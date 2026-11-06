@@ -1,3 +1,4 @@
+import {WorkOversightConversation} from "./WorkOversight";
 import {useEffect, useRef, useState} from "react";
 import {supabase} from "../lib/supabase";
 import {LoadingState, ProductNotice} from "./bits";
@@ -19,7 +20,7 @@ export default function ExecutiveWorkReview({id, me, back, openRoom}) {
     (async()=>{
       try {
         const result=await supabase.from("work_items")
-          .select("id,org_id,ref,title,kind,status,due_at,expected_outcome,unit_id,project_id")
+          .select("id,org_id,ref,title,kind,status,due_at,expected_outcome,unit_id,project_id,visibility,confidential")
           .eq("id",id).eq("org_id",me.org_id).single();
         if(result.error)throw result.error;
         if(!result.data||result.data.id!==id||result.data.org_id!==me.org_id)throw new Error("This work summary is unavailable.");
@@ -45,6 +46,7 @@ export default function ExecutiveWorkReview({id, me, back, openRoom}) {
   if(error)return <div className="body"><button className="back" onClick={back}>← Back</button><ProductNotice tone="error" title="Work summary unavailable" action={<button type="button" className="btn" onClick={()=>setReload(n=>n+1)}>Try again</button>}>{error}</ProductNotice></div>;
   return <div className="body ev2-work-detail" aria-label="Work review">
     <WorkDetailHeader refCode={item.ref} kind={item.kind} title={item.title} context="Outcome review" due={item.due_at ? `Due ${new Date(item.due_at).toLocaleDateString("en-GB",{timeZone:"Africa/Accra",day:"numeric",month:"short",year:"numeric"})}` : "No due date recorded"} status={item.status} onBack={back}/>
+    <WorkOversightConversation me={me} item={item} />
     <p className="screen-note">Review only · Private working activity and completion checklists are not shown here.</p>
     {item.expected_outcome&&<WorkDetailSection title="Expected outcome"><WorkDetailCopy>{item.expected_outcome}</WorkDetailCopy></WorkDetailSection>}
     <WorkDetailSection title="Submitted outcome">

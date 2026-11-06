@@ -1,3 +1,4 @@
+import WorkOversightWorkspace from "../components/WorkOversight";
 import { useEffect, useMemo, useRef, useState } from "react";
 import ManagerRoutineOccurrences from "../components/ManagerRoutineOccurrences";
 import { supabase } from "../lib/supabase";
@@ -95,6 +96,7 @@ export default function ManagerWork({ me, openItem, goAssign }) {
   const createdByMe = useMemo(() => mine.filter((item) => item.origin === "self_created"), [mine]);
   const completedByMe = useMemo(() => mine.filter((item) => item.status === "completed" || item.status === "self_certified"), [mine]);
   const views = [
+    ["oversight", "Team oversight"],
     ["mine", "My work", mine.filter((item) => item.status !== "cancelled").length],
     ["created", "Created by me", createdByMe.length],
     ["given", "Given out", activeGiven.length],
@@ -130,7 +132,8 @@ export default function ManagerWork({ me, openItem, goAssign }) {
     {!scopedLoading && error && <ProductNotice tone="error" title="Could not load Manager Work">{error}</ProductNotice>}
     {scopedLoading && <LoadingState label="Loading manager work…" />}
 
-    {!scopedLoading && !error && <WorkRegisterLayout me={me} rows={[...mine,...given,...team]} reviews={reviews} role="manager"
+    {!scopedLoading && !error && view === "oversight" && <><WorkTabs items={views} value={view} onChange={setView} ariaLabel="Manager work views" /><WorkOversightWorkspace me={me} openItem={openItem} /></>}
+    {!scopedLoading && !error && view !== "oversight" && <WorkRegisterLayout me={me} rows={[...mine,...given,...team]} reviews={reviews} role="manager"
       selectedId={view === "reviews" ? null : selectedInView}
       onClose={() => setSelectedWorkId("none")} openItem={openItem}
       recordCount={view === "reviews" ? reviews.length : rows.length}

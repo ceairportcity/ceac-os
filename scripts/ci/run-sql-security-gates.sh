@@ -70,6 +70,7 @@ tests=(
   messages_memos_gate.sql
   work_activity_followup_edit_gate.sql
   support_case_identity_intake_gate.sql
+  work_oversight_gate.sql
   notification_completion_gate.sql
   notification_work_state_gate.sql
   technical_support_v1_gate.sql
