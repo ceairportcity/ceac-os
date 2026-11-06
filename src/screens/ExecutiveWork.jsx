@@ -81,7 +81,8 @@ export default function ExecutiveWork({ me, openItem, goAssign }) {
   ];
   const rows = view === "given" ? activeGiven : view === "created" ? selfCreated
     : view === "completed" ? completedMine : mine.filter((item) => item.status !== "cancelled");
-  const selectedInView = selectedWorkId === "none" ? null : (rows.some(item => item.id === selectedWorkId) ? selectedWorkId : (rows[0]?.id || null));
+  const selectedInView = selectedWorkId && selectedWorkId !== "none" && rows.some(item => item.id === selectedWorkId)
+    ? selectedWorkId : null;
 
   return <div className="body executive-work ev2-work-page ev2-work-executive">
     <WorkPageHeader
@@ -100,7 +101,7 @@ export default function ExecutiveWork({ me, openItem, goAssign }) {
     {!scopedLoading && error && <ProductNotice tone="error" title="Could not load Work">{error}</ProductNotice>}
     {scopedLoading && <LoadingState label="Loading leadership work…" />}
 
-    {!scopedLoading && !error && <WorkRegisterLayout me={me}
+    {!scopedLoading && !error && <WorkRegisterLayout me={me} rows={[...mine,...given]} reviews={reviews} role="executive"
       selectedId={view === "reviews" ? null : selectedInView}
       onClose={() => setSelectedWorkId("none")} openItem={openItem}
       recordCount={view === "reviews" ? reviews.length : rows.length}
