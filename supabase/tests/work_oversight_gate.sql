@@ -42,7 +42,7 @@ begin
  begin perform public.add_work_oversight_entry(work,'milestone','Duplicate request',gen_random_uuid());raise exception 'Duplicate request allowed';exception when invalid_parameter_value then null;end;
  if (public.work_oversight_queue()->'rows')::text like '%'||foreign_work::text||'%' then raise exception 'Queue crossed tenant';end if;
  execute 'reset role';
-  if (select read_at from public.ceac_notification_events where source_event_id=attention and recipient_id=second_exec) is null then raise exception 'Answer did not acknowledge its exact notification';end if;
+  if exists(select 1 from public.ceac_notification_events where source_event_id=attention and recipient_id=second_exec and read_at is null) then raise exception 'Answer left its notification unread';end if;
  perform set_config('request.jwt.claim.sub',admin::text,true);perform set_config('request.jwt.claims',jsonb_build_object('sub',admin,'role','authenticated','aal','aal1')::text,true);
  execute 'set local role authenticated';
  perform public.set_work_supervisor(manager_work,second_exec,'Named executive reporting line');
