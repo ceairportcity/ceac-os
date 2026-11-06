@@ -283,6 +283,14 @@ begin
 end
 $executive_read_surface$;
 
+-- Reviewed oversight RPCs: guarded active actor, tenant and shared-work scope.
+insert into s2_expected_authenticated_definers(signature) values
+ ('public.work_recorded_supervisor(p_work uuid)'),
+ ('public.work_oversight_queue(p_offset integer)'),
+ ('public.work_oversight_context(p_work uuid)'),
+ ('public.set_work_supervisor(p_work uuid, p_supervisor uuid, p_reason text)'),
+ ('public.add_work_oversight_entry(p_work uuid, p_kind text, p_note text, p_request_id uuid, p_reply_to uuid)');
+
 do $allowlist$
 declare
   v_unexpected text;

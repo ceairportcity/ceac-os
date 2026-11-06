@@ -1,0 +1,33 @@
+import {test,expect} from '@playwright/test';
+const staff='11111111-1111-4111-8111-111111111111',manager='22222222-2222-4222-8222-222222222222';
+for(const width of [320,768,1440])test(`shared Work oversight controls and milestones at ${width}px`,async({page})=>{
+ // Real React controls, synthetic RPC responses; server authority is tested separately in work_oversight_gate.sql.
+ await page.setViewportSize({width,height:1050});
+ await page.goto('/tests/fixtures/work-oversight.html');
+ await page.getByRole('button',{name:/Registration preparation/}).click();
+ await expect(page.getByRole('heading',{name:'Shared work conversation'})).toBeVisible();
+ await expect(page.getByRole('button',{name:'Follow up',exact:true})).toBeVisible();
+ await expect(page.getByRole('button',{name:'Share update',exact:true})).toHaveCount(0);
+ await page.getByLabel('Fixture role').selectOption(staff);
+ await page.getByRole('button',{name:/Registration preparation/}).click();
+ await page.getByRole('button',{name:'Share update',exact:true}).click();
+ await page.getByRole('textbox',{name:'Progress update'}).fill('The desk is ready.');
+ await page.getByRole('button',{name:'Save and share'}).click();
+ await expect(page.getByText('Update shared. No approval request was created.',{exact:true})).toBeVisible();
+ await page.getByRole('button',{name:'Request milestone review'}).click();
+ await page.getByRole('textbox',{name:'Milestone for review'}).fill('Please review the completed desk arrangement.');
+ await page.getByRole('button',{name:'Save and share'}).click();
+ await expect(page.getByText('1 awaiting a response',{exact:true})).toBeVisible();
+ await expect(page.getByRole('button',{name:'Accept milestone'})).toHaveCount(0);
+ await page.getByLabel('Fixture role').selectOption(manager);
+ await page.getByRole('button',{name:/Registration preparation/}).click();
+ await page.getByRole('button',{name:'Accept milestone'}).click();
+ await page.getByRole('textbox',{name:'Milestone accepted'}).fill('Accepted. Continue to the next milestone.');
+ await page.getByRole('button',{name:'Save and share'}).click();
+ await expect(page.getByText('Milestone accepted',{exact:true})).toBeVisible();
+ const writes=await page.evaluate(()=>window.__oversightFixture.requests.filter(r=>r.name==='add_work_oversight_entry'));
+ expect(writes.map(r=>r.args.p_kind)).toEqual(['update','milestone','accepted']);
+ expect(writes[2].args.p_reply_to).toBe(writes[1].args.p_request_id);
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth)).toBe(false);
+ await page.screenshot({path:test.info().outputPath(`oversight-${width}.png`),fullPage:true});
+});

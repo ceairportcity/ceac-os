@@ -1,3 +1,4 @@
+import WorkOversightWorkspace from "../components/WorkOversight";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import SelfWorkComposer from "../components/SelfWorkComposer";
@@ -73,6 +74,7 @@ export default function ExecutiveWork({ me, openItem, goAssign }) {
   const selfCreated = mine.filter((item) => item.origin === "self_created");
   const completedMine = mine.filter((item) => item.status === "completed" || item.status === "self_certified");
   const tabs = [
+    ["oversight", "Oversight"],
     ["mine", "My work", mine.filter((item) => item.status !== "cancelled").length],
     ["created", "Created by me", selfCreated.length],
     ["given", "Given out", activeGiven.length],
@@ -101,7 +103,8 @@ export default function ExecutiveWork({ me, openItem, goAssign }) {
     {!scopedLoading && error && <ProductNotice tone="error" title="Could not load Work">{error}</ProductNotice>}
     {scopedLoading && <LoadingState label="Loading leadership work…" />}
 
-    {!scopedLoading && !error && <WorkRegisterLayout me={me} rows={[...mine,...given]} reviews={reviews} role="executive"
+    {!scopedLoading && !error && view === "oversight" && <><WorkTabs items={tabs} value={view} onChange={setView} ariaLabel="Executive work views" /><WorkOversightWorkspace me={me} openItem={openItem} /></>}
+    {!scopedLoading && !error && view !== "oversight" && <WorkRegisterLayout me={me} rows={[...mine,...given]} reviews={reviews} role="executive"
       selectedId={view === "reviews" ? null : selectedInView}
       onClose={() => setSelectedWorkId("none")} openItem={openItem}
       recordCount={view === "reviews" ? reviews.length : rows.length}

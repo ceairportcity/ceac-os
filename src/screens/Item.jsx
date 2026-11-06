@@ -1,3 +1,4 @@
+import {WorkOversightConversation} from "../components/WorkOversight";
 import { canSelfCertifyOwnWork } from "../lib/workCompletion";
 import ExecutiveWorkReview from "../components/ExecutiveWorkReview";
 import RoutineScheduleOptions from "../components/RoutineScheduleOptions";
@@ -603,6 +604,7 @@ function ItemDetail({ id, me, session, isManager = false, initialRoutineDate=nul
         <WorkDetailCopy>{item.instructions}</WorkDetailCopy>
       </WorkDetailSection>}
 
+      <WorkOversightConversation me={me} item={item} />
       <WorkActivityDiary key={`${me.id}:${item.id}`} me={me} item={item} routineOccurrences={routineOccurrences}
         prefillDate={routineEvidenceDate} prefillRequest={routineEvidenceRequest} />
 

@@ -149,8 +149,9 @@ async function describeJob(admin: any, job: any, sub: any) {
       if (notice.event_kind === "work_assigned" && !activeWorkStatus.has(work.status)) return null;
       if (notice.event_kind === "work_returned" && work.status!=="returned")return null;
       if (notice.event_kind === "work_approved" && work.status!=="completed")return null;
-      const actor = await actorDetails(admin, notice.actor_id || (notice.event_kind === "work_submitted" ? work.assignee_id : work.assigned_by),job.org_id);
-      const text = notice.event_kind === "work_submitted" ? "Submitted work for your review"
+      const actor = notice.event_kind === "work_oversight" ? null : await actorDetails(admin, notice.actor_id || (notice.event_kind === "work_submitted" ? work.assignee_id : work.assigned_by),job.org_id);
+      const text = notice.event_kind === "work_oversight" ? "Shared work needs your attention"
+        : notice.event_kind === "work_submitted" ? "Submitted work for your review"
         : notice.event_kind === "work_returned" ? "Changes requested"
         : notice.event_kind === "work_approved" ? "Your work was approved" : "Assigned work to you";
       return compose(work.confidential ? "" : text+": "+work.title,{

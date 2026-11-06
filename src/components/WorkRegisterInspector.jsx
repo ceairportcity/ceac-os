@@ -1,3 +1,4 @@
+import {WorkOversightConversation} from "./WorkOversight";
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 import WorkActivityDiary from "./WorkActivityDiary";
@@ -54,6 +55,7 @@ export function WorkRegisterInspector({ me, selectedId, onClose, openItem }) {
       <h2>{work.title}</h2>
       <p className="s2-work-inspector-context">{work.ref} · {work.projects?.name || "No linked project"}</p>
       <WorkDetailsEditor key={`${me.id}:${work.id}:${work.last_movement_at}`} me={me} item={work} onSaved={() => setReload(n=>n+1)} />
+      <WorkOversightConversation me={me} item={work} />
       <WorkActivityDiary me={me} item={work} compact key={`${me.id}:${work.id}`} />
       <WorkProjectLink me={me} item={work} key={`${me.id}:${work.id}`} onLinked={() => setReload(n=>n+1)} />
       <details className="s2-work-inspector-details"><summary>About this work</summary>

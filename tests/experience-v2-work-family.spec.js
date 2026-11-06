@@ -14,19 +14,19 @@ const roles = [
     key: "manager",
     email: "manager@ceac.local.test",
     app: ".manager-app",
-    tabs: ["My work", "Created by me", "Given out", "For review", "Completed", "Team work", "Routines"],
+    tabs: ["Team oversight", "My work", "Created by me", "Given out", "For review", "Completed", "Team work", "Routines"],
   },
   {
     key: "administration",
     email: "admin@ceac.local.test",
     app: ".office-app",
-    tabs: ["My work", "Created by me", "Given out", "For review", "Completed", "Organisation"],
+    tabs: ["Coordination", "My work", "Created by me", "Given out", "For review", "Completed", "Organisation"],
   },
   {
     key: "executive",
     email: "exec@ceac.local.test",
     app: ".executive-app",
-    tabs: ["My work", "Created by me", "Given out", "For review", "Completed"],
+    tabs: ["Oversight", "My work", "Created by me", "Given out", "For review", "Completed"],
   },
 ];
 
