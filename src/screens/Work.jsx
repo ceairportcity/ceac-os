@@ -413,7 +413,7 @@ export default function Work({ me, isManager = false, openItem }) {
 
     {loadError && <ProductNotice tone="error" title="Could not load your work">{loadError}</ProductNotice>}
     {loading && <LoadingState label="Loading your work…" />}
-    {!loading && !loadError && <WorkRegisterLayout me={me} selectedId={selectedInView}
+    {!loading && !loadError && <WorkRegisterLayout me={me} selectedId={selectedInView} rows={visibleItems} role="staff"
       onClose={() => setSelectedWorkId("none")} openItem={openItem} recordCount={visibleItems.length}
       tabs={<WorkTabs items={MODES} value={mode} onChange={nextMode=>{setMode(nextMode);setStatusFilter("all");}} ariaLabel="Work source" />}>
       <ResponsibilityRegister key={mode} rows={visibleItems} selectedId={selectedInView}
