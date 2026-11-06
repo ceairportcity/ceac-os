@@ -77,8 +77,11 @@ begin
  if private.ceac_responsible_reviewer_id(manager_work)<>second_exec then raise exception 'Notification reviewer disagrees with app reviewer';end if;
  perform set_config('request.jwt.claim.sub',second_exec::text,true);perform set_config('request.jwt.claims',jsonb_build_object('sub',second_exec,'role','authenticated','aal','aal1')::text,true);
  execute 'set local role authenticated';
- perform public.add_work_oversight_entry(manager_work,'answered','Proceed with the agreed direction',gen_random_uuid(),attention);
- if not (public.my_ceac_notifications())::text like '%'||manager_work::text||'%' then raise exception 'Executive cannot open shared-work notification';end if;
+  if not (public.my_ceac_notifications())::text like '%'||manager_work::text||'%' then raise exception 'Executive did not receive the shared-work notification';end if;
+  perform public.add_work_oversight_entry(manager_work,'answered','Proceed with the agreed direction',gen_random_uuid(),attention);
+  if (select read_at from public.ceac_notification_events where source_event_id=attention and recipient_id=second_exec) is null then raise exception 'Answer did not acknowledge its exact notification';end if;
+  if (public.my_ceac_notifications())::text like '%'||attention::text||'%' then raise exception 'Answered request remains unread';end if;
+  if (public.work_oversight_context(manager_work)->'events')::text not like '%'||attention::text||'%' then raise exception 'Acknowledgement concealed the shared work history';end if;
  execute 'reset role';
  perform set_config('request.jwt.claim.sub',admin::text,true);perform set_config('request.jwt.claims',jsonb_build_object('sub',admin,'role','authenticated','aal','aal1')::text,true);
  update public.profiles set active=false where id=second_exec;
