@@ -1,39 +1,44 @@
-# Restore the distinct phone composition — 6 November 2026
+# Original phone restoration — production build correction, 6 November 2026
 
-Owner rejected PR #210's stacked desktop cards. Restore the earlier phone interface while retaining Settings and Light/Dark/device appearance. iPad and laptop retain their own composition. This supersedes the prior phone-content acceptance that required desktop preview cards to be stacked on a phone.
+Owner requires the distinct original phone interface restored while keeping Light/Dark/device appearance and the separate iPad/laptop layouts. PR #210's stacked desktop cards were rejected.
 
-## Source authority and cause
+## Confirmed production cause
 
-Pre-appearance production `6d9d2873d14fcfe161a4097eb30e8429243ce270` contains the compact Manager phone composition: 22px greeting, Today/Work/Team shortcuts, compact next-work lane, and desktop summary/calendar/module/previews hidden. PR #205 preserved those layout declarations while changing colour values to paired theme tokens. Original phone compositions also remain in the shared shell, Work and other route styles.
+The appearance change added a final CSSO compression pass. Vite's prior minification converts legacy queries to modern ranges. The installed CSSO silently discards those entire media rules:
 
-Read-only PostCSS comparison of the pre-appearance commit against appearance merge `2130d93` confirmed identical display/position/inset/size/padding/margin/gap/grid/flex/font-size/line-height/white-space declarations and media nesting for shell.css, manager-overview.css and work-family.css.
+- @media (width<=720px){.phone-proof{display:block}} compresses to an empty string.
+- The same occurs for width>=900px and a bounded 721px<=width<=899px range.
+- The emitted production styles contained ZERO width media queries; the compact-phone shortcut retained only its base display:none declaration.
+- Disabling the incompatible first minification stage preserves 359 width-media rules in the final compressed application.
 
-The physical-phone frame workaround kept a 390px frame while media queries could still select the 980px desktop composition. PR #210 restored readability by overriding individual card layouts, including forcing desktop preview cards and the hero summary visible, which the owner explicitly rejected.
+This explains the source/development versus production discrepancy. Phone width workarounds and individual card overrides did not repair the missing released breakpoints.
 
-## Bounded repair
+A read-only PostCSS comparison between pre-appearance production 6d9d287 and appearance merge 2130d93 confirmed identical layout declarations/media nesting in shell.css, manager-overview.css and work-family.css. Original compact layouts remain in the source; appearance need not be removed.
 
-- Remove the page and shell recreation overrides from `phone-presentation.css`, retaining only physical-frame containment for a stale native viewport and fixed surfaces.
-- Select width terms in the existing CSS media rules using physical phone width, preserving the original declarations, cascade, selectors, nesting and breakpoints. Native matchMedia, colour/motion conditions and theme preference remain unchanged. iPad/laptop styles are not rewritten. Original media conditions are retained for restoration, rotation and printing.
-- Include lazily loaded route styles through stylesheet load/head-style observation. No repeated full-style scan on theme changes; unchanged-width events return immediately.
-- Keep People in its phone list flow when a stale desktop media query would auto-open the first person.
-- Advance the existing safe PWA update generation to `ceac-shell-v4-original-phone`. No database, authentication, permissions or dependency change.
+## Repair
 
-The frame guard also contains existing fixed-position dialog backdrops, sheets, toasts and the update banner. A narrow body does not change their native viewport containing block; without this, a dialog could still centre in 980px and a notice could sit beyond the 390px screen. This is frame containment, not a replacement composition. Retain the prior single-line bottom-navigation label guard.
+Use one supported final CSSO pass (Vite cssMinify:false). Fail the build explicitly if modern media-range input reaches that incompatible compressor again. Keep all responsive declarations; do not count deleted responsive rules as a size optimisation.
 
-## Verification and pending acceptance
+Remove the replacement desktop-card/shell compositions, retaining physical frame containment, the isolated single-line bottom-label guard, and fixed dialog/sheet/toast/update-banner bounds. Original phone media selection remains a fallback for a genuinely wide native viewport, including lazy route styles, with original declarations/cascade and non-phone restoration. Native matchMedia and colour/motion preferences are unchanged. People retains its phone list flow.
 
-Local Node 24 focused tests: phone detection, original-rule selection/lazy loading/restoration, current app query-grammar audit and appearance persistence passed (11 tests). Resilience source contracts passed. Initial build passed with CSS 676731 bytes, below unchanged 706560-byte budget; final build and Node 22 CI results must be recorded separately.
+Retain Light/Dark/device appearance, existing work/approval logic and current iPad/laptop layouts. The existing safe update generation is ceac-shell-v4-original-phone. No database, Auth, permission, provider or dependency change.
 
-The prior regression is corrected to require the original compact composition at both native 390px and a pinned native 980px media-query viewport with 390px physical phone signals. It checks Light → Dark → Light changes preserve geometry while colours change, plus reload. Separate cases preserve iPad/laptop composition. The authenticated installed-iPhone test now requires phone shortcuts visible and desktop summary/previews hidden before visiting Work and Settings. These are owner-directed product assertions, not a waiver of failed checks.
+## Complete-style performance baseline
 
-Local Chromium cannot create its required Unix-domain socket in this executor; no repeated browser launch/install attempts. Real browser and visual acceptance use the existing CI runner and its captured artifacts. Browser, final security/replay, production deployment and physical-device confirmation remain PENDING until observed. Use focused fixes/reruns for any actual failures and retain mandatory final release checks.
+The previous 690 KiB aggregate ceiling was passing output that omitted every width media rule. The locally measured complete, compressed stylesheet set is 764093 bytes with 359 width-media rules. For this requested restoration, bound the complete set to 750 KiB (768000 bytes, 3907 headroom). Preserve the original core CSS raw/gzip, Executive route, JavaScript, lazy route and vendor limits. This is a documented correction to an incomplete aggregate baseline, not removal of functional or security assertions. Final Node 22 measurement and all remaining size checks are required.
 
-## First candidate evidence — 855ed7492416c9c4d3eaed2e8d79474e5c54bde8
+## Browser and build protection
 
-CI build/source (802 cases), account security, migration replay and SQL/authority passed. New compact-phone Light/Dark checks passed at both 390px and pinned-native 980px, as did separate iPad/laptop cases; Light and Dark renders were visually inspected. These are historical evidence when the final bounded corrections below are committed, not final-head clearance.
+The phone regression now builds production CSS and uses those emitted entry/App/Manager styles instead of development CSS. It requires the compact 22px greeting, Today/Work/Team shortcuts, and hidden desktop summary/calendar/module/previews at native 390px and pinned native 980px with 390px handset signals. Light → Dark → Light must change colours and preserve geometry, including after reload. Real ModalDialog/Toast and a synthetic update-banner preview must fit the physical screen. Separate iPad/laptop cases retain their own composition. These checks would fail against the prior zero-media production output.
 
-Retain raw failures in Quality Gate run 42297126847: browser group 4 job 128165258677 expected the bottom label single-line guard (`white-space: nowrap`), which was removed with the broader overrides; restore that isolated guard. Group 6 job 128165258729 selected an unclassed legacy global Give out work shortcut before the Executive role stylesheet hid it. That global shortcut is deliberately hidden in executive-redesign.css; scope the test to the actual Work header action, retaining all subsequent composer assertions. Phone composition tests in that group passed; 144 tests passed and one failed. No browser retry or acceptance floor reduction.
+The minifier source tests refuse unsupported media ranges, retain legacy phone/desktop/device/colour/print queries, and verify the actual compact Manager rules survive compression. They join the existing source gate.
 
-Include real ModalDialog and Toast components and a synthetic update-banner preview in the presentation fixture, testing full physical-screen bounds for these fixed surfaces as well as the restored page composition. Final source/build/browser/security checks remain due at the final candidate SHA.
+## Historical evidence, not final production acceptance
 
-Bounded-correction local verification: the same 11 focused Node tests passed, final Node 24 production build exited 0 and sealed its script policy, and aggregate CSS is 677530/706560 bytes. Browser files parse and enumerate eight relevant cases. No failed browser check has been retried or marked passed; final Node 22/browser validation remains due.
+855ed749: Node 22 source/build (802 cases), account security, migration replay and SQL/authority passed. The four new development-style compact phone/appearance/iPad/laptop cases passed; both Light/Dark renders were inspected. Run 42297126847 retains two raw failures: group 4 job 128165258677 required the isolated nowrap nav safeguard; group 6 job 128165258729 selected a legacy unclassed global Give out work shortcut before Executive CSS hid it. Restore the nav safeguard and target the actual Work-header action while preserving every subsequent composer assertion.
+
+74c6a4a includes those bounded corrections and fixed-surface tests. Its passing development checks cannot certify production while its compressor drops responsive rules. The PR was explicitly held as soon as this cause was confirmed.
+
+Local Node 24 source checks and build trials are diagnostic evidence, not final Node 22 clearance. This executor cannot create Chromium's required Unix-domain socket; do not repeat browser install/launch attempts. The workspace restarted during the build investigation; use the connected repository and existing CI for the final candidate. Preserve focused repairs for confirmed failures, exact-head mandatory security/release checks and raw failures.
+
+Final compiled browser/visual inspection, security/replay, complete-style size checks, production deployment and device confirmation remain pending until observed.

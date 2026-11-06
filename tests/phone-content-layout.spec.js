@@ -1,7 +1,42 @@
 import fs from 'node:fs';
+import {execFileSync} from 'node:child_process';
 import {test,expect} from '@playwright/test';
 
-for(const viewportWidth of [390,980])test(`original compact phone survives Light/Dark at ${viewportWidth}px CSS viewport`,async({browser})=>{
+let productionCss;
+test.beforeAll(()=>{
+  execFileSync('npm',['run','build'],{stdio:'pipe',env:process.env});
+  const dir='dist/assets';
+  const assets=fs.readdirSync(dir).filter(name=>name.endsWith('.css'));
+  const selected=[];
+  for(const prefix of ['index-','App-','ManagerHome-']){
+    const name=assets.find(name=>name.startsWith(prefix));
+    if(name)selected.push(name);
+  }
+  if(!selected.some(name=>name.startsWith('index-'))||!selected.some(name=>name.startsWith('ManagerHome-')))
+    throw new Error('Expected production entry and Manager CSS assets');
+  const read=name=>fs.readFileSync(dir+'/'+name,'utf8');
+  for(const selector of ['.ceac-day-sections','.s2-own-work-session','.s2-landscape-hero','.fpg9-mobile-shortcuts','.ev2w-header']){
+    if(!selected.some(name=>read(name).includes(selector))){
+      const name=assets.find(name=>read(name).includes(selector));
+      if(!name)throw new Error('Missing compiled selector '+selector);
+      selected.push(name);
+    }
+  }
+  productionCss=selected.map(read).join('\n');
+  if(!/@media[^{}]*width/.test(productionCss))throw new Error('Production CSS lost responsive media rules');
+});
+async function useProductionStyles(page){
+  await expect(page.locator('.fpg9-home-hero')).toBeVisible();
+  await expect(page.getByRole('button',{name:'Start work',exact:true})).toBeEnabled();
+  await page.evaluate(css=>{
+    document.querySelectorAll('style[data-vite-dev-id],link[rel="stylesheet"]').forEach(node=>node.remove());
+    const style=document.createElement('style');
+    style.dataset.ceacCompiledProof='true';style.textContent=css;document.head.append(style);
+  },productionCss);
+}
+
+
+for(const viewportWidth of [390,980])test(`compiled original phone survives Light/Dark at ${viewportWidth}px CSS viewport`,async({browser})=>{
   const context=await browser.newContext({viewport:{width:viewportWidth,height:844},screen:{width:viewportWidth,height:844},isMobile:viewportWidth===390,hasTouch:true,userAgent:'Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148'});
   try{
     await context.addInitScript(()=>{
@@ -11,6 +46,7 @@ for(const viewportWidth of [390,980])test(`original compact phone survives Light
     });
     const page=await context.newPage();
     await page.goto('/tests/fixtures/phone-content.html');
+    await useProductionStyles(page);
     await expect(page.locator('.fpg9-home-hero')).toBeVisible();
     await expect(page.getByRole('button',{name:'Start work',exact:true})).toBeEnabled();
     expect(await page.evaluate(()=>matchMedia('(min-width: 900px)').matches)).toBe(viewportWidth===980);
@@ -47,6 +83,7 @@ for(const viewportWidth of [390,980])test(`original compact phone survives Light
     expect(compositions[2]).toEqual(compositions[0]);
     expect(colours[1]).not.toBe(colours[0]);
     await page.reload();
+    await useProductionStyles(page);
     await expect(page.locator('.fpg9-home-impact')).toBeHidden();
     await expect(page.locator('.fpg9-mobile-shortcuts')).toBeVisible();
     await page.getByRole('button',{name:'Open phone dialog',exact:true}).click();
@@ -69,6 +106,7 @@ for(const width of [768,1440])test(`iPad and laptop keep their overview composit
   try{
     const page=await context.newPage();
     await page.goto('/tests/fixtures/phone-content.html');
+    await useProductionStyles(page);
     await expect(page.locator('html')).not.toHaveClass(/ceac-physical-phone/);
     await expect(page.locator('.fpg9-home-impact')).toBeVisible();
     await expect(page.locator('.fpg9-mobile-shortcuts')).toBeHidden();

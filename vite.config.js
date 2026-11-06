@@ -1,6 +1,6 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
-import {minify as minifyCss} from "csso";
+import {minifyProductionCss} from "./scripts/build/production-css.mjs";
 
 export default defineConfig({
   plugins: [react(), {
@@ -12,11 +12,14 @@ export default defineConfig({
       // can be merged. Keep all runtime CSS in its existing stylesheet assets.
       for (const asset of Object.values(bundle)) {
         if (asset.type === "asset" && asset.fileName.endsWith(".css"))
-          asset.source = minifyCss(String(asset.source)).css;
+          asset.source = minifyProductionCss(String(asset.source));
       }
     },
   }],
   build: {
+    // Vite converts legacy media queries to ranges; CSSO 5 drops those rules.
+    // Run the final compressor once on the original, supported query syntax.
+    cssMinify: false,
     // Dynamic module-preload links do not inherit a hash-authorised script's
     // CSP trust. Native module imports preserve on-demand loading without
     // creating those unapproved preload requests.
