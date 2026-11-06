@@ -33,7 +33,7 @@ export default function WorkFocusPanel({ rows = [], reviews = [], role = "staff"
     const unique = [...new Map(rows.filter(Boolean).map(item => [item.id,item])).values()];
     const attention = unique.filter(item => item.status === "returned" || isWorkOverdue(item));
     const toDo = unique.filter(item => ["not_started","in_progress","assigned"].includes(item.status)
-      && !isWorkOverdue(item) && item.kind !== "routine");
+      && !isWorkOverdue(item));
     const waiting = unique.filter(item => awaiting.has(item.status));
     const completed = unique.filter(item => item.status === "completed" || item.status === "self_certified");
     const byDue = (a,b) => (a.due_at ? Date.parse(a.due_at) : Infinity) - (b.due_at ? Date.parse(b.due_at) : Infinity);
@@ -67,7 +67,7 @@ export default function WorkFocusPanel({ rows = [], reviews = [], role = "staff"
         <p style={style.focusTitle}>{review ? review.work_title || "Submitted work" : focus?.title || "You're up to date"}</p>
         <small style={style.focusMeta}>{review
           ? "A submitted work item is ready for your review."
-          : focus ? statusLabel(focus) + " · " + dueLabel(focus.due_at,focus.status)
+          : focus ? (focus.kind === "routine" ? "Recurring work · Open its schedule to update the correct date" : statusLabel(focus) + " · " + dueLabel(focus.due_at,focus.status))
           : facts.waiting ? "Some work is already with a reviewer or waiting on someone else. No repeat submission is needed."
           : "Your recorded work will appear here when action is needed."}</small>
       </div>
