@@ -17,7 +17,7 @@ export function phonePresentationMetrics(environment) {
     .filter(validWidth);
   return {
     phone: physicalPhone,
-    width: physicalPhone ? Math.round(Math.min(...widths)) : null,
+    width: physicalPhone && widths.length ? Math.round(Math.min(...widths)) : null,
   };
 }
 
