@@ -1,0 +1,20 @@
+# CEAC OS — Work redesign completion, 6 November 2026
+
+## Production gap being closed
+The successful PR #201 production release did not install the complete *visible* Work redesign. This PR completes the role-facing Work screens rather than substituting notification or infrastructure work.
+
+## Exact acceptance
+- Staff, Manager, Administration/HR and Executive all render the same premium, responsive Work overview using previously loaded, authorised records; no new database call or subscription.
+- The overview shows what needs attention, what is ready to work on, what is waiting or with a reviewer and what is complete. Leadership review decisions are shown separately.
+- Past-due alerts apply only to actionable ordinary work, not to submitted, waiting, completed or recurring master records. Requested corrections are treated as an action, separate from submitted work.
+- Staff can identify the next work item without opening a history or seeing stale "Overdue" after submission.
+- Work list is Apple-inspired restrained white/blue with accessible controls, clean status captions and adaptive 320px mobile layout.
+- User-driven selection fetches the Work inspector only when needed; selecting the first item, search/filter changes and opening the Work tab no longer automatically fetch a long diary.
+- Edit-work control is easy to find. Staff and managers can write backdated activity, milestones and updates, edit/remove own entries with audit preservation, and know that saving progress is not final approval.
+- Creating personal work starts with title and expected result; optional project and recurrence details are disclosed when needed, with an option for no checklist steps.
+- Project edit/archive/restore and safe delete-unused flows remain with existing authorised `ProjectManageControls`; Messages/Rooms/Memos/Calendar and production Web Push from PR #201 remain intact.
+
+## Release policy
+Focused Testing only for failures, preserving mandatory security/CI/migration/browser gates on the exact final commit. This documentation checkpoint requests the single isolated Vercel preview using the repository's supported `[vercel]` marker. It does not authorise preview access to production staff data. After all checks pass: move PR out of draft, merge to main, verify Vercel production READY and its exact SHA, and confirm Work routes.
+
+**No database migrations are required by this visual Work correction.**
