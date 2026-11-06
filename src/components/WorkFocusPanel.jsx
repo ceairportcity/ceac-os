@@ -64,7 +64,7 @@ export default function WorkFocusPanel({ rows = [], reviews = [], role = "staff"
     <div style={style.focus}>
       <div style={{flex:"1 1 190px",minWidth:0}}>
         <div style={style.kicker}>{review ? "Waiting for your decision" : focus ? (isLeadership ? "Work needing follow-up" : "Next action") : "No immediate action"}</div>
-        <p style={style.focusTitle}>{review ? review.work_title || "Submitted work" : focus?.title || "You're up to date"}</p>
+        <p style={style.focusTitle}>{review ? "Submitted work awaiting your decision" : focus?.title || "You're up to date"}</p>
         <small style={style.focusMeta}>{review
           ? "A submitted work item is ready for your review."
           : focus ? (focus.kind === "routine" ? "Recurring work · Open its schedule to update the correct date" : statusLabel(focus) + " · " + dueLabel(focus.due_at,focus.status))
