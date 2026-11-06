@@ -613,7 +613,7 @@ textarea{width:100%}
   --os-shell:#18232D;
   --os-shell-2:#21313D;
   --os-shell-3:#2A3C48;
-  --os-workspace:#F2F6F7;
+  --os-workspace:var(--c929);
   --os-surface:var(--c738);
   --os-surface-soft:var(--c775);
   --os-ink:var(--c776);
@@ -789,7 +789,7 @@ textarea{width:100%}
   --staff-shell:#17232D;
   --staff-shell-raised:#21313C;
   --staff-shell-line:rgba(255,255,255,.10);
-  --staff-workspace:#F2F5F6;
+  --staff-workspace:var(--c930);
   --staff-surface:var(--c738);
   --staff-surface-soft:var(--c805);
   --staff-ink:var(--c806);
@@ -1012,11 +1012,11 @@ textarea{width:100%}
 .manager-app{
   --manager-shell:#17232D;
   --manager-shell-raised:#21313C;
-  --manager-workspace:#F1F4F5;
+  --manager-workspace:var(--c931);
   --manager-surface:var(--c738);
   --manager-ink:var(--c806);
-  --manager-soft:#586873;
-  --manager-faint:#82919B;
+  --manager-soft:var(--c934);
+  --manager-faint:var(--c935);
   --manager-line:var(--c809);
   --manager-line-soft:var(--c810);
   --manager-brand:#118C83;
@@ -1157,11 +1157,11 @@ textarea{width:100%}
 .office-app,.executive-app{
   --office-shell:#17232D;
   --office-shell-raised:#21313C;
-  --office-workspace:#F1F4F5;
+  --office-workspace:var(--c931);
   --office-surface:var(--c738);
   --office-ink:var(--c806);
-  --office-soft:#586873;
-  --office-faint:#82919B;
+  --office-soft:var(--c934);
+  --office-faint:var(--c935);
   --office-line:var(--c809);
   --office-line-soft:var(--c810);
   --office-brand:#118C83;
@@ -1218,7 +1218,7 @@ textarea{width:100%}
 .office-app .tabs,.executive-app .tabs{
   left:0;right:0;bottom:0;max-width:none;min-height:calc(70px + env(safe-area-inset-bottom));
   padding:4px 8px env(safe-area-inset-bottom);border-top:1px solid rgba(215,224,228,.92);
-  background:rgba(252,253,253,.96);box-shadow:0 -10px 30px rgba(25,40,50,.07);backdrop-filter:blur(18px)
+  background:var(--c933);box-shadow:0 -10px 30px rgba(25,40,50,.07);backdrop-filter:blur(18px)
 }
 .office-app .tab,.executive-app .tab{
   position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;

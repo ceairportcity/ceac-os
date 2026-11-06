@@ -930,3 +930,6 @@
 :root[data-theme="dark"]{color-scheme:dark}
 :root[data-theme="light"]{color-scheme:light}
 @media print{:root{color-scheme:light!important}html,body{background:white!important;color:black!important}}
+
+/* Legacy role workspaces and glass header share the resolved appearance. */
+:root{--c929:light-dark(#F2F6F7,#14171b);--c930:light-dark(#F2F5F6,#14171b);--c931:light-dark(#F1F4F5,#14171b);--c932:light-dark(rgba(248, 250, 252, .96),rgba(28, 31, 36, .96));--c933:light-dark(rgba(252,253,253,.96),rgba(28,31,36,.96));--c934:light-dark(#586873,#aeb8c5);--c935:light-dark(#82919B,#aeb8c5)}

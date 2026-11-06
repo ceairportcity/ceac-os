@@ -1,6 +1,6 @@
 .s2-register-filters{display:grid;grid-template-columns:minmax(0,1fr) 164px 144px;gap:10px;padding:15px 20px;background:var(--c145);border-bottom:1px solid var(--c107)}
 .s2-register-filters label{min-width:0}
-.s2-register-filters input,.s2-register-filters select{box-sizing:border-box;width:100%;min-height:44px;padding:10px 12px;border:1px solid light-dark(#dce6f1,#414b58);border-radius:9px;background:var(--c242);color:light-dark(#36536f,#e8ecf1);font:inherit;font-size:13px}
+.s2-register-filters input,.s2-register-filters select{box-sizing:border-box;width:100%;min-height:44px;padding:10px 12px;border:1px solid light-dark(#dce6f1,#414b58);border-radius:9px;background:var(--s0);color:light-dark(#36536f,#e8ecf1);font:inherit;font-size:13px}
 .s2-register-search input{padding-left:14px}
 .s2-register-table-region{max-width:100%;overflow:auto;container-type:inline-size}
 .s2-work-register .s2-register-table{display:table;width:100%;border-collapse:collapse;table-layout:fixed;text-align:left;color:var(--c109)}

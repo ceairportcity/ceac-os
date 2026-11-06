@@ -130,6 +130,9 @@ for (const viewport of [
       // The Work release must retain the shared Settings appearance contract.
       await page.emulateMedia({ colorScheme: "dark" });
       await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+      await expect(page.locator(".ev2-work-page")).toHaveCSS("background-color", "rgb(20, 23, 27)");
+      await expect(page.locator(".ev2w-header h1")).toHaveCSS("color", "rgb(232, 236, 241)");
+      if (viewport.width > 900) await expect(page.locator(".ev2s-topbar")).toHaveCSS("background-color", "rgba(28, 31, 36, 0.96)");
       const overview = page.getByRole("region", { name: "Work overview", exact: true });
       await expect(overview.locator("h2")).toHaveCSS("color", "rgb(232, 236, 241)");
       await expect(overview.locator("strong").first()).toHaveCSS("color", "rgb(232, 236, 241)");
