@@ -59,7 +59,7 @@ export default function Goals({ id, me, back }) {
       {goal.status === "achieved" && <div className="flag flag-green" style={{ marginTop: 12 }}><h4>Achieved</h4>Well done.</div>}
       <div className="sec"><span>Steps</span><span>{doneCount} of {steps.length}</span></div>
       <div className="card" style={{ padding: "2px 15px" }}>
-        {steps.length === 0 && <div style={{ padding: "12px 0", fontSize: 13, color: "var(--ink-faint)" }}>Break it down into steps. Tick them off as you go.</div>}
+        {steps.length === 0 && <div style={{ padding: "12px 0", fontSize: 13, color:"var(--appearance-ink-faint)" }}>Break it down into steps. Tick them off as you go.</div>}
         {steps.map((s) => (
           <button key={s.id} className={"ck " + (s.done ? "done" : "")} onClick={() => toggle(s)}>
             <span className={"box " + (s.done ? "on" : "")} />

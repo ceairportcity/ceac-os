@@ -28,7 +28,7 @@ import {
 
 const BRAND_BOOK_TASK_CSS = `.fpg-brandbook-task-card{margin-top:var(--ev2-space-6);overflow:hidden;border:1px solid var(--ev2-line);border-radius:14px;background:var(--ev2-surface);box-shadow:var(--ev2-shadow-1)}
 .fpg-brandbook-task-card>header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 15px 10px}
-.fpg-brandbook-task-card>header span{display:grid;gap:2px}.fpg-brandbook-task-card>header small{color:var(--ev2-text-tertiary);font-size:12px}.fpg-brandbook-task-card>header strong{font-size:14px}.fpg-brandbook-task-card>header>b{font-size:22px;letter-spacing:-.04em}
+.fpg-brandbook-task-card>header span{display:grid;gap:2px}.fpg-brandbook-task-card>header small{color:var(--appearance-ev2-text-tertiary);font-size:12px}.fpg-brandbook-task-card>header strong{font-size:14px}.fpg-brandbook-task-card>header>b{font-size:22px;letter-spacing:-.04em}
 .fpg-brandbook-task-card>footer{padding:9px 15px;border-top:1px solid var(--ev2-line);color:var(--ev2-text-secondary);font-size:12px}
 .fpg-brandbook-task-card .staff-check-progress{margin:0 15px 8px;border-radius:999px}.fpg-brandbook-task-card .checklist-card{border:0;border-radius:0;box-shadow:none}`;
 

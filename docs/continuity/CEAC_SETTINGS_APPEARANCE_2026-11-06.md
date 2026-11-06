@@ -23,3 +23,15 @@ Owner approved implementation of an Apple-style grouped Settings area for all ro
 ## Remaining work
 
 Publish exact source tree and draft PR; run browser acceptance in CI and inspect visual evidence. Fix only identified failures, preserving passing results. Verify Dark-mode legibility, forms, charts, overlays and all-role application navigation. Required final gates/visual acceptance remain pending. Do not claim deployment or complete browser coverage from the fixture mocks. No SQL, Auth enforcement, production environment or existing production deployment changed.
+
+## First published head and correction batch
+
+Published initial head 7d749acab23e7af56d2f58fea6114af187adbc05, PR #205. CI (all 793 source tests and build), Account Security, Migration Replay and SQL/authority contracts passed. Browser groups 3, 6 and 7 passed. Groups 1/2/4/5/8 identified missing shared `.body` screen convention, stale Account-page titles/selectors, isolated fixtures without the new theme foundation, source-only colour readers and a 339-byte icon overrun. Those were corrected without changing budgets, contrast floors, fixture hashes or authority checks.
+
+A live sample-account visual inspection exposed an additional production-only issue: the CSS compiler lowered light-dark() into compatibility variables driven by authored color-scheme rules; setting the DOM scheme alone updated controls but retained Light surfaces. Explicit root data-theme rules now drive those emitted variables. New browser acceptance builds and exercises actual emitted CSS for manual Dark, Light and automatic device changes, and verifies primary-button contrast. It also records Dark screenshots for all role fixtures and three widths.
+
+Theme foundations are imported by both base and V2 CSS so isolated screens receive the same palette as the application. Foreground accent aliases are separated from solid button/background colours, preserving exact Light values while making Dark text readable. Account protection summary refreshes after verified authenticator setup. Role labels are human readable.
+
+Focused correction checks passed: existing executive protected Light/scenic/shell contracts (3), appearance/security/role checks (15), and Light declaration comparison across the original stylesheets (70 in one pass plus the OfficeSettings file checked separately). Latest pre-publication aggregate CSS was 665529 bytes and icons 20365 bytes, within unchanged 706560/20480 limits. Recheck exact final build and CI.
+
+Preview limitation: Vercel returned 402 api-deployments-free-per-day (more than 100/day) when refreshing the corrected isolated sample preview. No CLI credentials are available, no plan/security settings changed, and no repeated deployment attempts should be made to evade that limit. The older sample preview exposed the defect and is not evidence of corrected Dark surfaces. Continue using CI-produced browser screenshots for corrected visual acceptance. Production remains unchanged.

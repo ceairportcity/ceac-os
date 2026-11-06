@@ -1,3 +1,4 @@
+import {lightAppearanceCss} from "./helpers/lightAppearanceCss.mjs";
 import fs from "node:fs";
 import { test, expect } from "@playwright/test";
 
@@ -39,7 +40,7 @@ test("premium CSS preserves the 12px operational text floor", async () => {
 });
 
 test("workspace action colours resolve through semantic tokens", async () => {
-  const premium = fs.readFileSync("src/premium.css", "utf8").toLowerCase();
+  const premium = lightAppearanceCss(fs.readFileSync("src/premium.css", "utf8")).toLowerCase();
   expect((premium.match(/#0c5df9/g) || []).length).toBe(1);
   expect((premium.match(/#6498f9/g) || []).length).toBe(1);
 

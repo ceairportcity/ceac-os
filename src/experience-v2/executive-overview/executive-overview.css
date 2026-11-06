@@ -1,11 +1,15 @@
 .executivev2 {
   --exec-purple: #7148e8;
+  --appearance-exec-purple: light-dark(var(--exec-purple),color-mix(in srgb,var(--exec-purple) 45%,white));
   --exec-purple-soft: var(--c337);
-  --exec-green: var(--c338);
+  --exec-green: #25a86b;
+  --appearance-exec-green: light-dark(var(--exec-green),color-mix(in srgb,var(--exec-green) 45%,white));
   --exec-green-soft: var(--c339);
-  --exec-amber: var(--c340);
+  --exec-amber: #e79024;
+  --appearance-exec-amber: light-dark(var(--exec-amber),color-mix(in srgb,var(--exec-amber) 45%,white));
   --exec-amber-soft: var(--c341);
-  --exec-blue: var(--c342);
+  --exec-blue: #2e86e6;
+  --appearance-exec-blue: light-dark(var(--exec-blue),color-mix(in srgb,var(--exec-blue) 45%,white));
   --exec-blue-soft: var(--c334);
   --exec-red: #e85252;
   --exec-red-soft: var(--c343);
@@ -131,10 +135,10 @@ button.executivev2-kpi:focus-visible { outline: 3px solid rgba(113,72,232,.18); 
   place-items: center;
   border-radius: 9px;
 }
-.executivev2-kpi.is-purple .executivev2-kpi-icon { background: var(--exec-purple-soft); color: var(--exec-purple); }
-.executivev2-kpi.is-green .executivev2-kpi-icon { background: var(--exec-green-soft); color: var(--exec-green); }
-.executivev2-kpi.is-amber .executivev2-kpi-icon { background: var(--exec-amber-soft); color: var(--exec-amber); }
-.executivev2-kpi.is-blue .executivev2-kpi-icon { background: var(--exec-blue-soft); color: var(--exec-blue); }
+.executivev2-kpi.is-purple .executivev2-kpi-icon { background: var(--exec-purple-soft); color: var(--appearance-exec-purple); }
+.executivev2-kpi.is-green .executivev2-kpi-icon { background: var(--exec-green-soft); color: var(--appearance-exec-green); }
+.executivev2-kpi.is-amber .executivev2-kpi-icon { background: var(--exec-amber-soft); color: var(--appearance-exec-amber); }
+.executivev2-kpi.is-blue .executivev2-kpi-icon { background: var(--exec-blue-soft); color: var(--appearance-exec-blue); }
 .executivev2-kpi-copy { min-width: 0; display: grid; gap: 2px; }
 .executivev2-kpi-copy > span { color: var(--c350); font-weight: 650; line-height: 1.25; }
 .executivev2-kpi-copy > strong { font-size: 21px; line-height: 1.04; font-variant-numeric: tabular-nums; }
@@ -182,7 +186,7 @@ button.executivev2-kpi:focus-visible { outline: 3px solid rgba(113,72,232,.18); 
   padding: 0 3px;
   border: 0;
   background: transparent;
-  color: var(--exec-purple);
+  color: var(--appearance-exec-purple);
   font: inherit;
   font-weight: 700;
   cursor: pointer;
@@ -222,9 +226,9 @@ button.executivev2-kpi:focus-visible { outline: 3px solid rgba(113,72,232,.18); 
 }
 .executivev2-attention-icon { width: 30px; height: 30px; }
 .executivev2-attention-icon.is-risk { background: var(--exec-red-soft); color: var(--exec-red); }
-.executivev2-attention-icon.is-warning { background: var(--exec-amber-soft); color: var(--exec-amber); }
-.executivev2-attention-icon.is-action { background: var(--exec-blue-soft); color: var(--exec-blue); }
-.executivev2-attention-icon.is-purple { background: var(--exec-purple-soft); color: var(--exec-purple); }
+.executivev2-attention-icon.is-warning { background: var(--exec-amber-soft); color: var(--appearance-exec-amber); }
+.executivev2-attention-icon.is-action { background: var(--exec-blue-soft); color: var(--appearance-exec-blue); }
+.executivev2-attention-icon.is-purple { background: var(--exec-purple-soft); color: var(--appearance-exec-purple); }
 .executivev2-attention-copy { min-width: 0; display: grid; gap: 2px; }
 .executivev2-attention-copy strong,
 .executivev2-attention-copy small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -241,9 +245,9 @@ button.executivev2-kpi:focus-visible { outline: 3px solid rgba(113,72,232,.18); 
   border-top: 1px solid var(--c353);
 }
 .executivev2-direction-icon { width: 30px; height: 30px; }
-.executivev2-direction-icon.is-success { background: var(--exec-green-soft); color: var(--exec-green); }
-.executivev2-direction-icon.is-warning { background: var(--exec-amber-soft); color: var(--exec-amber); }
-.executivev2-direction-icon.is-blue { background: var(--exec-blue-soft); color: var(--exec-blue); }
+.executivev2-direction-icon.is-success { background: var(--exec-green-soft); color: var(--appearance-exec-green); }
+.executivev2-direction-icon.is-warning { background: var(--exec-amber-soft); color: var(--appearance-exec-amber); }
+.executivev2-direction-icon.is-blue { background: var(--exec-blue-soft); color: var(--appearance-exec-blue); }
 .executivev2-direction-copy { min-width: 0; display: grid; gap: 2px; }
 .executivev2-direction-copy small { color: var(--ev2-text-secondary); }
 .executivev2-direction-track {
@@ -271,10 +275,10 @@ button.executivev2-kpi:focus-visible { outline: 3px solid rgba(113,72,232,.18); 
   padding: 8px 12px;
 }
 .executivev2-org-icon { width: 30px; height: 30px; }
-.executivev2-org-icon.is-purple { background: var(--exec-purple-soft); color: var(--exec-purple); }
-.executivev2-org-icon.is-blue { background: var(--exec-blue-soft); color: var(--exec-blue); }
-.executivev2-org-icon.is-amber { background: var(--exec-amber-soft); color: var(--exec-amber); }
-.executivev2-org-icon.is-green { background: var(--exec-green-soft); color: var(--exec-green); }
+.executivev2-org-icon.is-purple { background: var(--exec-purple-soft); color: var(--appearance-exec-purple); }
+.executivev2-org-icon.is-blue { background: var(--exec-blue-soft); color: var(--appearance-exec-blue); }
+.executivev2-org-icon.is-amber { background: var(--exec-amber-soft); color: var(--appearance-exec-amber); }
+.executivev2-org-icon.is-green { background: var(--exec-green-soft); color: var(--appearance-exec-green); }
 .executivev2-org-row > span:nth-child(2) { min-width: 0; display: flex; justify-content: space-between; gap: 8px; }
 .executivev2-org-row small { color: var(--ev2-text-secondary); font-weight: 700; font-variant-numeric: tabular-nums; }
 
@@ -294,11 +298,11 @@ button.executivev2-kpi:focus-visible { outline: 3px solid rgba(113,72,232,.18); 
   border-top: 1px solid var(--c353);
 }
 .executivev2-activity-item:first-child { border-top: 0; }
-.executivev2-activity-icon { width: 28px; height: 28px; background: var(--exec-blue-soft); color: var(--exec-blue); }
-.executivev2-activity-icon.is-purple { background: var(--exec-purple-soft); color: var(--exec-purple); }
-.executivev2-activity-icon.is-green { background: var(--exec-green-soft); color: var(--exec-green); }
-.executivev2-activity-icon.is-amber { background: var(--exec-amber-soft); color: var(--exec-amber); }
-.executivev2-activity-icon.is-blue { background: var(--exec-blue-soft); color: var(--exec-blue); }
+.executivev2-activity-icon { width: 28px; height: 28px; background: var(--exec-blue-soft); color: var(--appearance-exec-blue); }
+.executivev2-activity-icon.is-purple { background: var(--exec-purple-soft); color: var(--appearance-exec-purple); }
+.executivev2-activity-icon.is-green { background: var(--exec-green-soft); color: var(--appearance-exec-green); }
+.executivev2-activity-icon.is-amber { background: var(--exec-amber-soft); color: var(--appearance-exec-amber); }
+.executivev2-activity-icon.is-blue { background: var(--exec-blue-soft); color: var(--appearance-exec-blue); }
 .executivev2-activity-copy { min-width: 0; display: grid; gap: 2px; }
 .executivev2-activity-copy strong,
 .executivev2-activity-copy small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -325,7 +329,7 @@ button.executivev2-kpi:focus-visible { outline: 3px solid rgba(113,72,232,.18); 
   border: 1px solid var(--c360);
   border-radius: 8px;
   background: var(--c361);
-  color: var(--exec-purple);
+  color: var(--appearance-exec-purple);
   font: inherit;
   font-weight: 700;
   cursor: pointer;
@@ -342,7 +346,7 @@ button.executivev2-kpi:focus-visible { outline: 3px solid rgba(113,72,232,.18); 
   text-align: left;
 }
 .executivev2-empty.compact { min-height: 62px; justify-content: flex-start; padding: 10px 12px; }
-.executivev2-empty > svg { color: var(--exec-green); }
+.executivev2-empty > svg { color: var(--appearance-exec-green); }
 .executivev2-empty span { display: grid; gap: 3px; }
 .executivev2-empty strong { color: var(--ev2-text); }
 .executivev2-empty small { line-height: 1.35; }

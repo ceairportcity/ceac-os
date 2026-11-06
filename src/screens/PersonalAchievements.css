@@ -5,7 +5,7 @@
 .s2-achievement-heading h1{margin:5px 0 6px;font-size:clamp(26px,3vw,34px);letter-spacing:-.04em;font-weight:760}
 .s2-achievement-heading p{margin:0;max-width:73ch;font-size:13px;color:var(--c680)}
 .s2-achievement-actions{display:flex;gap:8px;align-items:center}
-.s2-achievement-actions button{border:1px solid var(--c681);border-radius:9px;min-height:var(--exec-control-min,39px);padding:9px 13px;font-size:12px;background:var(--c1);color:var(--exec-purple,var(--c682));cursor:pointer;white-space:nowrap}
+.s2-achievement-actions button{border:1px solid var(--c681);border-radius:9px;min-height:var(--exec-control-min,39px);padding:9px 13px;font-size:12px;background:var(--c1);color:var(--appearance-exec-purple,var(--c682));cursor:pointer;white-space:nowrap}
 .s2-achievement-actions :is(.s2-achievement-print,[aria-pressed=true]){border-color:var(--exec-purple,#126ede);background:var(--exec-purple,#126ede);color:white;font-weight:650}
 .s2-achievement-actions button:disabled{opacity:.55;cursor:not-allowed}
 .s2-achievement-filters{display:grid;grid-template-columns:140px 155px minmax(170px,1fr) minmax(185px,1.15fr);gap:10px;margin-bottom:15px;border:1px solid var(--c188);border-radius:12px;background:var(--c1);padding:16px}
@@ -27,7 +27,7 @@
 .s2-achievement table{border-collapse:collapse;width:100%;min-width:600px;text-align:left}
 .s2-achievement th{padding:10px 8px;font-size:12px;color:var(--c693);background:var(--c694);font-weight:650;white-space:nowrap}
 .s2-achievement td{padding:12px 8px;border-top:1px solid var(--c695);color:var(--c696);line-height:1.45;font-size:12px;vertical-align:top}
-.s2-achievement :is(td,article) button{padding:0;text-align:left;color:var(--exec-purple,var(--c697));background:none;border:0;cursor:pointer;font-size:12px;font-weight:680}
+.s2-achievement :is(td,article) button{padding:0;text-align:left;color:var(--appearance-exec-purple,var(--c697));background:none;border:0;cursor:pointer;font-size:12px;font-weight:680}
 .s2-achievement td button small{display:block;margin-top:4px;color:var(--c698);font-weight:450;font-size:12px}
 .s2-achievement-insights dl{display:grid;gap:8px;margin:0}
 .s2-achievement-insights dl div{display:flex;justify-content:space-between;border-bottom:1px solid var(--c699);padding:6px 0;gap:8px}

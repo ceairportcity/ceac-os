@@ -94,7 +94,7 @@
 }
 
 .ev2dv-axis-label {
-  fill: var(--ev2-text-tertiary);
+  fill: var(--appearance-ev2-text-tertiary);
   font-family: var(--ev2-font-sans);
   font-size: var(--ev2-type-label);
 }
@@ -121,7 +121,7 @@
   padding: 0;
   border: 0;
   background: transparent;
-  color: var(--ev2-action);
+  color: var(--appearance-ev2-action);
   font: inherit;
   font-weight: 650;
   text-align: left;

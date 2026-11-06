@@ -41,7 +41,7 @@
 .s2-exec-brief{color:var(--ev2-text);border-color:var(--ev2-line);box-shadow:var(--ev2-shadow-1)}
 .s2-exec-brief-head{min-width:0;flex-wrap:wrap}.s2-exec-brief-head>div{min-width:0;flex:1 1 300px}
 .s2-exec-brief-head h2{color:var(--ev2-text);font-size:clamp(19px,2vw,25px);line-height:1.3}
-.s2-exec-brief-head span{color:var(--ev2-action)}.s2-exec-brief-print{background:var(--ev2-action);min-height:44px}
+.s2-exec-brief-head span{color:var(--appearance-ev2-action)}.s2-exec-brief-print{background:var(--ev2-action);min-height:44px}
 .s2-exec-brief-section h3{color:var(--ev2-text)}
 .s2-exec-brief-section{border-color:var(--ev2-line);border-radius:11px}
 .s2-exec-brief-stats article{border-color:var(--ev2-line)}
@@ -50,7 +50,7 @@
 
 /* Keep report explanation optional on small screens; make empty copy a calm single line. */
 .s2-exec-brief-method{margin-top:14px;border-top:1px solid var(--ev2-line,var(--c58));padding-top:12px;color:var(--ev2-text-secondary,var(--c30));font-size:13px;line-height:1.5}
-.s2-exec-brief-method summary{color:var(--ev2-action,var(--c59));font-size:13px;font-weight:650;cursor:pointer;min-height:36px;display:list-item;padding:8px 0;list-style-position:inside}
+.s2-exec-brief-method summary{color:var(--appearance-ev2-action,var(--c59));font-size:13px;font-weight:650;cursor:pointer;min-height:36px;display:list-item;padding:8px 0;list-style-position:inside}
 .s2-exec-brief-method summary:focus-visible{outline:2px solid var(--ev2-action,#216bd3);outline-offset:3px}
 .s2-exec-brief-method p{margin:5px 0 0;max-width:67ch}
 .s2-exec-brief-empty{color:var(--ev2-text-secondary,var(--c30));font-size:13px;line-height:1.55;margin:10px 0}

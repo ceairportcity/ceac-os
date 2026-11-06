@@ -183,7 +183,7 @@ const destinations = [
   ["exec-reports", ".ev2-reporting-executive", "Reports"],
   ["messages", ".msg-workspace", "Messages"],
   ["me", ".ev2-personal-hub", "My Hub"],
-  ["account", ".ev2-personal-account", "Your account"],
+  ["account", ".ceac-settings", "Settings"],
 ];
 
 for (const [tab, selector, label] of destinations) {

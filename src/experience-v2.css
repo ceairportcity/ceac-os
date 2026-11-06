@@ -1,3 +1,4 @@
+@import "./appearance.css";
 /* CEAC OS Experience V2 — design foundation
    Stage 2 only. This file must not become a blanket legacy override layer.
    New V2 components opt in with ev2-* classes while the old UI remains intact.
@@ -32,28 +33,35 @@
   --ev2-space-12: 3rem;
   --ev2-space-16: 4rem;
 
-  --ev2-bg: var(--c296);
+  --ev2-bg: var(--c926);
   --ev2-surface: var(--c297);
-  --ev2-surface-soft: var(--c245);
-  --ev2-surface-muted: var(--c298);
+  --ev2-surface-soft: var(--c927);
+  --ev2-surface-muted: var(--c928);
   --ev2-shell: #0f1723;
   --ev2-shell-raised: #172534;
   --ev2-text: var(--c299);
   --ev2-text-secondary: var(--c300);
-  --ev2-text-tertiary: var(--c301);
+  --ev2-text-tertiary: #5e6d80;
+  --appearance-ev2-text-tertiary: light-dark(var(--ev2-text-tertiary),color-mix(in srgb,var(--ev2-text-tertiary) 45%,white));
   --ev2-line: var(--c302);
   --ev2-line-strong: var(--c303);
   --ev2-identity: #118c83;
+  --appearance-ev2-identity: light-dark(var(--ev2-identity),color-mix(in srgb,var(--ev2-identity) 45%,white));
   --ev2-identity-strong: #0c766f;
   --ev2-identity-soft: var(--c304);
   --ev2-action: #0c5df9;
+  --appearance-ev2-action: light-dark(var(--ev2-action),color-mix(in srgb,var(--ev2-action) 45%,white));
   --ev2-action-hover: #084fd8;
+  --appearance-ev2-action-hover: light-dark(var(--ev2-action-hover),color-mix(in srgb,var(--ev2-action-hover) 45%,white));
   --ev2-action-soft: var(--c305);
   --ev2-success: #2f7358;
+  --appearance-ev2-success: light-dark(var(--ev2-success),color-mix(in srgb,var(--ev2-success) 45%,white));
   --ev2-success-soft: var(--c306);
   --ev2-warning: #94600f;
+  --appearance-ev2-warning: light-dark(var(--ev2-warning),color-mix(in srgb,var(--ev2-warning) 45%,white));
   --ev2-warning-soft: var(--c307);
   --ev2-danger: #a04935;
+  --appearance-ev2-danger: light-dark(var(--ev2-danger),color-mix(in srgb,var(--ev2-danger) 45%,white));
   --ev2-danger-soft: var(--c308);
   --ev2-violet: #7c62d7;
 
@@ -424,7 +432,7 @@
 }
 
 .ev2-icon-box-action {
-  color: var(--ev2-action);
+  color: var(--appearance-ev2-action);
   background: var(--ev2-action-soft);
 }
 
@@ -499,7 +507,7 @@
 
 .ev2-button:disabled {
   cursor: not-allowed;
-  color: var(--ev2-text-tertiary);
+  color: var(--appearance-ev2-text-tertiary);
   background: var(--ev2-surface-muted);
   border-color: var(--ev2-line);
   opacity: .78;
@@ -567,17 +575,17 @@
 }
 
 .ev2-status-success {
-  color: var(--ev2-success);
+  color: var(--appearance-ev2-success);
   background: var(--ev2-success-soft);
 }
 
 .ev2-status-warning {
-  color: var(--ev2-warning);
+  color: var(--appearance-ev2-warning);
   background: var(--ev2-warning-soft);
 }
 
 .ev2-status-danger {
-  color: var(--ev2-danger);
+  color: var(--appearance-ev2-danger);
   background: var(--ev2-danger-soft);
 }
 
@@ -620,7 +628,7 @@
   place-items: center;
   flex: 0 0 auto;
   border-radius: var(--ev2-radius-card);
-  color: var(--ev2-action);
+  color: var(--appearance-ev2-action);
   background: var(--ev2-action-soft);
 }
 

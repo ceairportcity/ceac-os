@@ -33,11 +33,11 @@ function friendlyDevice(ua) {
 const when = (t) => new Date(t).toLocaleString("en-GB",
   { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
 
-export default function AccountActivity({ me }) {
-  return <AccountWorkspace key={`${me.org_id}:${me.id}`} me={me}/>;
+export default function AccountActivity({ me, onSecurityChanged }) {
+  return <AccountWorkspace key={`${me.org_id}:${me.id}`} me={me} onSecurityChanged={onSecurityChanged}/>;
 }
 
-function AccountWorkspace({ me }) {
+function AccountWorkspace({ me, onSecurityChanged }) {
   const [section,setSection]=useState("security");
   const [changingPassword,setChangingPassword]=useState(false);
   const readGeneration=useRef(0);
@@ -121,7 +121,7 @@ function AccountWorkspace({ me }) {
         title="Authenticator app"
         description="Use an authenticator app for an extra sign-in check. Set it up or review it here."
       >
-        <AccountMfaSetup key={`${me.org_id}:${me.id}`}/>
+        <AccountMfaSetup key={`${me.org_id}:${me.id}`} onVerified={onSecurityChanged}/>
       </PersonalSection>
 
       </div>

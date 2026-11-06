@@ -97,7 +97,7 @@
 }
 
 .staffv2-session.needs-review .staffv2-session-icon {
-  color: var(--ev2-warning);
+  color: var(--appearance-ev2-warning);
   background: var(--ev2-surface);
 }
 
@@ -151,7 +151,7 @@
 .staffv2-recovery-icon {
   width: 2.25rem;
   height: 2.25rem;
-  color: var(--ev2-warning);
+  color: var(--appearance-ev2-warning);
   background: var(--ev2-warning-soft);
 }
 
@@ -178,7 +178,7 @@
   display: flex;
   gap: var(--ev2-space-3);
   align-items: flex-start;
-  color: var(--ev2-danger);
+  color: var(--appearance-ev2-danger);
   border-color: var(--ev2-danger);
 }
 
@@ -279,7 +279,7 @@
 
 .staffv2-attention .staffv2-count {
   background: var(--ev2-warning-soft);
-  color: var(--ev2-warning);
+  color: var(--appearance-ev2-warning);
 }
 
 .staffv2-clear {
@@ -646,12 +646,12 @@
 
 .staffv2-ministry-notice.is-error {
   border-color: var(--ev2-danger);
-  color: var(--ev2-danger);
+  color: var(--appearance-ev2-danger);
 }
 
 .staffv2-ministry-notice.is-success {
   border-color: var(--ev2-success);
-  color: var(--ev2-success);
+  color: var(--appearance-ev2-success);
 }
 
 @media (max-width: 599px) {

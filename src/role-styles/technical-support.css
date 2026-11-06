@@ -1,6 +1,6 @@
 /* Support-only workspace styling. Deliberately separate from shared V2,
    Executive, Administration, Volunteer and Manager design systems. */
-.ceac-support-page { max-width: 1420px; margin-inline: auto; color: var(--ink, var(--c621)); }
+.ceac-support-page { max-width: 1420px; margin-inline: auto; color: var(--appearance-ink, var(--c621)); }
 .ceac-support-heading { max-width: 960px; margin-bottom: 24px; }
 .ceac-support-heading h1 { margin: 4px 0 8px; font-size: clamp(1.7rem, 2.5vw, 2.3rem); line-height: 1.12; letter-spacing: -.025em; }
 .ceac-support-heading > p:last-child { max-width: 78ch; line-height: 1.55; }

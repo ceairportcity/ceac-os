@@ -926,4 +926,7 @@
 --c922:light-dark(#F7E6E2,#252a31);
 --c923:light-dark(#F8F0DE,#252a31);
 --c924:light-dark(rgba(255,255,255,.72),rgb(28 31 36 / .96))}
+:root{--c925:light-dark(#F2F3EF,#14171b);--c926:light-dark(#f5f7fa,#14171b);--c927:light-dark(#f8fafc,#252a31);--c928:light-dark(#eef2f6,#252a31)}
+:root[data-theme="dark"]{color-scheme:dark}
+:root[data-theme="light"]{color-scheme:light}
 @media print{:root{color-scheme:light!important}html,body{background:white!important;color:black!important}}

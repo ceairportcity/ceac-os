@@ -27,7 +27,7 @@
 .ev2p-section-head > div > span,
 .ev2p-attention-copy > span {
   display: block;
-  color: var(--ev2-text-tertiary);
+  color: var(--appearance-ev2-text-tertiary);
   font-size: var(--ev2-type-label);
   line-height: 1.35;
   font-weight: 750;
@@ -134,7 +134,7 @@
 .ev2p-tabs button.is-selected {
   border-bottom-color: var(--ev2-action);
   background: transparent;
-  color: var(--ev2-action);
+  color: var(--appearance-ev2-action);
 }
 
 .ev2p-tabs button b {
@@ -193,7 +193,7 @@
 }
 
 .ev2p-row-main > small {
-  color: var(--ev2-text-tertiary);
+  color: var(--appearance-ev2-text-tertiary);
   font-size: var(--ev2-type-label);
   line-height: 1.35;
   font-weight: 700;
@@ -217,7 +217,7 @@
 }
 
 .ev2p-row-main .ev2p-row-note {
-  color: var(--ev2-text-tertiary);
+  color: var(--appearance-ev2-text-tertiary);
 }
 
 .ev2p-row-state {
@@ -225,7 +225,7 @@
   align-items: center;
   justify-content: flex-end;
   gap: var(--ev2-space-2);
-  color: var(--ev2-text-tertiary);
+  color: var(--appearance-ev2-text-tertiary);
 }
 
 
@@ -264,7 +264,7 @@
 }
 
 .ev2p-context-row-main > small {
-  color: var(--ev2-text-tertiary);
+  color: var(--appearance-ev2-text-tertiary);
   font-size: var(--ev2-type-label);
   line-height: 1.35;
   font-weight: 700;
@@ -315,7 +315,7 @@
 }
 
 .ev2p-context-facts small {
-  color: var(--ev2-text-tertiary);
+  color: var(--appearance-ev2-text-tertiary);
   font-size: var(--ev2-type-label);
   line-height: 1.3;
 }
@@ -342,7 +342,7 @@
   align-items: center;
   gap: var(--ev2-space-1);
   padding: 0 var(--ev2-space-2);
-  color: var(--ev2-action);
+  color: var(--appearance-ev2-action);
   background: transparent;
   border: 0;
   border-radius: var(--ev2-radius-control);
@@ -507,7 +507,7 @@
 }
 
 .ev2p-summary small {
-  color: var(--ev2-text-tertiary);
+  color: var(--appearance-ev2-text-tertiary);
 }
 .ev2p-summary-action{width:100%;min-height:44px;padding:0;border:0;background:transparent;text-align:left;font:inherit;cursor:pointer}.ev2p-summary-action:focus-visible{outline:3px solid var(--ev2-action);outline-offset:3px}
 
@@ -627,7 +627,7 @@
   min-height: var(--ev2-control-min);
   display: flex;
   align-items: center;
-  color: var(--ev2-action);
+  color: var(--appearance-ev2-action);
   font-size: var(--ev2-type-supporting);
   font-weight: 650;
   cursor: pointer;
@@ -658,7 +658,7 @@
 }
 
 .ev2-project-workspace .project-room-entry b {
-  color: var(--ev2-action);
+  color: var(--appearance-ev2-action);
 }
 
 @media (min-width: 900px) {
@@ -1075,7 +1075,7 @@
 .ev2-project-workspace .ev2p-tabs button.is-selected {
   border-bottom-color: var(--ev2-action);
   background: transparent;
-  color: var(--ev2-action);
+  color: var(--appearance-ev2-action);
 }
 
 .ev2-project-workspace .project-overview-grid > .card,

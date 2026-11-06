@@ -25,7 +25,7 @@
 .ev2cal-eyebrow {
   display: block;
   margin-bottom: var(--ev2-space-1);
-  color: var(--ev2-text-tertiary);
+  color: var(--appearance-ev2-text-tertiary);
   font-size: var(--ev2-type-label);
   line-height: 1.3;
   font-weight: 700;
@@ -118,7 +118,7 @@
 
 .ev2cal-weekdays span {
   padding: 0 var(--ev2-space-2);
-  color: var(--ev2-text-tertiary);
+  color: var(--appearance-ev2-text-tertiary);
   font-size: var(--ev2-type-label);
   line-height: 1;
   font-weight: 700;
@@ -162,7 +162,7 @@
 }
 
 .ev2cal-day.is-muted .ev2cal-day-button {
-  color: var(--ev2-text-tertiary);
+  color: var(--appearance-ev2-text-tertiary);
 }
 
 .ev2cal-selection-indicator {
@@ -239,7 +239,7 @@ button.ev2cal-event {
 
 button.ev2cal-event:hover {
   background: var(--ev2-action-soft);
-  color: var(--ev2-action);
+  color: var(--appearance-ev2-action);
 }
 
 .ev2cal-event > span:last-child {
@@ -279,7 +279,7 @@ button.ev2cal-event:hover {
   min-height: 1.75rem;
   padding: var(--ev2-space-1) var(--ev2-space-2);
   background: transparent;
-  color: var(--ev2-action);
+  color: var(--appearance-ev2-action);
   font-size: var(--ev2-type-label);
   font-weight: 650;
   text-align: left;
@@ -600,7 +600,7 @@ button.ev2cal-event:hover {
   border: 1px solid var(--ev2-line-strong);
   border-radius: var(--ev2-radius-control);
   background: var(--ev2-surface);
-  color: var(--ev2-action);
+  color: var(--appearance-ev2-action);
   font-size: var(--ev2-type-supporting);
   font-weight: 650;
   line-height: 1.2;
@@ -787,7 +787,7 @@ button.ev2cal-event:hover {
 }
 
 .phase6-day-workspace-head > div > span {
-  color: var(--ev2-text-tertiary);
+  color: var(--appearance-ev2-text-tertiary);
   font-size: var(--ev2-type-label);
   font-weight: 760;
   letter-spacing: .055em;
@@ -817,7 +817,7 @@ button.ev2cal-event:hover {
   padding: 0 var(--ev2-space-2);
   border-radius: var(--ev2-radius-pill);
   background: var(--ev2-action-soft);
-  color: var(--ev2-action);
+  color: var(--appearance-ev2-action);
   font-size: var(--ev2-type-supporting);
   font-weight: 700;
 }
@@ -844,7 +844,7 @@ button.ev2cal-event:hover {
 
 .phase6-day-tabs button.is-selected {
   background: var(--ev2-surface);
-  color: var(--ev2-action);
+  color: var(--appearance-ev2-action);
   box-shadow: var(--ev2-shadow-control);
 }
 
@@ -955,17 +955,17 @@ button.ev2cal-event:hover {
 .phase6-day-kind.is-meeting,
 .phase6-day-kind.is-work {
   background: var(--ev2-action-soft);
-  color: var(--ev2-action);
+  color: var(--appearance-ev2-action);
 }
 
 .phase6-day-kind.is-leave {
   background: var(--ev2-success-soft);
-  color: var(--ev2-success);
+  color: var(--appearance-ev2-success);
 }
 
 .phase6-day-empty {
   margin: var(--ev2-space-2) 0;
-  color: var(--ev2-text-tertiary);
+  color: var(--appearance-ev2-text-tertiary);
   font-size: var(--ev2-type-supporting);
   line-height: 1.45;
 }
@@ -992,14 +992,14 @@ button.ev2cal-event:hover {
 }
 
 .phase6-private-task em {
-  color: var(--ev2-text-tertiary);
+  color: var(--appearance-ev2-text-tertiary);
   font-size: var(--ev2-type-label);
   font-style: normal;
   font-weight: 700;
 }
 
 .phase6-private-task.is-complete strong {
-  color: var(--ev2-text-tertiary);
+  color: var(--appearance-ev2-text-tertiary);
   text-decoration: line-through;
 }
 
@@ -1051,7 +1051,7 @@ button.ev2cal-event:hover {
 }
 
 .phase6-day-note-actions span {
-  color: var(--ev2-text-tertiary);
+  color: var(--appearance-ev2-text-tertiary);
   font-size: var(--ev2-type-supporting);
 }
 
@@ -1195,7 +1195,7 @@ button.ev2cal-event:hover {
 
 .phase6-composer-tabs button.is-selected {
   background: var(--ev2-surface);
-  color: var(--ev2-action);
+  color: var(--appearance-ev2-action);
   box-shadow: var(--ev2-shadow-control);
 }
 
@@ -1234,7 +1234,7 @@ button.ev2cal-event:hover {
 
 .phase6-day-kind.is-personal {
   background: var(--ev2-action-soft);
-  color: var(--ev2-action);
+  color: var(--appearance-ev2-action);
 }
 
 @media (max-width: 599px) {
@@ -1303,7 +1303,7 @@ button.ev2cal-event:hover {
 
 .phase6-calendar-scope button.is-selected {
   background: var(--ev2-surface);
-  color: var(--ev2-action);
+  color: var(--appearance-ev2-action);
   box-shadow: var(--ev2-shadow-control);
 }
 
@@ -1490,7 +1490,7 @@ button.phase6-note-card {
   padding-inline: var(--ev2-space-2);
   border-radius: var(--ev2-radius-pill);
   background: var(--ev2-action-soft);
-  color: var(--ev2-action);
+  color: var(--appearance-ev2-action);
   font-size: var(--ev2-type-label);
   font-weight: 760;
 }

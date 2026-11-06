@@ -4,10 +4,10 @@
 .control-settings-toolbar input{width:100%;min-height:46px;padding:10px 12px;border:1px solid var(--ev2-line);border-radius:6px;background:var(--ev2-surface,var(--c1));color:var(--ev2-text);font:inherit;font-size:16px}
 .control-settings-views{display:flex;gap:4px;border-bottom:1px solid var(--ev2-line)}
 .control-settings-views button{padding:10px 12px;min-height:44px;border:0;border-bottom:2px solid transparent;background:none;color:var(--ev2-text-secondary);font:inherit;font-size:14px;cursor:pointer}
-.control-settings-views button[aria-pressed=true]{border-bottom-color:var(--ev2-action);color:var(--ev2-action)}
+.control-settings-views button[aria-pressed=true]{border-bottom-color:var(--ev2-action);color:var(--appearance-ev2-action)}
 .control-settings-views span{margin-left:5px}
 .control-review-notice{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--c636);color:var(--c637);padding:10px 14px;border-radius:6px;margin-bottom:24px;font-size:14px}
-.control-review-notice button{border:0;background:none;color:var(--ev2-action);font:inherit;font-weight:600;min-height:44px;cursor:pointer}
+.control-review-notice button{border:0;background:none;color:var(--appearance-ev2-action);font:inherit;font-weight:600;min-height:44px;cursor:pointer}
 .control-setting-groups{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px;align-items:start}
 .control-setting-groups h2,.control-related-work h2{font-size:15px;font-weight:600;margin:0 0 10px;color:var(--ev2-text)}
 .control-setting-list{border:1px solid var(--ev2-line);border-radius:8px;background:var(--ev2-surface,var(--c1));overflow:hidden}
@@ -21,13 +21,13 @@
 .control-setting-chevron{font-size:24px;color:var(--ev2-text-secondary)}
 .control-related-work{border-top:1px solid var(--ev2-line);margin-top:30px;padding-top:20px;font-size:14px;color:var(--ev2-text-secondary);line-height:1.6}
 .control-related-work p{margin:8px 0}
-.control-related-work button{border:0;background:none;color:var(--ev2-action);font:inherit;padding:4px;min-height:44px;text-decoration:underline;cursor:pointer}
+.control-related-work button{border:0;background:none;color:var(--appearance-ev2-action);font:inherit;padding:4px;min-height:44px;text-decoration:underline;cursor:pointer}
 .control-settings-toolbar input:focus-visible,.control-settings-views button:focus-visible,.control-setting-row:focus-visible,.control-related-work button:focus-visible,.control-review-notice button:focus-visible{outline:2px solid var(--ev2-action,#087bf5);outline-offset:-3px}
 @media(max-width:700px){.ev2-control-center .control-settings-toolbar{display:grid;gap:12px}.control-settings-toolbar>label{max-width:none}.control-setting-groups{grid-template-columns:1fr;gap:22px}}
 
 .ev2s-content:has(.ev2-control-center),.ev2s-content:has(.focused-settings){background:var(--ev2-surface,var(--c1))}
 .ev2-control-center .ev2-control-center-header{background:transparent;border:0;box-shadow:none;padding:0;border-radius:0}
-.ev2-control-center .control-setting-row>.ev2-icon{flex-shrink:0;color:var(--ev2-action,var(--c120))}
+.ev2-control-center .control-setting-row>.ev2-icon{flex-shrink:0;color:var(--appearance-ev2-action,var(--c120))}
 
 .office-app .body.control-center,.office-app .body.focused-settings{background:var(--ev2-surface,var(--c1))}
 .office-app .body.control-center{padding-top:20px}

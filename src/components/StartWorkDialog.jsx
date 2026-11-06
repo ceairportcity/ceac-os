@@ -32,8 +32,8 @@ export const workDialogLayout = {
   footer: {display:"flex",gap:12,alignItems:"center",justifyContent:"space-between",padding:`16px ${gutter} calc(16px + env(safe-area-inset-bottom))`,borderTop:line},
   cancel: {minHeight:44,padding:"10px 0",color:muted,fontSize:14},
   start: {display:"flex",width:"auto",alignItems:"center",justifyContent:"center",gap:9,minHeight:46,minWidth:146,padding:"11px 20px",fontSize:14,fontWeight:600,margin:0},
-  error: {margin:"14px 0 0",color:"var(--ev2-danger,var(--brick))",fontSize:13,lineHeight:1.5,overflowWrap:"anywhere"},
-  reload: {minHeight:44,marginTop:8,textDecoration:"underline",color:"var(--ev2-action,var(--ceac-action-blue))",fontSize:13},
+  error: {margin:"14px 0 0",color:"var(--appearance-ev2-danger,var(--brick))",fontSize:13,lineHeight:1.5,overflowWrap:"anywhere"},
+  reload: {minHeight:44,marginTop:8,textDecoration:"underline",color:"var(--appearance-ev2-action,var(--ceac-action-blue))",fontSize:13},
 };
 
 const layout = workDialogLayout;

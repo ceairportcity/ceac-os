@@ -2,12 +2,16 @@
 
 .executive-app {
   --exec-purple: #7148e8;
+  --appearance-exec-purple: light-dark(var(--exec-purple),color-mix(in srgb,var(--exec-purple) 45%,white));
   --exec-purple-soft: var(--c337);
-  --exec-green: var(--c338);
+  --exec-green: #25a86b;
+  --appearance-exec-green: light-dark(var(--exec-green),color-mix(in srgb,var(--exec-green) 45%,white));
   --exec-green-soft: var(--c339);
-  --exec-amber: var(--c340);
+  --exec-amber: #e79024;
+  --appearance-exec-amber: light-dark(var(--exec-amber),color-mix(in srgb,var(--exec-amber) 45%,white));
   --exec-amber-soft: var(--c341);
-  --exec-blue: var(--c342);
+  --exec-blue: #2e86e6;
+  --appearance-exec-blue: light-dark(var(--exec-blue),color-mix(in srgb,var(--exec-blue) 45%,white));
   --exec-blue-soft: var(--c334);
   --exec-red: #e85252;
   --exec-red-soft: var(--c343);
@@ -20,7 +24,7 @@
 .ev2-work-executive .ev2w-group-head { padding-inline: 2px; }
 .ev2-work-executive .ev2w-row { min-height: 62px; border-color: var(--c353); }
 .ev2-work-executive .ev2w-row-icon,
-.ev2-work-executive .ev2w-review-icon { border-radius: 8px; background: var(--exec-purple-soft); color: var(--exec-purple); }
+.ev2-work-executive .ev2w-review-icon { border-radius: 8px; background: var(--exec-purple-soft); color: var(--appearance-exec-purple); }
 .ev2-work-executive .ev2w-empty {
   border: 1px solid var(--c351);
   border-radius: 11px;
@@ -129,7 +133,7 @@
   border-radius: 8px;
 }
 .executive-app .exec-redesign-notification:hover {
-  color: var(--exec-purple);
+  color: var(--appearance-exec-purple);
   border-color: var(--c593);
   background: var(--exec-purple-soft);
 }
@@ -137,7 +141,7 @@
   color: var(--c592);
 }
 .executive-app .exec-redesign-mobile-notification:hover {
-  color: var(--exec-purple);
+  color: var(--appearance-exec-purple);
   background: var(--exec-purple-soft);
 }
 
@@ -173,7 +177,7 @@
   .executive-app .ev2s-mobile-topbar .ev2c-avatar {
     border-color: var(--c598);
     background: var(--exec-purple-soft);
-    color: var(--exec-purple);
+    color: var(--appearance-exec-purple);
   }
   .executive-app .ev2s-mobile-profile:hover { background: var(--c599); }
   .executive-app .ev2s-mobile-nav {
@@ -182,7 +186,7 @@
   }
   .executive-app .ev2s-mobile-nav button.is-active {
     background: transparent;
-    color: var(--exec-purple);
+    color: var(--appearance-exec-purple);
   }
   .executive-app .ev2s-mobile-nav button.is-active svg {
     filter: drop-shadow(0 2px 4px rgba(113,72,232,.16));
@@ -230,17 +234,17 @@
 .executive-app .ev2-work-executive .ev2w-row[data-status="in_progress"] .ev2w-row-icon,
 .executive-app .ev2-work-executive .ev2w-row[data-status="in_review"] .ev2w-row-icon {
   background: var(--exec-blue-soft);
-  color: var(--exec-blue);
+  color: var(--appearance-exec-blue);
 }
 .executive-app .ev2-work-executive .ev2w-row[data-status="waiting_on"] .ev2w-row-icon,
 .executive-app .ev2-work-executive .ev2w-row[data-status="returned"] .ev2w-row-icon {
   background: var(--exec-amber-soft);
-  color: var(--exec-amber);
+  color: var(--appearance-exec-amber);
 }
 .executive-app .ev2-work-executive .ev2w-row[data-status="completed"] .ev2w-row-icon,
 .executive-app .ev2-work-executive .ev2w-row[data-status="self_certified"] .ev2w-row-icon {
   background: var(--exec-green-soft);
-  color: var(--exec-green);
+  color: var(--appearance-exec-green);
 }
 .executive-app .ev2-work-executive .ev2w-row.is-attention .ev2w-row-icon {
   background: var(--exec-red-soft);
@@ -252,14 +256,14 @@
 .executive-app .ev2-project-delivery.is-executive .ev2p-row[data-health="on_track"] .ev2p-row-icon,
 .executive-app .ev2-project-delivery.is-executive .ev2p-context-row[data-health="on_track"] .ev2p-context-row-icon {
   background: var(--exec-green-soft);
-  color: var(--exec-green);
+  color: var(--appearance-exec-green);
 }
 .executive-app .ev2-project-delivery.is-executive .ev2p-row[data-health="watch"] .ev2p-row-icon,
 .executive-app .ev2-project-delivery.is-executive .ev2p-row[data-health="at_risk"] .ev2p-row-icon,
 .executive-app .ev2-project-delivery.is-executive .ev2p-context-row[data-health="watch"] .ev2p-context-row-icon,
 .executive-app .ev2-project-delivery.is-executive .ev2p-context-row[data-health="at_risk"] .ev2p-context-row-icon {
   background: var(--exec-amber-soft);
-  color: var(--exec-amber);
+  color: var(--appearance-exec-amber);
 }
 .executive-app .ev2-project-delivery.is-executive .ev2p-row[data-health="blocked"] .ev2p-row-icon,
 .executive-app .ev2-project-delivery.is-executive .ev2p-context-row[data-health="blocked"] .ev2p-context-row-icon {
