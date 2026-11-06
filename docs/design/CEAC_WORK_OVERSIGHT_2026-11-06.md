@@ -58,3 +58,9 @@ Review found that `ceac_push_context_visible` still limited work notifications t
 Applied to staging and reran the rollback-only oversight integration gate: passed, including named-supervisor device visibility on Admin-assigned work, tenant/private/confidential denial and service-only helper grants. Affected source tests: 25/25 passed (`/tmp/ceac-oversight-device-focused.log`). Migration inventory explicitly includes both new filenames (237 total).
 
 Candidate dd7ed58 passed CI source/build, Account Security, clean Migration Replay and complete Level B SQL/authority contracts (job 127991160977); browser groups remain pending. These are historical results once the device visibility correction is committed, not certification of the later head.
+
+## Response acknowledgement and final qualification
+
+Staging migration `20261106161125_work_oversight_response_acknowledgement.sql` is now versioned in this PR. It atomically acknowledges only the matching outstanding Work notification for the responding supervisor, preserving unrelated unread notifications; final Work reviewer permissions and the private diary remain unchanged. All three forward migrations now live in source; the repository migration inventory expects 238 files. The additional migration was already applied to isolated staging as `20261106161125` and must pass clean replay before production application.
+
+The failing screenshot fixture in `tests/work-oversight.spec.js` was corrected to select the pending indicator within the shared conversation rather than ambiguously matching the separate Work list indicator. Browser, security, SQL, migration and production release qualification must be repeated against the final exact head; prior results are not acceptance for this revision.
