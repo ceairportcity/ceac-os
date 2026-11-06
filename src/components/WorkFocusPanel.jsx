@@ -49,12 +49,12 @@ export default function WorkFocusPanel({ rows = [], reviews = [], role = "staff"
   const hasAction = Boolean(review || focus);
   return <section className="ceac-work-focus" aria-label="Work overview" style={style.wrap}>
     <div style={style.kicker}>{isLeadership ? "Your work and approvals" : "Your work, made clear"}</div>
-    <h2 style={style.head}>Your work at a glance</h2>
-    <p style={style.desc}>See what needs your attention, what is waiting for approval, and what has been completed.</p>
+    <h2 style={style.head}>{role === "staff" ? "Your work at a glance" : role === "manager" ? "Team work at a glance" : role === "admin" ? "Organisation work at a glance" : "Leadership work at a glance"}</h2>
+    <p style={style.desc}>See open work, what is waiting for approval, and what has been completed.</p>
     <div style={style.grid}>
       {[
         [facts.attention + (isLeadership ? reviews.length : 0),isLeadership ? "Needs attention or review" : "Needs your attention"],
-        [facts.toDo,"Ready to work on"],
+        [facts.toDo,isLeadership ? "Work in progress or ready" : "Ready to work on"],
         [facts.waiting,"Waiting or with reviewer"],
         [facts.completed,"Completed"],
       ].map(([value,label])=><div style={style.metric} key={label}>
@@ -63,7 +63,7 @@ export default function WorkFocusPanel({ rows = [], reviews = [], role = "staff"
     </div>
     <div style={style.focus}>
       <div style={{flex:"1 1 190px",minWidth:0}}>
-        <div style={style.kicker}>{review ? "Waiting for your decision" : focus ? "Next action" : "No immediate action"}</div>
+        <div style={style.kicker}>{review ? "Waiting for your decision" : focus ? (isLeadership ? "Work needing follow-up" : "Next action") : "No immediate action"}</div>
         <p style={style.focusTitle}>{review ? review.work_title || "Submitted work" : focus?.title || "You're up to date"}</p>
         <small style={style.focusMeta}>{review
           ? "A submitted work item is ready for your review."
