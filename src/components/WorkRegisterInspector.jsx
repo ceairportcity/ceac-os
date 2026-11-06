@@ -42,9 +42,9 @@ export function WorkRegisterInspector({ me, selectedId, onClose, openItem }) {
     return () => { current=false; };
   }, [me.id,me.org_id,selectedId,reload]);
 
-  return <aside className="s2-work-inspector" aria-label="Selected responsibility">
+  return <aside className="s2-work-inspector" aria-label="Work details">
     <header className="s2-work-inspector-head">
-      <span>Selected responsibility</span>
+      <span>Work details</span>
       {onClose && <button aria-label="Close responsibility inspector" type="button" onClick={onClose}>×</button>}
     </header>
     {!selectedId && <p className="s2-work-inspector-empty">Select work from the list to see its details.</p>}
@@ -53,10 +53,10 @@ export function WorkRegisterInspector({ me, selectedId, onClose, openItem }) {
     {!checking && !activeError && work && <>
       <h2>{work.title}</h2>
       <p className="s2-work-inspector-context">{work.ref} · {work.projects?.name || "No linked project"}</p>
+      <WorkDetailsEditor key={`${me.id}:${work.id}:${work.last_movement_at}`} me={me} item={work} onSaved={() => setReload(n=>n+1)} />
       <WorkActivityDiary me={me} item={work} compact key={`${me.id}:${work.id}`} />
       <WorkProjectLink me={me} item={work} key={`${me.id}:${work.id}`} onLinked={() => setReload(n=>n+1)} />
       <details className="s2-work-inspector-details"><summary>About this work</summary>
-      <WorkDetailsEditor key={`${me.id}:${work.id}:${work.last_movement_at}`} me={me} item={work} onSaved={() => setReload(n=>n+1)} />
       <dl className="s2-work-inspector-facts">
         <div><dt>Person responsible</dt><dd>{work.assignee_id === me.id ? "You" : work.profiles?.full_name || "Authorised person"}</dd></div>
         <div><dt>Origin</dt><dd>{work.origin === "self_created" ? "Self-created" : "Assigned"}</dd></div>
