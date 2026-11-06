@@ -115,7 +115,7 @@ color:var(--c172);border-color:#126bdc;
 }
 .manager-projects.s2-owner-approved-projects .project-workspace-area{padding:0;background:transparent}
 .manager-projects.s2-project-workflow.fpg-project-gold{
---fpg-rail:#f5f9fd;
+--fpg-rail:var(--c946);
 --fpg-rail-soft:var(--c173);
 --fpg-accent:#1574e7;
 border-color:var(--c174);

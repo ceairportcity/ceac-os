@@ -41,7 +41,7 @@ export default function SelfWorkComposer({ me, onClose, onCreated }) {
   const [objectiveId, setObjectiveId] = useState("");
   const [phaseId, setPhaseId] = useState("");
   const [steps, setSteps] = useState([""]);
-  const [noSteps, setNoSteps] = useState(false);
+  const [noSteps, setNoSteps] = useState(true);
   const [projects, setProjects] = useState([]);
   const [objectives, setObjectives] = useState([]);
   const [phases, setPhases] = useState([]);
@@ -185,7 +185,7 @@ export default function SelfWorkComposer({ me, onClose, onCreated }) {
   return <WorkSheet open title={me.is_exec ? "Add my work" : undefined} panelClassName={me.is_exec ? "reference-composer" : undefined} onClose={() => { if (!saving) onClose?.(); }}>
     <div className="eyebrow">My responsibilities</div>
     {!me.is_exec && <h2 className="h2">Add my work</h2>}
-    <p className="screen-note">Record a responsibility you personally carry. It is not an approved result until reviewed under CEAC's existing rules.</p>
+    <p className="screen-note">Start with what you will do and what finished looks like. Add a schedule or project only when needed.</p>
     {!me.is_exec && !memberships.length && <p role="alert">No authorised department membership is recorded for this account. Administration must assign membership before creating organisational work.</p>}
     {unitsError && <div role="alert">{unitsError}<button type="button" className="btn btn-ghost" onClick={() => setUnitsReload(n=>n+1)}>Retry departments</button></div>}
     {me.is_exec && <p className="screen-note">Choose the department this responsibility supports. Your Executive role does not require department membership.</p>}
@@ -208,6 +208,9 @@ export default function SelfWorkComposer({ me, onClose, onCreated }) {
         <textarea className="field" aria-label="Expected result" rows={2} value={outcome}
           onChange={(e) => setOutcome(e.target.value)} placeholder="What outcome are you working towards?" required />
       </FieldGroup>
+      <details className="reference-disclosure">
+        <summary>Schedule, project and other details (optional)</summary>
+        <div className="reference-disclosure-body">
       <FieldGroup label="Purpose (optional)">
         <textarea className="field" rows={2} value={purpose} onChange={(e) => setPurpose(e.target.value)} />
       </FieldGroup>
@@ -242,6 +245,8 @@ export default function SelfWorkComposer({ me, onClose, onCreated }) {
       {!repeat.enabled && <FieldGroup label="Due date (optional)">
         <input className="field" type="datetime-local" value={due} onChange={(e) => setDue(e.target.value)} />
       </FieldGroup>}
+        </div>
+      </details>
       <div className="card small">
         <label><input type="checkbox" checked={noSteps} onChange={(e) => setNoSteps(e.target.checked)} /> No steps needed yet</label>
         {!noSteps && <>

@@ -42,19 +42,20 @@ for (const actor of actors) {
       }
       const row = page.locator('.s2-register-row').filter({ hasText: title });
       await expect(row).toBeVisible();
-      const inspector = page.getByRole('complementary', { name: 'Selected responsibility' });
+      const inspector = page.getByRole('complementary', { name: 'Work details' });
       await expect(inspector.getByRole('heading', { name: title, exact: true })).toBeVisible();
       const diary = inspector.getByRole('region', { name: 'Responsibility activity diary' });
       await diary.getByRole('textbox', { name: 'Write a work update' }).focus();
-      await diary.getByLabel('Activity date', { exact: true }).fill('2026-09-30');
+      await diary.getByLabel('When did you do this?', { exact: true }).fill('2026-09-30');
       await diary.getByLabel('What did you accomplish?').fill(original);
+      await diary.locator('details').filter({hasText:'More details (optional)'}).locator('summary').click();
       await diary.getByLabel('What was the result?').fill('A verifiable action was recorded.');
       await diary.getByLabel('What happens next?', { exact: true }).fill('Confirm the next collection date.');
       await diary.getByRole('button', { name: 'Save work update', exact: true }).click();
       await expect(diary.locator('li').filter({ hasText: original })).toBeVisible();
       await diary.locator('li').filter({ hasText: original }).locator('summary[aria-label^="Options for"]').click();
       await diary.getByRole('button', { name: 'Edit entry', exact: true }).click();
-      await diary.getByLabel('Activity date', { exact: true }).fill('2026-10-01');
+      await diary.getByLabel('When did you do this?', { exact: true }).fill('2026-10-01');
       await diary.getByLabel('What did you accomplish?').fill(corrected);
       await diary.getByRole('button', { name: 'Save correction', exact: true }).click();
       await expect(diary.locator('li').filter({ hasText: corrected })).toBeVisible();

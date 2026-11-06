@@ -6,11 +6,23 @@ test('waiting-on and returned records stay separate from work in progress',()=>{
   const rows=[{id:1,status:'waiting_on'},{id:2,status:'in_progress'},{id:3,status:'returned'},
     {id:4,status:'self_certified'},{id:5,status:'cancelled'},{id:6,status:'not_started'}];
   const groups=Object.fromEntries(groupResponsibilities(rows).map(g=>[g.title,g.items.map(r=>r.id)]));
-  assert.deepEqual(groups['Waiting & review'],[1,3]);
+  assert.deepEqual(groups['With reviewer or waiting'],[1]);
+  assert.deepEqual(groups['Needs attention'],[3]);
   assert.deepEqual(groups['In progress'],[2]);
   assert.deepEqual(groups.Completed,[4]);
   assert.deepEqual(groups.Archived,[5]);
   assert.deepEqual(groups.Upcoming,[6]);
+});
+
+test('overdue open work needs attention, but submitted work never remains overdue',()=>{
+  const rows=[{id:1,status:'in_progress',kind:'task',due_at:'2020-01-01'},
+    {id:2,status:'in_review',kind:'task',due_at:'2020-01-01'},
+    {id:3,status:'waiting_on',kind:'task',due_at:'2020-01-01'},
+    {id:4,status:'in_progress',kind:'routine',due_at:'2020-01-01'}];
+  const groups=Object.fromEntries(groupResponsibilities(rows).map(g=>[g.title,g.items.map(r=>r.id)]));
+  assert.deepEqual(groups['Needs attention'],[1]);
+  assert.deepEqual(groups['With reviewer or waiting'],[2,3]);
+  assert.deepEqual(groups['In progress'],[4]);
 });
 
 test('project filters use identities even when two projects share the same name',()=>{

@@ -258,26 +258,31 @@ function ActivityDiary({ me, item, prefillDate = "", prefillRequest = 0, compact
     {editor && verified && <form className="s2-work-diary-form" onSubmit={save}>
       <fieldset disabled={busy || Boolean(savedActivity.current)} className="s2-work-diary-fields">
       {correctingId && <p className="wide" role="status">Correcting your own activity. The existing dated entry is preserved for the audit trail. Existing private follow-up tasks stay in Calendar; edit them there if needed.</p>}
-      <label>Activity date <input type="date" value={date} max={ghanaDay()} onChange={(e) => setDate(e.target.value)} required /></label>
+      <label>When did you do this? <input type="date" value={date} max={ghanaDay()} onChange={(e) => setDate(e.target.value)} required /></label>
       <p className="wide">Earlier dates, including weekends, are available.</p>
-      <label>Progress type<select value={entryKind} onChange={event=>setEntryKind(event.target.value)}>
+      <label>What are you recording?<select value={entryKind} onChange={event=>setEntryKind(event.target.value)}>
         <option value="update">Work update</option><option value="milestone">Milestone reached</option>
       </select></label>
-      <label>Action state <select value={state} onChange={(e) => setState(e.target.value)}>
+      <label>How is the work going? <select value={state} onChange={(e) => setState(e.target.value)}>
         {states.map(([value,label]) => <option key={value} value={value}>{label}</option>)}
       </select></label>
       <p className="wide">Write a short description of what you did. The remaining details are optional.</p>
       <label className="wide">{entryKind==="milestone"?"What milestone was reached?":"What did you accomplish?"} <textarea autoFocus value={summary} onChange={(e) => setSummary(e.target.value)} maxLength={600} minLength={3} required rows={2} placeholder="What did you do?" /></label>
-      <p className="wide"><strong>More about this update (optional)</strong></p>
+      <details key={correctingId || "new"} className="wide" defaultOpen={Boolean(correctingId)} style={{padding:"12px 14px",border:"1px solid light-dark(#e3eaf2,#414b58)",borderRadius:9,background:"light-dark(#fbfdff,#252a31)"}}>
+        <summary style={{cursor:"pointer",fontWeight:650,minHeight:44}}>More details (optional)</summary>
+        <div className="s2-work-diary-fields" style={{marginTop:12}}>
       <label className="wide">What was the result? <textarea value={outcome} onChange={(e) => setOutcome(e.target.value)} maxLength={4000} rows={2} placeholder="What happened?" /></label>
       <label className="wide">What happens next? <textarea value={nextAction} onChange={(e) => setNextAction(e.target.value)} maxLength={1200} rows={2} /></label>
       <label>Next action date (optional) <input type="date" value={nextActionOn} onChange={e => setNextActionOn(e.target.value)} disabled={!nextAction.trim()} /></label>
       {nextAction.trim()&&<label className="wide"><span><input type="checkbox" checked={planNext} onChange={e=>setPlanNext(e.target.checked)}/> Keep this follow-up in my private plan</span></label>}
-      <p className="wide">An update or milestone does not close the responsibility.</p>
+
       <label>Minutes spent (optional, self-recorded) <input type="number" min={0} max={1440} value={minutes} onChange={(e) => setMinutes(e.target.value)} /></label>
       <label className="wide">Evidence link (optional, HTTPS) <input type="url" pattern="https://.*" value={evidenceUrl} onChange={(e) => setEvidenceUrl(e.target.value)} placeholder="https://" /></label>
+        </div>
+      </details>
       </fieldset>
       <div className="wide"><PendingFilePicker compact files={files} onChange={setFiles} disabled={busy} label="Attach activity files"/></div>
+      <p className="wide" style={{fontSize:12,color:"light-dark(#657c92,#aeb8c5)",lineHeight:1.5,margin:"4px 0"}}>Saving progress does not submit the whole task for approval. When ready, open the full work record to finish or send it for review.</p>
       {writeError&&<p className="wide" role="alert">{writeError}</p>}
       {savedActivity.current&&<button className="btn btn-ghost btn-sm" type="button" disabled={busy} onClick={()=>{savedActivity.current=null;uploadAttempts.current.clear();setFiles([]);setEditor(false);setWriteError("");setSuccess("The activity is saved. You can plan its next action or attach files from its activity record later.");setReload(n=>n+1);}}>Keep saved activity; finish later</button>}
       <button type="submit" className="btn btn-sm" style={{width:"fit-content"}} disabled={busy || summary.trim().length < 3 || !date}>{busy ? "Saving..." : correctingId ? "Save correction" : "Save work update"}</button>

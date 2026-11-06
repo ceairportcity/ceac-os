@@ -43,6 +43,8 @@ test("an opted-in routine is delivered once through CEAC Messages and clears onl
   const own=await signIn(browser,"staff@ceac.local.test",390);context=own.context;
   await own.page.goto("/?tab=work");
   await own.page.getByRole("button",{name:"Add my work",exact:true}).click();
+  await own.page.locator("details.reference-disclosure").filter({hasText:"Schedule, project and other details (optional)"}).locator("summary").click();
+  await own.page.getByRole("checkbox",{name:/No steps needed/}).uncheck();
   await own.page.getByPlaceholder("What are you doing?").fill(title);
   await own.page.getByPlaceholder("What should be true when this is finished?").fill("Inspect the venue");
   await own.page.getByPlaceholder("What must be done?").fill("Inspect entrances");

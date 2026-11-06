@@ -47,7 +47,7 @@
   --ev2-line-strong: var(--c303);
   --ev2-identity: #118c83;
   --appearance-ev2-identity: light-dark(var(--ev2-identity),color-mix(in srgb,var(--ev2-identity) 45%,white));
-  --ev2-identity-strong: #0c766f;
+  --ev2-identity-strong: #0c766f;--appearance-ev2-identity-strong:light-dark(var(--ev2-identity-strong),color-mix(in srgb,var(--ev2-identity-strong) 45%,white));
   --ev2-identity-soft: var(--c304);
   --ev2-action: #0c5df9;
   --appearance-ev2-action: light-dark(var(--ev2-action),color-mix(in srgb,var(--ev2-action) 45%,white));
@@ -353,7 +353,7 @@
   font-weight: 700;
   letter-spacing: .08em;
   text-transform: uppercase;
-  color: var(--ev2-identity-strong);
+  color: var(--appearance-ev2-identity-strong);
 }
 
 .ev2-gallery-intro {
@@ -367,7 +367,7 @@
   padding: var(--ev2-space-2) var(--ev2-space-3);
   border-radius: var(--ev2-radius-pill);
   background: var(--ev2-identity-soft);
-  color: var(--ev2-identity-strong);
+  color: var(--appearance-ev2-identity-strong);
   font-size: var(--ev2-type-label);
   line-height: 1;
   font-weight: 700;
@@ -437,7 +437,7 @@
 }
 
 .ev2-icon-box-identity {
-  color: var(--ev2-identity-strong);
+  color: var(--appearance-ev2-identity-strong);
   background: var(--ev2-identity-soft);
 }
 

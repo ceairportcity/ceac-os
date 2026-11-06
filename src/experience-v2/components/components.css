@@ -414,7 +414,7 @@
   border: 1px solid var(--ev2-line);
   border-radius: 50%;
   background: var(--ev2-identity-soft);
-  color: var(--ev2-identity-strong);
+  color: var(--appearance-ev2-identity-strong);
   font-family: var(--ev2-font-sans);
   font-weight: 700;
 }

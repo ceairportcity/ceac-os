@@ -4,9 +4,9 @@ import { Button, StatusBadge } from "../components";
 const STATUS_META = {
   not_started: ["Not started", "neutral"],
   in_progress: ["In progress", "action"],
-  waiting_on: ["Waiting", "warning"],
-  returned: ["Returned", "warning"],
-  in_review: ["In review", "action"],
+  waiting_on: ["Waiting on someone else", "neutral"],
+  returned: ["Changes requested", "warning"],
+  in_review: ["Awaiting approval", "neutral"],
   completed: ["Completed", "success"],
   self_certified: ["Completed", "success"],
   cancelled: ["Cancelled", "neutral"],
@@ -190,7 +190,7 @@ export function WorkReviewRow({
         </span>
         {note ? <small>{note}</small> : null}
       </span>
-      <span className="ev2w-row-context"><span>Review submitted work</span></span>
+      <span className="ev2w-row-context"><span>Open submitted work</span></span>
       <span className="ev2w-row-state">
         <WorkStateBadge status="in_review" />
         <CeacIcon name="chevronRight" size="meta" decorative />
@@ -269,7 +269,7 @@ export function WorkReturnedNotice({ comment, checklistItems = [] }) {
       <div className="ev2ws-icon"><CeacIcon name="warning" size="row" decorative /></div>
       <div className="ev2ws-main">
         <div className="ev2ws-heading">
-          <h2>Sent back by your manager</h2>
+          <h2>Changes requested by your reviewer</h2>
           <StatusBadge tone="warning" icon={false}>Correction needed</StatusBadge>
         </div>
         {comment ? <p>{comment}</p> : null}

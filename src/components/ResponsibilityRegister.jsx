@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useId, useMemo, useState } from 'react';
-import { dueLabel } from '../lib/time';
+import { dueLabel, isWorkOverdue } from '../lib/time';
 import { filterResponsibilities, groupResponsibilities, RESPONSIBILITY_STATUS } from '../lib/responsibilityRegister';
 import './ResponsibilityRegister.css';
 
@@ -44,11 +44,12 @@ export default function ResponsibilityRegister({rows,selectedId,onSelect,emptyAc
     setPage(0);
     setQuery(values.query);setProjectId(values.projectId);setStatus(values.status);
     setCollapsed({});
-    onSelect(groupResponsibilities(filterResponsibilities(rows,values))[0]?.items[0]?.id||'none');
+    // Filtering never opens an inspector or fetches history until explicitly selected.
+    onSelect('none');
   }
   return <>
-    <div className="s2-register-filters" role="search" aria-label="Find responsibilities">
-      <label className="s2-register-search"><span className="sr-only">Find a responsibility</span>
+    <div className="s2-register-filters" role="search" aria-label="Find work">
+      <label className="s2-register-search"><span className="sr-only">Find work</span>
         <input type="search" value={query} onChange={event=>filter({query:event.target.value})} placeholder="Find a task, project or reference…" />
       </label>
       <label><span className="sr-only">Filter by project</span><select value={projectId} onChange={event=>filter({projectId:event.target.value})}>
@@ -58,10 +59,10 @@ export default function ResponsibilityRegister({rows,selectedId,onSelect,emptyAc
         <option value="">Any status</option>{statuses.map(value=><option key={value} value={value}>{RESPONSIBILITY_STATUS[value]||value.replaceAll('_',' ')}</option>)}
       </select></label>
     </div>
-    <div className="s2-register-table-region" role="region" aria-label="Responsibility register" tabIndex={0}>
+    <div className="s2-register-table-region" role="region" aria-label="Work list" tabIndex={0}>
       <table className="s2-register-table">
-        <caption className="sr-only">Responsibilities, projects, due dates and recorded work status</caption>
-        <thead><tr><th scope="col">Responsibility</th><th scope="col" className="s2-register-project">Project</th><th scope="col" className="s2-register-due">Due</th><th scope="col">Status</th></tr></thead>
+        <caption className="sr-only">Work items, projects, due dates and approval status</caption>
+        <thead><tr><th scope="col">Work item</th><th scope="col" className="s2-register-project">Project</th><th scope="col" className="s2-register-due">Due</th><th scope="col">Status</th></tr></thead>
         {groups.map(group=><Fragment key={group.title}><tbody>
           <tr className="s2-register-group"><th colSpan={4} scope="rowgroup">
             <button type="button" aria-expanded={!collapsed[group.title]} aria-controls={`${id}-${group.title.replaceAll(' ','-')}`}
@@ -72,15 +73,15 @@ export default function ResponsibilityRegister({rows,selectedId,onSelect,emptyAc
         </tbody><tbody id={`${id}-${group.title.replaceAll(' ','-')}`} hidden={Boolean(collapsed[group.title])}>
           {group.items.map(row=><tr key={row.id} className={`s2-register-row${selectedId===row.id?' is-selected':''}`}>
             <th scope="row"><button type="button" aria-pressed={selectedId===row.id} onClick={()=>onSelect(row.id)}>
-              <strong>{row.title}</strong><small>{row.ref} · {row.visibility==='private'?'Private':row.origin==='self_created'?'Created by me':'Assigned work'}</small>
+              <strong>{row.title}</strong><small>{[row.ref,row.visibility==='private'?'Private':row.origin==='self_created'?'Created by me':'Assigned',row.projects?.name].filter(Boolean).join(" · ")}</small>
             </button></th>
             <td className="s2-register-project">{row.projects?.name||'Not linked'}</td>
             <td className="s2-register-due">{dueLabel(row.due_at, row.status)}</td>
-            <td><span className="s2-register-status" data-state={row.status}>{RESPONSIBILITY_STATUS[row.status]||row.status?.replaceAll('_',' ')||'Not recorded'}</span></td>
+            <td><span className="s2-register-status" data-state={isWorkOverdue(row)?"past_due":row.status}>{isWorkOverdue(row)?"Past due — action needed":RESPONSIBILITY_STATUS[row.status]||row.status?.replaceAll('_',' ')||'Not recorded'}</span></td>
           </tr>)}
         </tbody></Fragment>)}
         {groups.length===0&&<tbody><tr><td colSpan={4} className="s2-register-empty">
-          {rows.length?'No work matches these filters.':'No work to show here yet.'}
+          {rows.length?'No work matches these filters.':'No work to show here yet. New assignments and work you create will appear in this list.'}
           {(query||projectId||status)&&<button type="button" onClick={()=>filter({query:'',projectId:'',status:''})}>Clear filters</button>}
           {!rows.length&&emptyAction&&<button type="button" onClick={emptyAction.onClick}>{emptyAction.label}</button>}
         </td></tr></tbody>}
@@ -92,7 +93,7 @@ export default function ResponsibilityRegister({rows,selectedId,onSelect,emptyAc
         <span>Page {currentPage+1} of {pageCount}</span>
         <button type="button" aria-label="Next responsibility page" disabled={currentPage===pageCount-1} onClick={()=>changePage(currentPage+1)}>Next</button>
       </nav>}
-      {onAdd&&<button type="button" onClick={onAdd}>Add another responsibility →</button>}
+      {/* The main page has one prominent Add my work action; do not duplicate it here. */}
     </footer>
   </>;
 }

@@ -36,7 +36,7 @@
 }
 
 .staffv2-context span {
-  color: var(--ev2-identity-strong);
+  color: var(--appearance-ev2-identity-strong);
 }
 
 .staffv2-intro h1 {
@@ -92,7 +92,7 @@
 }
 
 .staffv2-session.is-active .staffv2-session-icon {
-  color: var(--ev2-identity-strong);
+  color: var(--appearance-ev2-identity-strong);
   background: var(--ev2-surface);
 }
 
@@ -613,7 +613,7 @@
   place-items: center;
   border-radius: var(--ev2-radius-control);
   background: var(--ev2-identity-soft);
-  color: var(--ev2-identity-strong);
+  color: var(--appearance-ev2-identity-strong);
 }
 
 .staffv2-ministry-copy {
@@ -672,7 +672,7 @@
 .staffv2-focus-card {
   border-color: rgba(12, 93, 249, .16);
   background:
-    linear-gradient(135deg, rgba(234, 241, 255, .72) 0%, var(--c466) 62%, var(--c1) 100%);
+    linear-gradient(135deg, var(--c943) 0%, var(--c466) 62%, var(--c1) 100%);
 }
 
 .staffv2-focus-card .ev2c-focus-title {

@@ -188,11 +188,11 @@
   place-items: center;
   border-radius: 50%;
   background: var(--ev2-identity-soft);
-  color: var(--ev2-identity-strong);
+  color: var(--appearance-ev2-identity-strong);
 }
 
 .ev2cal-day-button small {
-  color: var(--ev2-identity-strong);
+  color: var(--appearance-ev2-identity-strong);
   font-size: var(--ev2-type-label);
 }
 

@@ -35,7 +35,7 @@ test("each real work record exposes source-backed person-attributed dated activi
   assert.match(diary, /next_action:/);
   assert.match(diary, /duration_minutes:/);
   assert.match(diary, /check\.data\.contributor_id !== me\.id/);
-  assert.match(diary, /An update or milestone does not close the responsibility/);
+  assert.match(diary, /Saving progress does not submit the whole task for approval/);
   assert.doesNotMatch(diary, /\.update\(|\.delete\(|autoApprove|markObjectiveAchieved|calculatePerformanceScore/);
 });
 
@@ -233,7 +233,7 @@ test("manager, administration and executive default to truthful My work records 
   }
   const manager=source("src/screens/ManagerWork.jsx");
   const register=source("src/lib/responsibilityRegister.js");
-  for(const label of ["In progress", "Waiting & review", "Upcoming", "Completed"]){
+  for(const label of ["Needs attention", "In progress", "With reviewer or waiting", "Upcoming", "Completed"]){
     assert.ok(register.includes(label),`Missing shared Work group: ${label}`);
   }
   assert.match(manager, /<ResponsibilityRegister/);

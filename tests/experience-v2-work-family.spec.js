@@ -79,6 +79,8 @@ for (const viewport of [
       const { context, page } = await openWork(browser, role, { width: viewport.width, height: viewport.height });
 
       await expect(page.getByRole("heading", { name: "Work", exact: true })).toBeVisible();
+      await expect(page.getByRole("region", { name: "Work overview", exact: true })).toBeVisible();
+      await expect(page.locator(".s2-work-inspector")).toHaveCount(0);
       for (const label of role.tabs) {
         await expect(page.getByRole("tab", { name: new RegExp(label) }).first()).toBeVisible();
       }
@@ -125,6 +127,17 @@ for (const viewport of [
         path: `test-artifacts/redesign-r7-stage10a1-${role.key}-${viewport.name}.png`,
         fullPage: true,
       });
+      // The Work release must retain the shared Settings appearance contract.
+      await page.emulateMedia({ colorScheme: "dark" });
+      await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+      await expect(page.locator(".ev2-work-page")).toHaveCSS("background-color", "rgb(20, 23, 27)");
+      await expect(page.locator(".ev2w-header h1")).toHaveCSS("color", "rgb(232, 236, 241)");
+      if (viewport.width > 900) await expect(page.locator(".ev2s-topbar")).toHaveCSS("background-color", "rgba(28, 31, 36, 0.96)");
+      const overview = page.getByRole("region", { name: "Work overview", exact: true });
+      await expect(overview.locator("h2")).toHaveCSS("color", "rgb(232, 236, 241)");
+      await expect(overview.locator("strong").first()).toHaveCSS("color", "rgb(232, 236, 241)");
+      expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
+      await page.screenshot({ path: `test-artifacts/work-overview-dark-${role.key}-${viewport.name}.png`, fullPage: true });
       await context.close();
     });
   }
@@ -170,7 +183,7 @@ for (const viewport of [
     const firstRow = page.locator(".s2-register-row:visible th button").first();
     await expect(firstRow).toBeVisible();
     await firstRow.click();
-    await expect(page.getByRole("complementary", { name: "Selected responsibility" })).toBeVisible();
+    await expect(page.getByRole("complementary", { name: "Work details" })).toBeVisible();
     await page.getByRole("button", { name: /Open full work record/ }).click();
 
     await expect(page.locator(".ev2-work-detail")).toBeVisible();
@@ -326,7 +339,7 @@ for (const viewport of [
       });
       expect(registerColumns.every(column => column.inside), 'Every displayed register column fits inside the register').toBe(true);
       expect(registerColumns.map(column => column.name)).toEqual(viewport.width < 560
-        ? ['Responsibility', 'Status'] : ['Responsibility', 'Project', 'Due', 'Status']);
+        ? ['Work item', 'Status'] : ['Work item', 'Project', 'Due', 'Status']);
 
       const smallest = await page.locator(".ev2-work-page").evaluate((root) => {
         const values = [...root.querySelectorAll("*")]
@@ -381,7 +394,7 @@ for (const viewport of [
     const firstRow = page.locator(".s2-register-row:visible th button").first();
     await expect(firstRow).toBeVisible();
     await firstRow.click();
-    await expect(page.getByRole("complementary", { name: "Selected responsibility" })).toBeVisible();
+    await expect(page.getByRole("complementary", { name: "Work details" })).toBeVisible();
     await page.getByRole("button", { name: /Open full work record/ }).click();
     await expect(page.locator(".ev2-work-detail")).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);

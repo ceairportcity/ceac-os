@@ -87,7 +87,8 @@ export default function AdminWork({ me, openItem, goAssign }) {
   const rows = view === "given" ? activeGiven : view === "organisation" ? activeOrg
     : view === "created" ? selfCreated : view === "completed" ? completedMine
     : mine.filter((item) => item.status !== "cancelled");
-  const selectedInView = selectedWorkId === "none" ? null : (rows.some(item => item.id === selectedWorkId) ? selectedWorkId : (rows[0]?.id || null));
+  const selectedInView = selectedWorkId && selectedWorkId !== "none" && rows.some(item => item.id === selectedWorkId)
+    ? selectedWorkId : null;
   const groupTitle = view === "given" ? "Work Administration gave out" : view === "organisation" ? "Organisation work"
     : view === "created" ? "Responsibilities created by me" : view === "completed" ? "Completed responsibilities" : "My responsibilities";
 
@@ -95,7 +96,7 @@ export default function AdminWork({ me, openItem, goAssign }) {
     <WorkPageHeader
       eyebrow="Organisation operations"
       title="Work"
-      description="Plan, record, and finish your work. Keep every contribution connected to the right project."
+      description="Organisation work, upcoming decisions and approvals in one place."
       actionLabel="Give out work"
       onAction={() => goAssign?.()}
       secondaryActionLabel="Add my work"
@@ -108,7 +109,7 @@ export default function AdminWork({ me, openItem, goAssign }) {
     {!scopedLoading && error && <ProductNotice tone="error" title="Could not load Work">{error}</ProductNotice>}
     {scopedLoading && <LoadingState label="Loading organisation work…" />}
 
-    {!scopedLoading && !error && <WorkRegisterLayout me={me}
+    {!scopedLoading && !error && <WorkRegisterLayout me={me} rows={[...mine,...given,...org]} reviews={reviews} role="admin"
       selectedId={view === "reviews" ? null : selectedInView}
       onClose={() => setSelectedWorkId("none")} openItem={openItem}
       recordCount={view === "reviews" ? reviews.length : rows.length}

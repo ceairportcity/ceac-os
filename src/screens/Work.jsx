@@ -28,7 +28,7 @@ const BRAND_BOOK_DASHBOARD_CSS = `.fpg-brandbook-dashboard{display:grid;grid-tem
 .fpg-brandbook-schedule-list span{display:grid;gap:1px;min-width:0}.fpg-brandbook-schedule-list strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px}.fpg-brandbook-schedule-list small,.fpg-brandbook-schedule-list p{color:var(--ev2-text-secondary);font-size:12px}
 .fpg-brandbook-hours>strong{display:block;margin:18px 0 10px;font-size:28px;letter-spacing:-.04em}.fpg-brandbook-hours-bars{height:76px;display:grid;grid-template-columns:repeat(7,1fr);gap:5px;align-items:end}
 .fpg-brandbook-hours-bars>span{height:100%;display:grid;grid-template-rows:1fr 17px;align-items:end;gap:3px}.fpg-brandbook-hours-bars i{display:block;min-height:4px;border-radius:4px 4px 1px 1px;background:var(--ev2-action)}.fpg-brandbook-hours-bars small{text-align:center;color:var(--appearance-ev2-text-tertiary);font-size:12px}
-.fpg-brandbook-hours>p{margin:9px 0 0;color:var(--ev2-text-secondary);font-size:12px;line-height:1.4}.fpg-brandbook-note{background:#f7d765;border-color:#e8c54c}.fpg-brandbook-note>p{min-height:88px;margin:16px 0;color:#3e3520;font-size:14px;line-height:1.5}.fpg-brandbook-note>footer{color:#6d5a24;font-size:12px}
+.fpg-brandbook-hours>p{margin:9px 0 0;color:var(--ev2-text-secondary);font-size:12px;line-height:1.4}.fpg-brandbook-note{background:var(--c954);border-color:var(--c955)}.fpg-brandbook-note>p{min-height:88px;margin:16px 0;color:var(--c956);font-size:14px;line-height:1.5}.fpg-brandbook-note>footer{color:var(--c957);font-size:12px}
 .fpg-brandbook-context-warning{margin:-8px 0 14px;color:var(--appearance-ev2-text-tertiary);font-size:12px}
 @media(max-width:820px){.fpg-brandbook-dashboard{grid-template-columns:1fr 1fr}.fpg-brandbook-note{grid-column:1/-1}}
 @media(max-width:560px){.fpg-brandbook-dashboard{grid-template-columns:1fr}.fpg-brandbook-note{grid-column:auto}.fpg-brandbook-card{min-height:0}}`;
@@ -75,7 +75,7 @@ export default function Work({ me, isManager = false, openItem }) {
   const [due, setDue] = useState("");
   const [repeat, setRepeat] = useState(initialOrganisationalRepeat);
   const [steps, setSteps] = useState([""]);
-  const [noStepsNeeded, setNoStepsNeeded] = useState(false);
+  const [noStepsNeeded, setNoStepsNeeded] = useState(true);
   const [busy, setBusy] = useState(false);
   // Blocks two synchronous create clicks before React renders the busy state.
   const ownCreatePending = useRef(false);
@@ -262,7 +262,7 @@ export default function Work({ me, isManager = false, openItem }) {
     setDue("");
     setRepeat(initialOrganisationalRepeat());
     setSteps([""]);
-    setNoStepsNeeded(false);
+    setNoStepsNeeded(true);
     setNotice(null);
     setSheet("self");
   }
@@ -393,7 +393,7 @@ export default function Work({ me, isManager = false, openItem }) {
     <WorkPageHeader
       eyebrow={me.unit_name}
       title="Work"
-      description="Plan, record, and finish your work. Keep every contribution connected to the right project."
+      description="See what needs doing, record progress and follow your approvals."
       actionLabel="Add my work"
       onAction={() => openCreate("unit")}
     />
@@ -413,7 +413,7 @@ export default function Work({ me, isManager = false, openItem }) {
 
     {loadError && <ProductNotice tone="error" title="Could not load your work">{loadError}</ProductNotice>}
     {loading && <LoadingState label="Loading your work…" />}
-    {!loading && !loadError && <WorkRegisterLayout me={me} selectedId={selectedInView}
+    {!loading && !loadError && <WorkRegisterLayout me={me} selectedId={selectedInView} rows={visibleItems} role="staff"
       onClose={() => setSelectedWorkId("none")} openItem={openItem} recordCount={visibleItems.length}
       tabs={<WorkTabs items={MODES} value={mode} onChange={nextMode=>{setMode(nextMode);setStatusFilter("all");}} ariaLabel="Work source" />}>
       <ResponsibilityRegister key={mode} rows={visibleItems} selectedId={selectedInView}
@@ -489,8 +489,12 @@ export default function Work({ me, isManager = false, openItem }) {
       </p>
 
       <FieldGroup label="Work to carry"><input className="field" placeholder="What are you doing?" value={title} onChange={(event) => setTitle(event.target.value)} /></FieldGroup>
-      <FieldGroup label="Why it matters" hint="Optional context."><textarea className="field" rows={2} placeholder="Why it matters" value={purpose} onChange={(event) => setPurpose(event.target.value)} /></FieldGroup>
       <FieldGroup label="Finished result"><textarea className="field" rows={3} placeholder="What should be true when this is finished?" value={expectedOutcome} onChange={(event) => setExpectedOutcome(event.target.value)} /></FieldGroup>
+
+      <details className="reference-disclosure">
+        <summary>Schedule, project and other details (optional)</summary>
+        <div className="reference-disclosure-body">
+      <FieldGroup label="Why it matters" hint="Optional context."><textarea className="field" rows={2} placeholder="Why it matters" value={purpose} onChange={(event) => setPurpose(event.target.value)} /></FieldGroup>
 
       {createVisibility === "unit" && <FieldGroup label="Linked project (optional)">
         <input className="field" type="search" aria-label="Search authorised projects"
@@ -531,6 +535,8 @@ export default function Work({ me, isManager = false, openItem }) {
       {createVisibility === "unit" && <OrganisationalRepeatFields value={repeat} onChange={setRepeat} disabled={busy} />}
       {!repeat.enabled && <><label className="field-label">Due date (optional)</label>
       <input className="field" type="datetime-local" value={due} onChange={(event) => setDue(event.target.value)} /></>}
+        </div>
+      </details>
 
       <label className="card small no-steps-option">
         <input type="checkbox" checked={noStepsNeeded} onChange={(event) => setNoStepsNeeded(event.target.checked)} />

@@ -135,7 +135,7 @@ async function openCompleteWorkRecord(page, title) {
   const row=page.locator(".s2-register-row").filter({hasText:title}).first();
   await expect(row).toBeVisible({timeout:20000});
   await row.getByRole("button").first().click();
-  const inspector=page.getByRole("complementary",{name:"Selected responsibility"});
+  const inspector=page.getByRole("complementary",{name:"Work details"});
   await expect(inspector.getByRole("heading",{name:title})).toBeVisible({timeout:20000});
   await inspector.getByRole("button",{name:/Open full work record/}).click();
   await expect(page.locator(".ev2-work-detail")).toBeVisible({timeout:20000});
@@ -205,7 +205,7 @@ test("Staff and Manager complete the real work loop, including return and approv
     const { context, page } = await openAs(browser, "staff@ceac.local.test");
     await go(page, "Work");
     await openCompleteWorkRecord(page, title);
-    await expect(page.getByText("Sent back by your manager")).toBeVisible();
+    await expect(page.getByText("Changes requested by your reviewer")).toBeVisible();
     await expect(page.getByText("Please correct the acceptance item.")).toBeVisible();
     await page.screenshot({ path: "test-artifacts/redesign-r7-stage10a3-returned-work.png", fullPage: true });
 
@@ -487,7 +487,7 @@ test("Typed work can be created and reaches the Staff work surface", async ({ br
   for (const item of created.filter((entry) => entry.kind !== "Request")) {
     // The real register is paginated. Find each newly authored responsibility
     // through its existing search before asserting the saved Staff row.
-    await staff.page.getByRole("searchbox", { name: "Find a responsibility" }).fill(item.title);
+    await staff.page.getByRole("searchbox", { name: "Find work" }).fill(item.title);
     await expect(staff.page.locator(".s2-register-row").getByText(item.title, { exact: true })).toBeVisible();
   }
   await staff.context.close();

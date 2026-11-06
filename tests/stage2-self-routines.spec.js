@@ -24,6 +24,8 @@ for (const actor of ['staff', 'manager', 'admin', 'exec']) {
       await expect(page.locator('.ev2s-workspace')).toBeVisible();
       await page.goto('/?tab=work');
       await page.getByRole('button',{name:'Add my work',exact:true}).click();
+      await page.locator("details.reference-disclosure").filter({hasText:"Schedule, project and other details (optional)"}).locator("summary").click();
+      await page.getByRole("checkbox",{name:/No steps needed/}).uncheck();
       if (actor === 'staff') {
         await page.getByPlaceholder('What are you doing?').fill(title);
         await page.getByPlaceholder('What should be true when this is finished?').fill('Confirm the venue is ready each day.');
@@ -53,7 +55,7 @@ for (const actor of ['staff', 'manager', 'admin', 'exec']) {
       expect(colleagueSignIn.error).toBeNull();
       expect((await colleague.rpc('record_routine_occurrence',params)).error?.code).toBe('42501');
       await page.locator('.s2-register-row').filter({hasText:title}).locator('th button').click();
-      await page.getByRole('complementary',{name:'Selected responsibility'})
+      await page.getByRole('complementary',{name:'Work details'})
         .getByRole('button',{name:/Open full work record/}).click();
       await expect(page.getByRole('region',{name:'Routine method'})).toBeVisible();
       await expect(page.getByRole('region',{name:'Task checklist and progress'})).toHaveCount(0);
@@ -117,8 +119,9 @@ for (const actor of ['staff', 'manager', 'admin', 'exec']) {
       // The separately attributable dated evidence editor reuses the existing
       // immutable Work diary; this does not approve or rewrite the occurrence.
       await page.getByRole('button',{name:`Record evidence for ${today}`}).click();
-      const activityDate = page.getByLabel('Activity date',{exact:true});
+      const activityDate = page.getByLabel('When did you do this?',{exact:true});
       await expect(activityDate).toHaveValue(today);
+      await page.locator(".s2-work-diary details").filter({hasText:"More details (optional)"}).locator("summary").click();
       await page.getByLabel('What did you accomplish?',{exact:true}).fill('Inspected venue and verified entrances');
       await page.getByRole('button',{name:'Save work update',exact:true}).click();
       await expect(page.getByText('Your dated activity was recorded.',{exact:true})).toBeVisible();
@@ -191,6 +194,8 @@ test("custom self routine keeps exact interval/count/timezone and future edits p
   await page.getByRole("button",{name:"Add my work",exact:true}).click();
   await page.getByPlaceholder("What are you doing?").fill(title);
   await page.getByPlaceholder("What should be true when this is finished?").fill("Inspect the venue on each scheduled date.");
+  await page.locator("details.reference-disclosure").filter({hasText:"Schedule, project and other details (optional)"}).locator("summary").click();
+  await page.getByRole("checkbox",{name:/No steps needed/}).uncheck();
   await page.getByPlaceholder("What must be done?").fill("Inspect venue");
   await page.getByRole("checkbox",{name:"Repeat this responsibility"}).check();
   await page.getByRole("combobox",{name:"Repeat frequency"}).selectOption("daily");
@@ -211,7 +216,7 @@ test("custom self routine keeps exact interval/count/timezone and future edits p
   for(const row of preview.data) expect(new Intl.DateTimeFormat("en-GB",{timeZone:"Europe/Amsterdam",hour:"2-digit",minute:"2-digit"}).format(new Date(row.due_at))).toBe("09:30");
   expect((await client.schema("private").rpc("change_routine_schedule_options",{p_work_item_id:work.data.id,p_effective_from:day(2),p_options:{schedule_kind:"daily"}})).error?.code).toBe("PGRST106");
   await register.locator("th button").click();
-  await page.getByRole("complementary",{name:"Selected responsibility"}).getByRole("button",{name:/Open full work record/}).click();
+  await page.getByRole("complementary",{name:"Work details"}).getByRole("button",{name:/Open full work record/}).click();
   await page.getByRole("button",{name:"Change future schedule",exact:true}).click();
   const dialog=page.getByRole("dialog");
   await dialog.getByLabel("Effective from").fill(day(2));
