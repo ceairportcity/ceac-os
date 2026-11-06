@@ -38,6 +38,12 @@ async function openCreate(page, label) {
     }
     await expect(objective).toBeVisible();
     await objective.click();
+  } else if (label === 'Give out work') {
+    // Work's authorised trigger, not the legacy global shortcut that the
+    // Executive shell deliberately hides once its role stylesheet arrives.
+    const action = page.locator('.ev2w-header').getByRole('button', {name:'Give out work',exact:true});
+    await expect(action).toBeVisible();
+    await action.click();
   } else {
     await page.getByRole("button", { name: route[1], exact: true }).first().click();
   }

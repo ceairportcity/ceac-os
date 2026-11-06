@@ -35,6 +35,39 @@
   max-width: 100%;
   right: auto;
 }
+:root.ceac-physical-phone .ev2s-mobile-nav button span {
+  max-width: 100%;
+  white-space: nowrap;
+  overflow-wrap: normal;
+  word-break: normal;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.1;
+}
 :root.ceac-physical-phone :is(.ceac-pwa-status,.ev2s-mobile-search-drawer) {
   max-width: var(--ceac-phone-visible-width, 100%);
+}
+
+/* Portalled dialogs use the viewport as their fixed containing block, rather
+   than the narrow app frame. Keep the existing phone dialog inside that frame. */
+:root.ceac-physical-phone :is(.ev2c-overlay,.phase5-access-revoke,.fpg-work-drawer-bg,.sheet-bg,.menu-bg,.sheet,.meeting-scheduler) {
+  box-sizing: border-box;
+  left: 0;
+  right: auto;
+  width: var(--ceac-phone-visible-width, 100%);
+  max-width: 100%;
+  margin-inline: 0;
+}
+:root.ceac-physical-phone :is(.ev2c-toast,.ceac-toast) {
+  box-sizing: border-box;
+  left: 16px;
+  right: auto;
+  width: min(24rem, calc(var(--ceac-phone-visible-width, 100vw) - 32px));
+  max-width: calc(var(--ceac-phone-visible-width, 100vw) - 32px);
+}
+:root.ceac-physical-phone .ceac-pwa-status {
+  box-sizing: border-box;
+  left: 12px;
+  right: auto;
+  width: calc(var(--ceac-phone-visible-width, 100vw) - 24px);
 }

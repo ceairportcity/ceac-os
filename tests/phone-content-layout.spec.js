@@ -49,6 +49,18 @@ for(const viewportWidth of [390,980])test(`original compact phone survives Light
     await page.reload();
     await expect(page.locator('.fpg9-home-impact')).toBeHidden();
     await expect(page.locator('.fpg9-mobile-shortcuts')).toBeVisible();
+    await page.getByRole('button',{name:'Open phone dialog',exact:true}).click();
+    const dialog=page.getByRole('dialog',{name:'Phone form'});
+    await expect(dialog).toBeVisible();
+    await expect(dialog).toBeInViewport({ratio:1});
+    await expect.poll(async()=>{const b=await dialog.boundingBox();return b.x>=0&&b.x+b.width<=391;}).toBe(true);
+    await dialog.getByRole('button',{name:'Close',exact:true}).click();
+    await expect(dialog).toBeHidden();
+    await page.getByRole('button',{name:'Show phone notices',exact:true}).click();
+    for(const selector of ['.ev2c-toast','.ceac-pwa-status']){
+      await expect(page.locator(selector)).toBeVisible();
+      await expect.poll(async()=>{const b=await page.locator(selector).boundingBox();return b.x>=0&&b.x+b.width<=391;}).toBe(true);
+    }
   }finally{await context.close();}
 });
 
