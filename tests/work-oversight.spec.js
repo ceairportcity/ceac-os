@@ -33,3 +33,19 @@ for(const width of [320,768,1440])test(`shared Work oversight controls and miles
  fs.mkdirSync('test-artifacts',{recursive:true});
  await page.screenshot({path:`test-artifacts/work-oversight-${width}.png`,fullPage:true});
 });
+
+// Installed iPhones can retain a wide layout viewport while the device screen is narrow.
+// Preserve the conversation's one-column reading layout in that situation.
+test('shared Work oversight uses one column on a physical iPhone with wide layout viewport', async ({browser}) => {
+ const context=await browser.newContext({viewport:{width:980,height:844},screen:{width:390,height:844},deviceScaleFactor:3,isMobile:true,hasTouch:true});
+ try {
+  const page=await context.newPage();
+  await page.goto('/tests/fixtures/work-oversight.html');
+  await page.getByRole('button',{name:/Registration preparation/}).click();
+  const columns=await page.locator('.cw-oversight-columns.has-selection').evaluate(node=>getComputedStyle(node).gridTemplateColumns.split(' ').filter(Boolean).length);
+  expect(await page.evaluate(()=>matchMedia('(max-device-width: 720px)').matches)).toBe(true);
+  expect(columns).toBe(1);
+  await expect(page.getByRole('heading',{name:'Shared work conversation'})).toBeVisible();
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth)).toBe(false);
+ } finally {await context.close();}
+});
