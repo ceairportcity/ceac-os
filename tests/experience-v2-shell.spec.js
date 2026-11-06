@@ -451,7 +451,7 @@ test("Stage 4B mobile shell keeps five controls and uses the shared More drawer"
   await expect(drawer.getByRole("button", { name: "Calendar", exact: true })).toBeVisible();
   await expect(drawer.getByRole("button", { name: "Time & Leave", exact: true })).toBeVisible();
   await expect(drawer.getByRole("button", { name: "Messages", exact: true })).toBeVisible();
-  await expect(drawer.getByRole("button", { name: "Account security", exact: true })).toBeVisible();
+  await expect(drawer.getByRole("button", { name: "Settings", exact: true })).toBeVisible();
 
   await page.keyboard.press("Escape");
   await expect(drawer).toBeHidden();

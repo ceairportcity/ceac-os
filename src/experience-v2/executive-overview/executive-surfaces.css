@@ -51,7 +51,7 @@
   padding: 0;
   border-radius: 0;
   background: transparent;
-  color: var(--ev2-text-tertiary);
+  color: var(--appearance-ev2-text-tertiary);
 }
 
 .ev2-work-executive .ev2w-list {

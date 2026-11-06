@@ -19,11 +19,14 @@ for(const width of [320,768,1440])test(`mocked notification controls remain clea
   };
  });
  await page.goto('/tests/fixtures/notification-controls.html');
- await expect(page.getByText('Notifications are enabled on this device.',{exact:false}),await page.locator('body').innerText()).toBeVisible();
+
  await expect(page.getByText('New memo from Ama Example',{exact:true})).toBeVisible();
  await expect(page.getByText('Work is past due',{exact:true})).toHaveCount(0);
  await page.getByRole('button',{name:'Action needed',exact:false}).click();
  await expect(page.getByText('Work is past due',{exact:true})).toBeVisible();
+ await expect(page.getByRole('link',{name:'Notification settings'})).toHaveAttribute('href','/?tab=account&preference=notifications');
+ await page.goto('/tests/fixtures/notification-controls.html?settings=1');
+ await expect(page.getByText('Notifications are enabled on this device.',{exact:false})).toBeVisible();
  await page.getByLabel('Quiet hours · Ghana time').check();
  await page.getByRole('button',{name:'Save preferences',exact:true}).click();
  await expect(page.getByText('Notification preferences saved.',{exact:true})).toBeVisible();
@@ -31,6 +34,7 @@ for(const width of [320,768,1440])test(`mocked notification controls remain clea
  expect(saved.preferences.quietStart).toBe(21);expect(saved.preferences.quietEnd).toBe(7);
  await page.getByRole('button',{name:'Send a test notification',exact:true}).click();
  await expect(page.getByText('Test queued.',{exact:false})).toBeVisible();
+ await page.goto('/tests/fixtures/notification-controls.html');
  await page.getByRole('button',{name:'History',exact:true}).click();
  await expect(page.getByText('New Memo',{exact:true})).toBeVisible();
  expect(await page.evaluate(()=>document.documentElement.scrollWidth>window.innerWidth)).toBe(false);

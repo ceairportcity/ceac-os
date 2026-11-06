@@ -9,7 +9,7 @@ There are **48** explicit `tab ===` routing cases, plus a separate default `me` 
 | Tab | Main role navigation | App-level render routing | Root screen/component | Acceptance stage | Proof |
 | --- | --- | --- | --- | --- | --- |
 | `guide` | Deep link, submenu or conditional | Signed in; no additional root guard | `Guide` | P0/P7 | SOURCE ONLY |
-| `account` | staff, manager, admin, executive | Signed in; no additional root guard | `AccountActivity` | P2 | SOURCE ONLY |
+| `account` | staff, manager, admin, executive | Signed in; no additional root guard | `Settings (shared personal preferences; AccountActivity remains the security subview)` | P2 | SOURCE ONLY |
 | `achievements` | Deep link, submenu or conditional | Signed in; no additional root guard | `PersonalAchievements` | P6 | SOURCE ONLY |
 | `technical-help` | Deep link, submenu or conditional | Signed in; no additional root guard | `TechnicalHelp` | P0/P7 | SOURCE ONLY |
 | `technical-support` | Deep link, submenu or conditional | Signed in; Support capability conditional render | `TechnicalSupport` | P0/P7 | SOURCE ONLY |

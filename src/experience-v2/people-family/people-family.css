@@ -25,7 +25,7 @@
 .ev2p-eyebrow {
   display: block;
   margin-bottom: var(--ev2-space-2);
-  color: var(--ev2-text-tertiary);
+  color: var(--appearance-ev2-text-tertiary);
   font-size: var(--ev2-type-label);
   line-height: 1.3;
   font-weight: 750;
@@ -73,7 +73,7 @@
 }
 
 .ev2p-count span {
-  color: var(--ev2-text-tertiary);
+  color: var(--appearance-ev2-text-tertiary);
   font-size: var(--ev2-type-label);
   line-height: 1.3;
 }
@@ -118,7 +118,7 @@
   place-items: center;
   border-radius: var(--ev2-radius-control);
   background: var(--ev2-surface);
-  color: var(--ev2-identity);
+  color: var(--appearance-ev2-identity);
 }
 
 .ev2p-room-copy,
@@ -211,7 +211,7 @@
   display: inline-flex;
   align-items: center;
   gap: var(--ev2-space-2);
-  color: var(--ev2-text-tertiary);
+  color: var(--appearance-ev2-text-tertiary);
 }
 
 .ev2p-section-meta b {
@@ -260,17 +260,17 @@
   align-items: center;
   justify-content: flex-end;
   gap: var(--ev2-space-2);
-  color: var(--ev2-text-tertiary);
+  color: var(--appearance-ev2-text-tertiary);
 }
 
 .ev2p-fact-warning .ev2p-fact-icon {
   background: var(--ev2-warning-soft);
-  color: var(--ev2-warning);
+  color: var(--appearance-ev2-warning);
 }
 
 .ev2p-fact-success .ev2p-fact-icon {
   background: var(--ev2-success-soft);
-  color: var(--ev2-success);
+  color: var(--appearance-ev2-success);
 }
 
 .ev2p-fact-meta {
@@ -282,7 +282,7 @@
 
 .ev2p-resource-icon {
   background: var(--ev2-action-soft);
-  color: var(--ev2-action);
+  color: var(--appearance-ev2-action);
 }
 
 .ev2p-empty {
@@ -804,7 +804,7 @@
 .ev2p-evidence-summary > p {
   max-width: 76ch;
   margin: var(--ev2-space-2) var(--ev2-space-1) 0;
-  color: var(--ev2-text-tertiary);
+  color: var(--appearance-ev2-text-tertiary);
   font-size: var(--ev2-type-supporting);
   line-height: 1.45;
 }
@@ -886,14 +886,14 @@
 }
 
 .ev2p-filter-tab b {
-  color: var(--ev2-text-tertiary);
+  color: var(--appearance-ev2-text-tertiary);
   font-size: var(--ev2-type-label);
 }
 
 .ev2p-filter-tab.is-selected {
   border-color: color-mix(in srgb, var(--ev2-action) 32%, var(--ev2-line));
   background: var(--ev2-action-soft);
-  color: var(--ev2-action);
+  color: var(--appearance-ev2-action);
 }
 
 .ev2p-filter-tab.is-selected b {
@@ -955,7 +955,7 @@
 }
 
 .ev2p-link-row-tail {
-  color: var(--ev2-text-tertiary);
+  color: var(--appearance-ev2-text-tertiary);
 }
 
 .ev2p-outcome-grid {
@@ -1022,7 +1022,7 @@
 }
 
 .ev2p-objective-ref {
-  color: var(--ev2-text-tertiary);
+  color: var(--appearance-ev2-text-tertiary);
   font-size: var(--ev2-type-label);
   line-height: 1.35;
   font-weight: 700;
@@ -1057,7 +1057,7 @@
   padding: 0;
   border: 0;
   background: transparent;
-  color: var(--ev2-action);
+  color: var(--appearance-ev2-action);
   font: inherit;
   font-size: var(--ev2-type-supporting);
   font-weight: 650;
@@ -1273,7 +1273,7 @@
 }
 
 .ev2p-admin-person-context small {
-  color: var(--ev2-text-tertiary);
+  color: var(--appearance-ev2-text-tertiary);
   font-size: var(--ev2-type-supporting);
   line-height: 1.4;
   overflow-wrap: anywhere;
@@ -1343,7 +1343,7 @@
   border: 1px solid var(--ev2-line-strong);
   border-radius: var(--ev2-radius-control);
   background: var(--ev2-surface);
-  color: var(--ev2-action);
+  color: var(--appearance-ev2-action);
   font: inherit;
   font-size: var(--ev2-type-supporting);
   font-weight: 700;
@@ -1404,7 +1404,7 @@
 
 .ev2p-admin-history-row > span {
   max-width: 12rem;
-  color: var(--ev2-text-tertiary);
+  color: var(--appearance-ev2-text-tertiary);
   text-align: right;
 }
 
@@ -1455,7 +1455,7 @@
 }
 
 .ev2p-admin-protected-grid span {
-  color: var(--ev2-text-tertiary);
+  color: var(--appearance-ev2-text-tertiary);
   font-size: var(--ev2-type-label);
   line-height: 1.35;
   font-weight: 700;
@@ -2200,13 +2200,13 @@
 .s2-team-room-copy{display:grid;gap:2px;min-width:0}
 .s2-team-room-copy strong{font-size:14px}
 .s2-team-room-copy span{font-size:12px;line-height:1.4;color:var(--ev2-text-secondary)}
-.s2-team-room-open{flex:none;min-height:36px;padding:0 12px;border:1px solid var(--ev2-line);border-radius:6px;background:var(--ev2-surface);color:var(--ev2-action);font:inherit;font-size:12px;font-weight:700;cursor:pointer}
+.s2-team-room-open{flex:none;min-height:36px;padding:0 12px;border:1px solid var(--ev2-line);border-radius:6px;background:var(--ev2-surface);color:var(--appearance-ev2-action);font:inherit;font-size:12px;font-weight:700;cursor:pointer}
 .s2-team-room-open:focus-visible{outline:3px solid rgba(12,93,249,.26);outline-offset:2px}
 .s2-team-room-open:hover{border-color:var(--ev2-action)}
 .phase6-manager-people-toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:10px 0 12px;padding:0;border:0;border-radius:0;border-bottom:1px solid var(--ev2-line);background:transparent}
 .phase6-manager-people-tabs{display:flex;flex-wrap:wrap;gap:12px}
 .phase6-manager-people-tabs button{min-height:40px;padding:0 2px;border:0;border-bottom:2px solid transparent;border-radius:0;background:transparent;color:var(--ev2-text-secondary);font:inherit;font-size:13px;font-weight:650;cursor:pointer}
-.phase6-manager-people-tabs button.is-selected{border-bottom-color:var(--ev2-action);background:transparent;color:var(--ev2-action)}
+.phase6-manager-people-tabs button.is-selected{border-bottom-color:var(--ev2-action);background:transparent;color:var(--appearance-ev2-action)}
 .phase6-add-volunteer.btn{flex:0 0 auto;min-height:34px;width:auto;padding:0 12px;border-radius:6px;font-size:12px;line-height:1.2}
 .ev2-people-manager .ev2p-section{border-radius:8px;margin-top:12px}
 .ev2-people-manager .ev2p-section-head{min-height:54px;padding:10px 14px}
@@ -2342,7 +2342,7 @@
 .phase6-day-pills input:checked + span {
   border-color: color-mix(in srgb, var(--ev2-action) 34%, var(--ev2-line));
   background: var(--ev2-action-soft);
-  color: var(--ev2-action);
+  color: var(--appearance-ev2-action);
 }
 
 .phase6-time-grid {
@@ -2437,7 +2437,7 @@
 }
 
 .phase6-volunteer-profile-grid span {
-  color: var(--ev2-text-tertiary);
+  color: var(--appearance-ev2-text-tertiary);
   font-size: var(--ev2-type-label);
   font-weight: 700;
   letter-spacing: .035em;
@@ -2602,12 +2602,12 @@
 
 .phase6-recommendation-status.is-accepted {
   background: var(--ev2-success-soft);
-  color: var(--ev2-success);
+  color: var(--appearance-ev2-success);
 }
 
 .phase6-recommendation-status.is-declined {
   background: var(--ev2-danger-soft);
-  color: var(--ev2-danger);
+  color: var(--appearance-ev2-danger);
 }
 
 @media (max-width: 760px) {

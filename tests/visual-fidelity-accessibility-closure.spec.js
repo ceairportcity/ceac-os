@@ -1,3 +1,4 @@
+import {lightAppearanceCss} from "./helpers/lightAppearanceCss.mjs";
 import { readFileSync } from "node:fs";
 import { expect, test } from "@playwright/test";
 
@@ -61,7 +62,7 @@ test("VF9A accessibility semantics and accepted colour tokens remain explicit", 
   const manager = readFileSync("src/experience-v2/manager-overview/ManagerOverviewV2.jsx", "utf8");
   const admin = readFileSync("src/experience-v2/admin-overview/AdminOverviewV2.jsx", "utf8");
   const executive = readFileSync("src/experience-v2/executive-overview/ExecutiveOverviewV2.jsx", "utf8");
-  const foundation = readFileSync("src/experience-v2.css", "utf8");
+  const foundation = lightAppearanceCss(readFileSync("src/experience-v2.css", "utf8"));
   const shell = readFileSync("src/experience-v2/shell/shell.css", "utf8");
   const dataViz = readFileSync("src/experience-v2/data-viz/data-viz.css", "utf8");
 

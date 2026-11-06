@@ -20,7 +20,7 @@
 .ceac-pwa-status strong { font-size: .9rem; }
 .ceac-pwa-status span,
 .ceac-pwa-status small { color: #d9e2e8; font-size: .78rem; line-height: 1.35; overflow-wrap: anywhere; }
-.ceac-pwa-status button { flex: 0 0 auto; min-height: 44px; padding: 0 14px; border: 0; border-radius: 8px; background: #eef6f5; color: #143733; font: inherit; font-weight: 700; cursor: pointer; }
+.ceac-pwa-status button { flex: 0 0 auto; min-height: 44px; padding: 0 14px; border: 0; border-radius: 8px; background: var(--c586); color: var(--c587); font: inherit; font-weight: 700; cursor: pointer; }
 .ceac-pwa-status.is-offline { border-color: rgba(244, 185, 66, .5); }
 
 @media (max-width: 520px) {

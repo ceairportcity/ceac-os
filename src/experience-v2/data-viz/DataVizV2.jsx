@@ -2,11 +2,11 @@ import { useMemo, useState } from "react";
 import { Button, TableShell } from "../components";
 
 const SERIES_COLORS = [
-  "var(--ev2-action)",
-  "var(--ev2-identity)",
-  "var(--ev2-warning)",
+  "var(--appearance-ev2-action)",
+  "var(--appearance-ev2-identity)",
+  "var(--appearance-ev2-warning)",
   "var(--ev2-text-secondary)",
-  "var(--ev2-success)",
+  "var(--appearance-ev2-success)",
 ];
 
 function formatNumber(value) {

@@ -13,29 +13,29 @@ body{color:var(--ceac-text)}
 
 /* home grids */
 .staff-home,.manager-home,.admin-home,.executive-home{position:relative}
-.home-panel,.admin-pulse-card,.executive-intelligence-card,.office-meeting-strip{background:#fff!important;border:1px solid var(--ceac-line)!important;border-radius:12px!important;box-shadow:0 4px 14px rgba(38,65,99,.045)!important}
+.home-panel,.admin-pulse-card,.executive-intelligence-card,.office-meeting-strip{background:var(--c1)!important;border:1px solid var(--ceac-line)!important;border-radius:12px!important;box-shadow:0 4px 14px rgba(38,65,99,.045)!important}
 .home-panel{padding:13px!important;margin:0!important}
-.row:not(:where(.exec-v2 *)){border-color:#edf1f6!important}
-.row-t:not(:where(.exec-v2 *)){font-size:12px!important;color:#16273e!important}.row-m:not(:where(.exec-v2 *)),.row-note:not(:where(.exec-v2 *)){font-size:12px!important;color:#7d8998!important}
+.row:not(:where(.exec-v2 *)){border-color:var(--c491)!important}
+.row-t:not(:where(.exec-v2 *)){font-size:12px!important;color:var(--c492)!important}.row-m:not(:where(.exec-v2 *)),.row-note:not(:where(.exec-v2 *)){font-size:12px!important;color:var(--c493)!important}
 
 /* Right rail */
 .reference-calendar-grid span.today{background:#1475ff;color:#fff;font-weight:800;box-shadow:0 5px 12px rgba(20,117,255,.25)}
 .reference-calendar-grid span.has-event:not(.today):after{content:"";position:absolute;width:3px;height:3px;border-radius:50%;background:#22b977;bottom:2px}
 
 /* Module strip */
-.tone-0{background:#edf5ff!important;color:#1677ff!important}.tone-1{background:#edf9f4!important;color:#17a673!important}.tone-2{background:#f5efff!important;color:#8656e9!important}.tone-3{background:#fff3eb!important;color:#f07d39!important}.tone-4{background:#eef3ff!important;color:#536ee8!important}
+.tone-0{background:var(--c121)!important;color:var(--c494)!important}.tone-1{background:var(--c495)!important;color:var(--c496)!important}.tone-2{background:var(--c497)!important;color:var(--c498)!important}.tone-3{background:var(--c499)!important;color:var(--c500)!important}.tone-4{background:var(--c501)!important;color:var(--c502)!important}
 
 /* Administration and executive */
 .admin-pulse-card,.executive-intelligence-card{padding:13px!important}
-.admin-action-row,.admin-evidence-row,.office-meeting-row{border-color:#edf1f5!important;padding:10px!important}
+.admin-action-row,.admin-evidence-row,.office-meeting-row{border-color:var(--c249)!important;padding:10px!important}
 .admin-unit-summary-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:8px!important}
-.admin-unit-summary{background:#fbfcfe!important;border:1px solid #edf1f5!important;border-radius:9px!important}
+.admin-unit-summary{background:var(--c503)!important;border:1px solid var(--c249)!important;border-radius:9px!important}
 .executive-home>.sec,.executive-home>.metric-grid,.executive-home>.row,.executive-home>.screen-note{margin-right:320px!important}
 
 /* Global product language */
 .card:not(:where(.exec-v2 *)),.panel:not(:where(.exec-v2 *)),.sheet:not(:where(.exec-v2 *)),.modal-card:not(:where(.exec-v2 *)){border-color:var(--ceac-line)!important;border-radius:12px!important;box-shadow:0 4px 15px rgba(38,65,99,.045)}
 .btn:not(:where(.exec-v2 *)){border-radius:8px!important}.btn:not(.btn-ghost):not(:where(.exec-v2 *)){background:linear-gradient(135deg,#1677ff,#0863ea)!important;border-color:#0d6cf0!important}
-.field:not(:where(.exec-v2 *)){border-color:#dce5ef!important;border-radius:9px!important;background:#fff!important}.sec:not(:where(.exec-v2 *)){color:#24364d!important}.pill:not(:where(.exec-v2 *)){border-radius:999px!important}
+.field:not(:where(.exec-v2 *)){border-color:var(--c210)!important;border-radius:9px!important;background:var(--c1)!important}.sec:not(:where(.exec-v2 *)){color:var(--c504)!important}.pill:not(:where(.exec-v2 *)){border-radius:999px!important}
 
 @media(max-width:900px){.app-content:not(:where(.exec-v2)){padding:8px 9px 78px!important}
   .executive-home>.sec,.executive-home>.metric-grid,.executive-home>.row,.executive-home>.screen-note{margin-right:0!important}
@@ -49,7 +49,7 @@ body{color:var(--ceac-text)}
 }
 .app-content:not(:where(.exec-v2))>.body:not(.staff-home):not(.manager-home):not(.admin-home):not(.executive-home)>.eyebrow:first-child,
 .app-content:not(:where(.exec-v2))>.body:not(.staff-home):not(.manager-home):not(.admin-home):not(.executive-home)>div:first-child>.eyebrow:first-child{
-  color:#6d7f94!important;font-size:12px!important;font-weight:800!important;letter-spacing:.08em!important;text-transform:uppercase!important
+  color:var(--c505)!important;font-size:12px!important;font-weight:800!important;letter-spacing:.08em!important;text-transform:uppercase!important
 }
 .app-content:not(:where(.exec-v2))>.body:not(.staff-home):not(.manager-home):not(.admin-home):not(.executive-home)>.h1,
 .premium-page-head .h1,
@@ -61,69 +61,69 @@ body{color:var(--ceac-text)}
 .exec-page-head .h1,
 .person-identity-header .h1,
 .project-detail-hero .h1{
-  color:#0f2036!important;font-size:25px!important;line-height:1.08!important;letter-spacing:-.03em!important;font-weight:780!important
+  color:var(--c506)!important;font-size:25px!important;line-height:1.08!important;letter-spacing:-.03em!important;font-weight:780!important
 }
 .premium-page-head,.premium-page-heading,.staff-page-intro,.manager-page-header,.manager-page-intro,.admin-page-header,.exec-page-head,.person-identity-header,.project-detail-hero,.project-command-surface{
-  background:linear-gradient(135deg,#fff 0%,#f8fbff 58%,#eef5fb 100%)!important;
+  background:linear-gradient(135deg,var(--c1) 0%,var(--c215) 58%,var(--c507) 100%)!important;
   border:1px solid var(--ceac-line)!important;border-radius:14px!important;
   padding:17px 18px!important;margin:0 0 12px!important;box-shadow:0 6px 22px rgba(30,61,98,.05)!important
 }
 .premium-page-head .screen-note,.premium-page-heading .screen-note,.staff-page-intro .screen-note,.manager-page-header .screen-note,.manager-page-intro .screen-note,.admin-page-header .screen-note,.exec-page-head .screen-note,.person-identity-header .screen-note{
-  color:#738197!important;font-size:12px!important;max-width:780px!important
+  color:var(--c508)!important;font-size:12px!important;max-width:780px!important
 }
 .body>.sec:not(:where(.exec-v2 *)),.premium-section-head{
   margin-top:15px!important;margin-bottom:8px!important;padding:0 2px!important;
-  color:#31465f!important;font-size:12px!important;font-weight:800!important;letter-spacing:.02em!important
+  color:var(--c509)!important;font-size:12px!important;font-weight:800!important;letter-spacing:.02em!important
 }
 .body>.card:not(:where(.exec-v2 *)),.body>.panel:not(:where(.exec-v2 *)),.body>.row:not(:where(.exec-v2 *)),.premium-surface,.team-section,.personal-area,.calendar-shell,.workforce-calendar,.report-leadership-overview,.report-outstanding-section,.exec-finance-panel,.exec-report-hero{
-  background:#fff!important;border:1px solid var(--ceac-line)!important;border-radius:12px!important;
+  background:var(--c1)!important;border:1px solid var(--ceac-line)!important;border-radius:12px!important;
   box-shadow:0 4px 14px rgba(33,61,96,.04)!important
 }
 .body>.row:not(:where(.exec-v2 *)),.premium-list-row,.manager-work-row,.manager-review-row,.admin-work-row,.admin-review-row,.exec-list>button,.exec-report-row{
-  min-height:54px!important;background:#fff!important;border-color:#edf2f6!important;
+  min-height:54px!important;background:var(--c1)!important;border-color:var(--c510)!important;
 }
 .body button.row:hover:not(:where(.exec-v2 *)),.premium-list-row:hover,.manager-work-row:hover,.manager-review-row:hover,.admin-work-row:hover,.exec-list>button:hover{
-  background:#f8fbff!important
+  background:var(--c215)!important
 }
 .manager-work-tabs,.admin-work-tabs,.workforce-tabs,.exec-tabs,.status-filter{
-  display:flex!important;gap:5px!important;padding:4px!important;background:#edf3f8!important;border:1px solid #e2e9f1!important;border-radius:10px!important
+  display:flex!important;gap:5px!important;padding:4px!important;background:var(--c511)!important;border:1px solid var(--c512)!important;border-radius:10px!important
 }
 .manager-work-tabs button,.admin-work-tabs button,.workforce-tabs button,.exec-tabs button,.status-filter button{
-  border:0!important;background:transparent!important;border-radius:7px!important;color:#67768a!important;font-size:12px!important;font-weight:750!important;padding:7px 10px!important
+  border:0!important;background:transparent!important;border-radius:7px!important;color:var(--c513)!important;font-size:12px!important;font-weight:750!important;padding:7px 10px!important
 }
 .manager-work-tabs button.on,.admin-work-tabs button.on,.workforce-tabs button.on,.exec-tabs button.on,.status-filter button.on{
-  background:#fff!important;color:#146af0!important;box-shadow:0 2px 8px rgba(43,70,104,.08)!important
+  background:var(--c1)!important;color:var(--c514)!important;box-shadow:0 2px 8px rgba(43,70,104,.08)!important
 }
 .metric-grid:not(:where(.exec-v2 *)),.finance-currency-grid,.finance-unit-grid,.manager-finance-position-grid,.exec-stat-grid,.exec-currency-grid,.workforce-grid,.exec-org-grid{
   gap:10px!important
 }
 .metric:not(:where(.exec-v2 *)),.finance-currency-card,.finance-unit-card,.manager-finance-position-card,.exec-currency-card,.workforce-person,.exec-org-grid article{
-  background:#fff!important;border:1px solid var(--ceac-line)!important;border-radius:11px!important;box-shadow:0 4px 12px rgba(33,61,96,.035)!important
+  background:var(--c1)!important;border:1px solid var(--ceac-line)!important;border-radius:11px!important;box-shadow:0 4px 12px rgba(33,61,96,.035)!important
 }
-.metric b:not(:where(.exec-v2 *)),.finance-currency-card strong,.manager-finance-position-card strong,.exec-currency-card strong{color:#132840!important}
+.metric b:not(:where(.exec-v2 *)),.finance-currency-card strong,.manager-finance-position-card strong,.exec-currency-card strong{color:var(--c515)!important}
 /* VF4D: Control Center presentation is owned by the later governance-workspace layer. */
-.people-directory-name strong,.work-list-main strong,.manager-work-main strong,.admin-work-main strong{color:#172a41!important}
-.people-directory-context,.work-list-main span,.work-list-main small,.manager-work-main span,.manager-work-main small,.admin-work-main small{color:#8490a0!important}
-.staff-calendar-layout,.manager-calendar .calendar-shell{background:#fff!important;border:1px solid var(--ceac-line)!important;border-radius:12px!important;box-shadow:0 5px 16px rgba(36,63,96,.04)!important}
-.staff-calendar-day{border-color:#edf1f5!important}.staff-calendar-day.today{background:#f2f7ff!important;box-shadow:inset 0 0 0 1px #aacaff!important}
+.people-directory-name strong,.work-list-main strong,.manager-work-main strong,.admin-work-main strong{color:var(--c516)!important}
+.people-directory-context,.work-list-main span,.work-list-main small,.manager-work-main span,.manager-work-main small,.admin-work-main small{color:var(--c517)!important}
+.staff-calendar-layout,.manager-calendar .calendar-shell{background:var(--c1)!important;border:1px solid var(--ceac-line)!important;border-radius:12px!important;box-shadow:0 5px 16px rgba(36,63,96,.04)!important}
+.staff-calendar-day{border-color:var(--c249)!important}.staff-calendar-day.today{background:var(--c141)!important;box-shadow:inset 0 0 0 1px #aacaff!important}
 .staff-calendar-event{border-radius:6px!important}
 .work-list-row,.team-person-row,.team-compact-row,.team-resource-row,.goal-card,.reminder-row,.leave-request-row,.info-row{
-  border-color:#edf1f5!important
+  border-color:var(--c249)!important
 }
 .split:not(:where(.exec-v2 *)){gap:12px!important}.split>.main-col:not(:where(.exec-v2 *)),.split>.side-col:not(:where(.exec-v2 *)){min-width:0}
-.sheet:not(:where(.exec-v2 *)){border-radius:18px 18px 0 0!important;background:#fff!important;box-shadow:0 -18px 48px rgba(16,38,65,.18)!important}
+.sheet:not(:where(.exec-v2 *)){border-radius:18px 18px 0 0!important;background:var(--c1)!important;box-shadow:0 -18px 48px rgba(16,38,65,.18)!important}
 .sheet-bg,.menu-bg{backdrop-filter:blur(4px)!important;background:rgba(7,21,38,.28)!important}
 .field:not(:where(.exec-v2 *)),.body input:not([type="checkbox"]):not([type="radio"]):not(:where(.exec-v2 *)),.body select:not(:where(.exec-v2 *)),.body textarea:not(:where(.exec-v2 *)){
-  border:1px solid #dce5ef!important;border-radius:9px!important;background:#fff!important;color:#1c3047!important
+  border:1px solid var(--c210)!important;border-radius:9px!important;background:var(--c1)!important;color:var(--c518)!important
 }
 .field:focus:not(:where(.exec-v2 *)),.body input:focus:not(:where(.exec-v2 *)),.body select:focus:not(:where(.exec-v2 *)),.body textarea:focus:not(:where(.exec-v2 *)){border-color:#77aaf7!important;box-shadow:0 0 0 3px rgba(34,116,238,.10)!important;outline:none!important}
-.body table:not(:where(.exec-v2 *)){width:100%;border-collapse:separate;border-spacing:0;background:#fff;border:1px solid var(--ceac-line);border-radius:11px;overflow:hidden}
-.body th:not(:where(.exec-v2 *)){background:#f7f9fc;color:#64748a;font-size:12px;text-transform:uppercase;letter-spacing:.06em;padding:10px;text-align:left}
-.body td:not(:where(.exec-v2 *)){padding:10px;border-top:1px solid #edf1f5;color:#253950;font-size:12px}
+.body table:not(:where(.exec-v2 *)){width:100%;border-collapse:separate;border-spacing:0;background:var(--c1);border:1px solid var(--ceac-line);border-radius:11px;overflow:hidden}
+.body th:not(:where(.exec-v2 *)){background:var(--c274);color:var(--c519);font-size:12px;text-transform:uppercase;letter-spacing:.06em;padding:10px;text-align:left}
+.body td:not(:where(.exec-v2 *)){padding:10px;border-top:1px solid var(--c249);color:var(--c520);font-size:12px}
 .product-notice:not(:where(.exec-v2 *)){border-radius:10px!important}
 .flag:not(:where(.exec-v2 *)){border-radius:10px!important}
-.back:not(:where(.exec-v2 *)){color:#1c69dd!important;font-weight:750!important}
-.text-action:not(:where(.exec-v2 *)){color:#1769df!important;font-weight:750!important}
+.back:not(:where(.exec-v2 *)){color:var(--c521)!important;font-weight:750!important}
+.text-action:not(:where(.exec-v2 *)){color:var(--c522)!important;font-weight:750!important}
 .manager-person-detail,.manager-projects,.manager-calendar,.manager-finance,.manager-reports,.manager-work,.staff-work,.staff-record,.staff-me,.admin-work,.workforce,.finance,.reports,.control-center{
   width:100%!important;max-width:none!important
 }

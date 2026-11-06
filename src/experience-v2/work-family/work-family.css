@@ -25,7 +25,7 @@
 .ev2w-eyebrow {
   display: block;
   margin-bottom: var(--ev2-space-2);
-  color: var(--ev2-text-tertiary);
+  color: var(--appearance-ev2-text-tertiary);
   font-size: var(--ev2-type-label);
   line-height: 1.3;
   font-weight: 750;
@@ -80,7 +80,7 @@
 }
 
 .ev2w-tabs button.is-selected {
-  border-bottom-color:var(--ev2-action);background:transparent;color:var(--ev2-action);
+  border-bottom-color:var(--ev2-action);background:transparent;color:var(--appearance-ev2-action);
 }
 
 .ev2w-tabs button b {
@@ -185,12 +185,12 @@
 
 .ev2w-row-icon {
   width:1.5rem;height:1.5rem;display:inline-grid;place-items:center;border-radius:4px;
-  background:transparent;color:var(--ev2-text-tertiary);
+  background:transparent;color:var(--appearance-ev2-text-tertiary);
 }
 
 .ev2w-review-icon {
   background: var(--ev2-action-soft);
-  color: var(--ev2-action);
+  color: var(--appearance-ev2-action);
 }
 
 .ev2w-row-main {
@@ -239,7 +239,7 @@
   align-items: center;
   justify-content: flex-end;
   gap: var(--ev2-space-2);
-  color: var(--ev2-text-tertiary);
+  color: var(--appearance-ev2-text-tertiary);
 }
 
 .ev2w-empty {
@@ -280,7 +280,7 @@
 .ev2w-footnote {
   max-width: 78ch;
   margin: var(--ev2-space-3) var(--ev2-space-1) 0;
-  color: var(--ev2-text-tertiary);
+  color: var(--appearance-ev2-text-tertiary);
   font-size: var(--ev2-type-supporting);
   line-height: 1.5;
 }
@@ -464,7 +464,7 @@
 }
 
 .ev2wd-kicker {
-  color: var(--ev2-text-tertiary);
+  color: var(--appearance-ev2-text-tertiary);
   font-size: var(--ev2-type-label);
   line-height: 1.35;
   font-weight: 700;
@@ -513,7 +513,7 @@
 }
 
 .ev2wd-section-head > span {
-  color: var(--ev2-text-tertiary);
+  color: var(--appearance-ev2-text-tertiary);
   font-size: var(--ev2-type-label);
   font-weight: 650;
 }
@@ -567,7 +567,7 @@
 }
 
 .ev2-work-detail .work-room-entry b {
-  color: var(--ev2-action);
+  color: var(--appearance-ev2-action);
 }
 
 .ev2-work-detail > .flag {
@@ -587,13 +587,13 @@
 .ev2-work-detail > .flag-brick {
   border-color: color-mix(in srgb, var(--ev2-danger) 30%, var(--ev2-line));
   background: var(--ev2-danger-soft);
-  color: var(--ev2-danger);
+  color: var(--appearance-ev2-danger);
 }
 
 .ev2-work-detail > .flag-amber {
   border-color: color-mix(in srgb, var(--ev2-warning) 30%, var(--ev2-line));
   background: var(--ev2-warning-soft);
-  color: var(--ev2-warning);
+  color: var(--appearance-ev2-warning);
 }
 
 .ev2-work-detail .sec {
@@ -606,7 +606,7 @@
 }
 
 .ev2-work-detail .sec > span:last-child:not(:first-child) {
-  color: var(--ev2-text-tertiary);
+  color: var(--appearance-ev2-text-tertiary);
   font-size: var(--ev2-type-label);
   font-weight: 650;
 }
@@ -852,7 +852,7 @@
 }
 
 .ev2-work-assignment .voice-proposal-head span {
-  color: var(--ev2-text-tertiary);
+  color: var(--appearance-ev2-text-tertiary);
   font-size: var(--ev2-type-label);
 }
 
@@ -874,7 +874,7 @@
 }
 
 .ev2-work-assignment .voice-proposal-facts b {
-  color: var(--ev2-action);
+  color: var(--appearance-ev2-action);
 }
 
 .ev2-work-assignment .card.small {
@@ -981,7 +981,7 @@
   cursor: pointer;
 }
 .ocr-composer-disclosure summary span {
-  color: var(--ev2-text-tertiary);
+  color: var(--appearance-ev2-text-tertiary);
   font-size: var(--ev2-type-label);
   font-weight: 500;
 }
@@ -1152,7 +1152,7 @@
 .ev2-work-detail .ev2wr-evidence > span {
   display: block;
   margin-bottom: var(--ev2-space-2);
-  color: var(--ev2-text-tertiary);
+  color: var(--appearance-ev2-text-tertiary);
   font-size: var(--ev2-type-label);
   line-height: 1.35;
   font-weight: 700;
@@ -1181,7 +1181,7 @@
   padding: 0 var(--ev2-space-3);
   border-radius: var(--ev2-radius-control);
   background: var(--ev2-action-soft);
-  color: var(--ev2-action);
+  color: var(--appearance-ev2-action);
   font-size: var(--ev2-type-supporting);
   font-weight: 650;
 }
@@ -1203,7 +1203,7 @@
   content: "•";
   position: absolute;
   left: var(--ev2-space-1);
-  color: var(--ev2-text-tertiary);
+  color: var(--appearance-ev2-text-tertiary);
 }
 
 .ev2-work-detail .ev2wr-actions {
@@ -1333,7 +1333,7 @@
 .ev2-work-staff .ev2w-actions .ev2c-button-primary:hover {
   border-color: color-mix(in srgb, var(--ev2-action) 24%, var(--ev2-line-strong));
   background: var(--ev2-action-soft);
-  color: var(--ev2-action);
+  color: var(--appearance-ev2-action);
 }
 
 .ev2-work-staff > .ev2w-tabs-compact {
@@ -1380,7 +1380,7 @@
   padding: 0;
   border-radius: 0;
   background: transparent;
-  color: var(--ev2-text-tertiary);
+  color: var(--appearance-ev2-text-tertiary);
 }
 
 .ev2-work-staff .ev2w-list {

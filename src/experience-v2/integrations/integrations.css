@@ -40,7 +40,7 @@
   place-items: center;
   border-radius: var(--ev2-radius-control);
   background: var(--ev2-action-soft);
-  color: var(--ev2-action);
+  color: var(--appearance-ev2-action);
 }
 
 .ev2i-provider-title {
@@ -80,7 +80,7 @@
 
 .ev2i-provider-facts span {
   font-size: var(--ev2-type-label);
-  color: var(--ev2-text-tertiary);
+  color: var(--appearance-ev2-text-tertiary);
 }
 
 .ev2i-provider-facts strong {
@@ -100,7 +100,7 @@
 }
 
 .ev2i-provider-warning {
-  color: var(--ev2-warning);
+  color: var(--appearance-ev2-warning);
 }
 
 .ev2i-provider-warning > span,
@@ -113,7 +113,7 @@
 }
 
 .ev2i-notice {
-  color: var(--ev2-success);
+  color: var(--appearance-ev2-success);
 }
 
 .ev2i-provider-actions,

@@ -6,7 +6,7 @@ import {pathToFileURL} from 'node:url';
 // Keep the bootstrap bytes fixed so the hosting header can authorise its hash
 // across builds. A non-parser-inserted module carries strict-dynamic trust into
 // its import graph; a parser-inserted external module's SRI hash does not.
-export const SCRIPT_BOOTSTRAP = '(()=>{const e=document.currentScript,l=()=>{const s=document.createElement("script");s.type="module";s.async=false;s.src=e.dataset.src;s.integrity=e.dataset.integrity;s.crossOrigin="anonymous";document.head.appendChild(s)};if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",l,{once:true});else l()})();';
+export const SCRIPT_BOOTSTRAP = '(()=>{try{const v=localStorage.getItem("ceac.appearance"),m=v==="light"||v==="dark"?v:"system",d=m==="dark"||m==="system"&&matchMedia("(prefers-color-scheme: dark)").matches;document.documentElement.dataset.appearance=m;document.documentElement.dataset.theme=d?"dark":"light";document.documentElement.style.colorScheme=d?"dark":"light"}catch{};const e=document.currentScript,l=()=>{const s=document.createElement("script");s.type="module";s.async=false;s.src=e.dataset.src;s.integrity=e.dataset.integrity;s.crossOrigin="anonymous";document.head.appendChild(s)};if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",l,{once:true});else l()})();';
 export const SCRIPT_BOOTSTRAP_HASH = 'sha384-'+createHash('sha384').update(SCRIPT_BOOTSTRAP).digest('base64');
 
 // Static Vite HTML cannot have per-request nonces. Seal the actual emitted

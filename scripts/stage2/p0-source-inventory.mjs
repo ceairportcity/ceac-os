@@ -9,7 +9,7 @@ const ROOT_COMPONENTS = Object.freeze({
     "Guide"
   ],
   "account": [
-    "AccountActivity"
+    "Settings"
   ],
   "achievements": [
     "PersonalAchievements"

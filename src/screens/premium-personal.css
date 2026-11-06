@@ -30,7 +30,7 @@
 .ceac-premium-record .highlight-card strong{font-size:17px;letter-spacing:-.025em;line-height:1.35}
 .ceac-premium-record .timeline{display:grid;gap:10px;margin-top:15px}
 .ceac-premium-record .timeline-row{display:grid;grid-template-columns:78px minmax(0,1fr);gap:18px;align-items:center;min-height:79px;padding:16px 20px;border:1px solid var(--ev2-line);border-radius:10px;background:var(--ev2-surface);text-align:left}
-.ceac-premium-record .timeline-row time{font-size:12px;font-weight:700;color:var(--ev2-text-tertiary)}
+.ceac-premium-record .timeline-row time{font-size:12px;font-weight:700;color:var(--appearance-ev2-text-tertiary)}
 .ceac-premium-record .timeline-row strong{font-size:13px;color:var(--ev2-text)}
 .ceac-premium-record .record-line,.ceac-premium-record .session-row{padding:17px 20px;border:1px solid var(--ev2-line);border-radius:10px;background:var(--ev2-surface);margin-bottom:9px}
 .ceac-premium-review .performance-cycle-strip{display:flex;gap:12px;flex-wrap:wrap;margin:26px 0}

@@ -1,3 +1,4 @@
+import {lightAppearanceCss} from "./helpers/lightAppearanceCss.mjs";
 import fs from "node:fs";
 import path from "node:path";
 import { expect, test } from "@playwright/test";
@@ -199,7 +200,7 @@ function stage15CssHex(source, token) {
 }
 
 test("Stage 15D keeps V2 normal-text semantic colors at AA contrast", () => {
-  const css = fs.readFileSync("src/experience-v2.css", "utf8");
+  const css = lightAppearanceCss(fs.readFileSync("src/experience-v2.css", "utf8"));
   const surfaces = [
     stage15CssHex(css, "--ev2-surface"),
     stage15CssHex(css, "--ev2-surface-soft"),

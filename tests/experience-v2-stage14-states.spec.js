@@ -172,7 +172,7 @@ test("Stage 14C keyboard and touch expose the same authorised Staff Calendar des
 test("Stage 14C destructive global sign-out requires confirmation and cancellation preserves the session", async ({ browser }) => {
   const { context, page } = await signIn(browser);
 
-  await page.goto("/?tab=account");
+  await page.goto("/?tab=account&preference=security");
   await expect(page.getByRole("heading", { name: "Your account", exact: true })).toBeVisible();
 
   await page.getByRole("tab", {name:"Sessions",exact:true}).click();

@@ -76,7 +76,7 @@ const routeByLabel = {
   Units:"units", Projects:"admin-projects", Calendar:"admin-calendar",
   Reports:"reporting", Cost:"cost", Finance:"finance", Payroll:"payroll",
   Audit:"audit", Events:"events", Workflows:"workflows", Checks:"workflows", Authority:"authority",
-  "System rules":"policies", Integrations:"integrations", "Connected Apps":"integrations", "Control Center":"settings", Settings:"settings",
+  "System rules":"policies", Integrations:"integrations", "Connected Apps":"integrations", "Control Center":"settings", Settings:"account",
   Announcements:"announcements"
 };
 
@@ -2346,6 +2346,7 @@ test("Administration surfaces use policy-safe HR states and real employee record
   await expect(page.getByRole("button", { name: "Configure leave policy", exact: true })).toBeVisible();
 
   await go(page, "Settings");
+  await page.getByRole("button", { name: /^Organisation settings/ }).click();
   await page.getByRole("button", { name: /^Alerts & reminders/ }).click();
   await expect(page.getByRole("heading", { name: "Alerts & reminders", exact: true })).toBeVisible();
 

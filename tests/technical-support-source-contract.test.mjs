@@ -1,3 +1,4 @@
+import {lightAppearanceCss} from "./helpers/lightAppearanceCss.mjs";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync, readdirSync } from "node:fs";
@@ -130,12 +131,12 @@ test("approved Executive Overview, palette and shell rules remain identical whil
   const protectedSelector = /executivev2|ev2s-|exec-redesign-(?:mobile-)?notification|fpg9-(?:sidebar-quick|topbar-message)/;
   function protectedRules(css) {
     const rules=[];
-    postcss.parse(css).walkRules(rule => {
+    postcss.parse(lightAppearanceCss(css)).walkRules(rule => {
       if (rule.selector.trim() !== ".executive-app" && !protectedSelector.test(rule.selector)) return;
       const scope=[];
       for (let parent=rule.parent; parent; parent=parent.parent)
         if (parent.type === "atrule") scope.unshift([parent.name,parent.params]);
-      rules.push({scope,selector:rule.selector,declarations:rule.nodes.map(node=>node.toString())});
+      rules.push({scope,selector:rule.selector,declarations:rule.nodes.filter(node=>node.type!=="decl"||!node.prop.startsWith("--appearance-")).map(node=>node.toString())});
     });
     return rules;
   }
