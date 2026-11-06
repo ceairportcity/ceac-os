@@ -41,7 +41,10 @@ export default function Inbox({ me, openRoom, openItem, openProject, scheduleMee
         if(result.error) throw result.error;
         if(attention.error && actionsOpen) throw attention.error;
         if(!active || serial !== request.current) return;
-        if(section==="rooms") setRooms(result.data || []);setActions(attention.error ? [] : (attention.data || []));setLoadedScope(scope);
+        if(section==="rooms") setRooms(result.data || []);
+        const linkedRoom=new URLSearchParams(window.location.search).get("room");
+        if(linkedRoom)setSelected((result.data||[]).find(room=>room.id===linkedRoom)||null);
+        setActions(attention.error ? [] : (attention.data || []));setLoadedScope(scope);
         if(section==="rooms") setSelected(current => (result.data || []).find(room => room.id === current?.id) || null);
       } catch(failure) {
         if(active && serial === request.current) {setRooms([]);setLoadedScope(scope);setError(failure.message || "Rooms could not be loaded.");}

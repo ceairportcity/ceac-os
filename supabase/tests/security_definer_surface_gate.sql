@@ -229,6 +229,9 @@ insert into s2_expected_authenticated_definers(signature) values
 -- migration contract. Raw event tables remain inaccessible to browsers.
 insert into s2_expected_authenticated_definers(signature) values
  ('public.my_ceac_notifications()'),
+ ('public.my_ceac_notification_snapshot()'),
+ ('public.my_ceac_notification_history(p_before timestamp with time zone, p_before_id uuid)'),
+ ('public.set_memo_preview_privacy(p_id uuid, p_confidential boolean, p_expected_updated_at timestamp with time zone)'),
  ('public.mark_ceac_notification_read(p_id uuid)');
 
 -- The redesign adds three Executive-only, tenant-scoped, read-only projections.
@@ -329,7 +332,7 @@ begin
 
   -- The three new Executive-only projections have explicit signatures and
   -- actor/tenant/no-anon/read-only checks above.
-  if v_actual<>184 or v_expected<>184 or v_unexpected is not null or v_missing is not null then
+  if v_actual<>187 or v_expected<>187 or v_unexpected is not null or v_missing is not null then
     raise exception E'S2 SECURITY DEFINER allowlist mismatch. actual=% expected=%\nunexpected:\n%\nmissing:\n%',
       v_actual,v_expected,coalesce(v_unexpected,'(none)'),coalesce(v_missing,'(none)');
   end if;

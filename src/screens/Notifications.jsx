@@ -2,20 +2,31 @@ import {useState} from "react";
 import {Bell,CalendarClock,CheckCircle2,Clock3,FileText,MessageSquare,RefreshCw} from "lucide-react";
 import {supabase} from "../lib/supabase";
 import "./notifications-center.css";
+import {ceacNoticeTarget,ceacNoticeTitle} from "../lib/notificationPriority";
 import DevicePushSettings from "../components/DevicePushSettings";
 
 const typeIcons={meeting:CalendarClock,work:Clock3,room:MessageSquare,
   event:FileText,calendar:CalendarClock,reminder:Bell};
-const filters=[["attention","Needs attention"],["personal","For you"],["activity","Room activity"],["all","All"]];
+const filters=[["unread","Unread"],["attention","Action needed"],["personal","For you"],["activity","Room activity"],["all","All"],["history","History"]];
 export default function Notifications({me,notificationCounts}){
-  const [filter,setFilter]=useState("attention");
+  const [filter,setFilter]=useState("unread");
   const [showAllRooms,setShowAllRooms]=useState(false);
   const [busy,setBusy]=useState("");
   const [error,setError]=useState("");
   const [search,setSearch]=useState("");
   const [showSettings,setShowSettings]=useState(false);
+  const [visibleCount,setVisibleCount]=useState(40);
+  const [history,setHistory]=useState([]);
+  const [historyMore,setHistoryMore]=useState(true);
+  async function loadHistory(){
+    setBusy("history");setError("");
+    try{const {data:rows,error:failure}=await supabase.rpc("my_ceac_notification_history",{p_before:history.at(-1)?.created_at||null,p_before_id:history.at(-1)?.id||null});
+      if(failure)throw failure;setHistory(previous=>[...previous,...(rows||[])]);setHistoryMore(rows?.length===40);
+    }catch{setError("History could not be loaded. Please retry.");}finally{setBusy("");}
+  }
   const data=notificationCounts;
-  const entries=(data?.items||[]).filter(row=>filter==="all"||row.level===filter);
+  const entries=filter==="history"?history.map(row=>({id:"event:"+row.id,type:"event",title:ceacNoticeTitle(row),meta:new Date(row.created_at).toLocaleString(),url:ceacNoticeTarget(row),level:row.read_at?"activity":"personal"}))
+    :(filter==="unread"?[...(data?.unreadItems||data?.items?.filter(row=>row.type==="event")||[]),...(data?.items||[]).filter(row=>row.type==="room")]:data?.items||[]).filter(row=>filter==="all"||filter==="unread"&&["event","room"].includes(row.type)||row.level===filter);
   const rooms=(data?.roomPreferences||[]).filter(room=>room.name.toLowerCase().includes(search.toLowerCase()));
   const visibleRooms=showAllRooms?rooms:rooms.slice(0,10);
   async function open(row){
@@ -31,8 +42,8 @@ export default function Notifications({me,notificationCounts}){
     if(row.type==="event"){
       const id=row.id.slice("event:".length);
       setBusy(id);setError("");
-      const result=await supabase.rpc("mark_ceac_notification_read",{p_id:id});
-      if(!result.error)window.dispatchEvent(new Event("ceac:notifications-changed"));
+      try{const result=await supabase.rpc("mark_ceac_notification_read",{p_id:id});
+      if(!result.error)window.dispatchEvent(new Event("ceac:notifications-changed"));}catch{/* Opening the authorised source still takes priority. */}
       // A temporary read-receipt failure must not block opening the source.
       // The notification remains unread until independently acknowledged.
     }
@@ -55,13 +66,13 @@ export default function Notifications({me,notificationCounts}){
     {error&&<p className="ceac-updates-error" role="alert">{error}</p>}
     <nav className="ceac-updates-tabs" aria-label="Notification priority">
       {filters.map(([value,label])=><button type="button" key={value} aria-current={value===filter?"page":undefined}
-        onClick={()=>setFilter(value)}>{label}
+        onClick={()=>{setFilter(value);setVisibleCount(40);if(value==="history"&&!history.length)void loadHistory();}}>{label}
         {value==="attention"&&Boolean(data?.attention)&&<span>{data.attention}</span>}
       </button>)}
     </nav>
     {!data?<p role="status" className="ceac-updates-empty">Verifying your notifications…</p>
       : !entries.length?<div className="ceac-updates-empty"><CheckCircle2 size={20}/> Nothing in this category needs your attention.</div>
-      : <div className="ceac-updates-list">{entries.slice(0,40).map(row=>{
+      : <div className="ceac-updates-list">{entries.slice(0,visibleCount).map(row=>{
         const Icon=typeIcons[row.type]||Bell;
         return <button type="button" className={"ceac-updates-entry is-"+row.level} key={row.id} disabled={Boolean(busy)}
           onClick={()=>void open(row)}>
@@ -70,6 +81,8 @@ export default function Notifications({me,notificationCounts}){
           <span className="ceac-updates-category">{row.level==="attention"?"Action":row.level==="personal"?"For you":"Quiet"}</span>
         </button>;
       })}</div>}
+    {entries.length>visibleCount&&<button type="button" className="ceac-updates-refresh" onClick={()=>setVisibleCount(n=>n+40)}>Show more updates</button>}
+    {filter==="history"&&historyMore&&<button type="button" disabled={Boolean(busy)} className="ceac-updates-refresh" onClick={()=>void loadHistory()}>Load more history</button>}
     <DevicePushSettings/>
     <section className="ceac-room-settings" aria-label="Room notification settings">
       <header><div><h3>Room notifications</h3><p>Access to a Room is separate from receiving its messages.</p></div>
