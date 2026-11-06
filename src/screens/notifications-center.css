@@ -23,4 +23,3 @@
 .ceac-room-setting span{min-width:0;display:grid;gap:3px}.ceac-room-setting strong{font-size:13px;color:#263e53;overflow-wrap:anywhere}.ceac-room-setting small{font-size:12px;color:#647990}
 .ceac-room-setting select{border:1px solid #cbdae9;border-radius:8px;padding:9px;color:#31546f;max-width:160px;background:#fff;font-size:12px;min-height:44px}
 @media(max-width:650px){.ceac-updates-page{padding:15px 12px;gap:11px}.ceac-updates-heading h2{font-size:19px}.ceac-updates-entry{padding:10px}.ceac-room-setting{align-items:flex-start;gap:7px}.ceac-room-setting select{max-width:145px}}
-
