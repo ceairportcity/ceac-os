@@ -13,7 +13,7 @@ const statusLabel = item => item.status === "returned" ? "Changes requested"
 
 const style = {
   wrap: { padding:"21px 22px 20px", border:"1px solid #dce7f3", background:"linear-gradient(130deg,#f5f9ff 0%,#fff 64%)", borderRadius:16, boxShadow:"0 8px 28px rgba(19,55,95,.035)", margin:"14px 0 18px" },
-  kicker: { fontSize:11, color:"#597b9d", letterSpacing:".065em", textTransform:"uppercase", fontWeight:700 },
+  kicker: { fontSize:12, color:"#597b9d", letterSpacing:".065em", textTransform:"uppercase", fontWeight:700 },
   head: { fontSize:21, fontWeight:680, color:"#173a60", letterSpacing:"-.035em", margin:"5px 0 4px", lineHeight:1.25 },
   desc: { margin:0, fontSize:13, color:"#667b92", lineHeight:1.55 },
   grid: { display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(min(100%,165px),1fr))", gap:10, marginTop:18 },

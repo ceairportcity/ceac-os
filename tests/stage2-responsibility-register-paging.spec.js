@@ -33,9 +33,9 @@ test("long Work registers keep every record searchable and the selected responsi
   }
   const own=await signIn(browser,"staff@ceac.local.test",390);context=own.context;
   await own.page.goto("/?tab=work");
-  const search=own.page.getByRole("searchbox",{name:"Find a responsibility",exact:true});
+  const search=own.page.getByRole("searchbox",{name:"Find work",exact:true});
   await search.fill(prefix);
-  const register=own.page.getByRole("region",{name:"Responsibility register",exact:true});
+  const register=own.page.getByRole("region",{name:"Work list",exact:true});
   const pager=own.page.getByRole("navigation",{name:"Responsibility pages",exact:true});
   await expect(register.locator(".s2-register-row")).toHaveCount(10);
   await expect(pager).toContainText("Page 1 of 2");
@@ -49,7 +49,7 @@ test("long Work registers keep every record searchable and the selected responsi
   expect(new Set([...firstTitles,...lastTitles]).size).toBe(12);
   const selected=register.locator(".s2-register-row").filter({hasText:lastTitles[1]});
   await selected.locator("th button").click();
-  await expect(own.page.getByRole("complementary",{name:"Selected responsibility"}).getByRole("heading",{name:lastTitles[1],exact:true})).toBeVisible();
+  await expect(own.page.getByRole("complementary",{name:"Work details"}).getByRole("heading",{name:lastTitles[1],exact:true})).toBeVisible();
   await search.fill(firstTitles[0]);
   await expect(register.locator(".s2-register-row")).toHaveCount(1);
   await expect(register).toContainText(firstTitles[0]);

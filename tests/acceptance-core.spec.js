@@ -135,7 +135,7 @@ async function openCompleteWorkRecord(page, title) {
   const row=page.locator(".s2-register-row").filter({hasText:title}).first();
   await expect(row).toBeVisible({timeout:20000});
   await row.getByRole("button").first().click();
-  const inspector=page.getByRole("complementary",{name:"Selected responsibility"});
+  const inspector=page.getByRole("complementary",{name:"Work details"});
   await expect(inspector.getByRole("heading",{name:title})).toBeVisible({timeout:20000});
   await inspector.getByRole("button",{name:/Open full work record/}).click();
   await expect(page.locator(".ev2-work-detail")).toBeVisible({timeout:20000});
@@ -487,7 +487,7 @@ test("Typed work can be created and reaches the Staff work surface", async ({ br
   for (const item of created.filter((entry) => entry.kind !== "Request")) {
     // The real register is paginated. Find each newly authored responsibility
     // through its existing search before asserting the saved Staff row.
-    await staff.page.getByRole("searchbox", { name: "Find a responsibility" }).fill(item.title);
+    await staff.page.getByRole("searchbox", { name: "Find work" }).fill(item.title);
     await expect(staff.page.locator(".s2-register-row").getByText(item.title, { exact: true })).toBeVisible();
   }
   await staff.context.close();
