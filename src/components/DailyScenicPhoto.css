@@ -2,7 +2,7 @@
 .s2-landscape-hero{position:relative;isolation:isolate;overflow:hidden;background:linear-gradient(105deg,var(--c12) 0%,var(--c13) 50%,var(--c1) 100%)!important;border:1px solid var(--c14);border-radius:14px;min-height:136px}
 .s2-landscape-hero>.s2-scenic-photo{position:absolute;inset:0 0 0 auto;width:55%;z-index:0;pointer-events:none;overflow:hidden}
 .s2-scenic-photo img{width:100%;height:100%;display:block;object-fit:cover;object-position:center;filter:saturate(.94)}
-.s2-landscape-hero>.s2-scenic-photo::after{content:"";position:absolute;inset:0;background:linear-gradient(to right,var(--c15) 0%,rgba(238,247,255,.83) 16%,rgba(238,247,255,.1) 64%,transparent 100%)}
+.s2-landscape-hero>.s2-scenic-photo::after{content:"";position:absolute;inset:0;background:linear-gradient(to right,var(--c15) 0%,var(--c950) 16%,var(--c951) 64%,transparent 100%)}
 .s2-landscape-hero h1,.s2-landscape-hero h2{color:var(--c16)}
 .s2-landscape-hero .fpg9-home-impact{color:var(--c17);background:var(--c18);border-color:rgba(216,231,248,.9);box-shadow:0 5px 22px rgba(20,70,120,.08)}
 .s2-landscape-hero .fpg9-home-impact small{color:var(--c19)}
@@ -12,7 +12,7 @@
 @media(max-width:640px){
  .s2-landscape-hero{border-radius:10px;min-height:115px}
  .s2-landscape-hero>.s2-scenic-photo{width:64%;opacity:.65}
- .s2-landscape-hero>.s2-scenic-photo::after{background:linear-gradient(to right,var(--c15) 0%,rgba(238,247,255,.87) 35%,rgba(238,247,255,.1) 100%)}
+ .s2-landscape-hero>.s2-scenic-photo::after{background:linear-gradient(to right,var(--c15) 0%,var(--c952) 35%,var(--c951) 100%)}
  .s2-landscape-hero h1,.s2-landscape-hero h2{color:var(--c16)}
 }
 

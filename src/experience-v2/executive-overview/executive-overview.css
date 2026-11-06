@@ -60,7 +60,7 @@
      Administration premium visual language. Do not embed private mockups
      as backgrounds or rely on third-party image hosts. */
   background:
-    linear-gradient(100deg, rgba(250,244,253,.96) 0%, rgba(248,242,253,.88) 38%, rgba(254,246,246,.5) 73%, rgba(255,246,229,.22) 100%),
+    linear-gradient(100deg, var(--c936) 0%, var(--c937) 38%, var(--c938) 73%, var(--c939) 100%),
     url('/ceac-hero-landscape.svg') center 53% / cover no-repeat;
   box-shadow: 0 8px 28px rgba(57,44,91,.08);
 }

@@ -1205,7 +1205,7 @@
   --fpg-ink:var(--c403);
   --fpg-muted:var(--c404);
   --fpg-line:var(--c405);
-  --fpg-chip:#f3f4f6;
+  --fpg-chip:var(--c944);
   --fpg-accent:#f2d44f;
   position:relative;
   display:grid;

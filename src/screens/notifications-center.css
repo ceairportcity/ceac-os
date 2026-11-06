@@ -7,7 +7,7 @@
 .ceac-updates-tabs button{background:transparent;color:var(--c718);border:0;border-bottom:2px solid transparent;padding:10px 13px;font-size:13px;white-space:nowrap}
 .ceac-updates-tabs button[aria-current=page]{color:var(--c719);border-bottom-color:#257bbb;font-weight:700}
 .ceac-updates-tabs span{font-size:12px;margin-left:5px}
-.ceac-updates-list{display:grid;gap:7px}.ceac-updates-entry{display:flex;align-items:center;gap:13px;text-align:left;min-width:0;padding:12px;background:rgba(247,250,254,.9);border:1px solid var(--c720);border-radius:12px}
+.ceac-updates-list{display:grid;gap:7px}.ceac-updates-entry{display:flex;align-items:center;gap:13px;text-align:left;min-width:0;padding:12px;background:var(--c945);border:1px solid var(--c720);border-radius:12px}
 .ceac-updates-entry:hover,.ceac-updates-entry:focus-visible{background:var(--c1);border-color:#a6c7e7}
 .ceac-updates-icon{display:grid;place-items:center;width:39px;height:39px;flex:none;border-radius:11px;background:var(--c721);color:var(--c722)}
 .ceac-updates-entry.is-attention .ceac-updates-icon{background:var(--c723);color:var(--c724)}
