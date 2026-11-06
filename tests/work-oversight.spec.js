@@ -18,7 +18,7 @@ for(const width of [320,768,1440])test(`shared Work oversight controls and miles
  await page.getByRole('button',{name:'Request milestone review'}).click();
  await page.getByRole('textbox',{name:'Milestone for review'}).fill('Please review the completed desk arrangement.');
  await page.getByRole('button',{name:'Save and share'}).click();
- await expect(page.getByText('1 awaiting a response',{exact:true})).toBeVisible();
+ await expect(page.getByRole('region',{name:'Shared oversight'}).getByText('1 awaiting a response',{exact:true})).toBeVisible();
  await expect(page.getByRole('button',{name:'Accept milestone'})).toHaveCount(0);
  await page.getByLabel('Fixture role').selectOption(manager);
  await page.getByRole('button',{name:/Registration preparation/}).click();
