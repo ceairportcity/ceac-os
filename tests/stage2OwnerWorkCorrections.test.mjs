@@ -35,7 +35,7 @@ test("each real work record exposes source-backed person-attributed dated activi
   assert.match(diary, /next_action:/);
   assert.match(diary, /duration_minutes:/);
   assert.match(diary, /check\.data\.contributor_id !== me\.id/);
-  assert.match(diary, /An update or milestone does not close the responsibility/);
+  assert.match(diary, /Saving progress does not submit the whole task for approval/);
   assert.doesNotMatch(diary, /\.update\(|\.delete\(|autoApprove|markObjectiveAchieved|calculatePerformanceScore/);
 });
 
