@@ -137,6 +137,36 @@ test("Stage 4C Staff shell holds every supported phone width", async ({ browser 
   }
 });
 
+test("iPhone device width retains mobile layout when its page viewport is desktop-sized", async ({ browser }) => {
+  const context = await browser.newContext({
+    viewport: { width: 980, height: 844 },
+    screen: { width: 390, height: 844 },
+    deviceScaleFactor: 3,
+    isMobile: true,
+    hasTouch: true,
+  });
+  try {
+    const page = await context.newPage();
+    await signIn(page, roles[1]);
+    const media = await page.evaluate(() => ({
+      wideLayout: matchMedia("(min-width: 721px)").matches,
+      phoneDevice: matchMedia("(max-device-width: 720px)").matches,
+    }));
+    expect(media).toEqual({ wideLayout: true, phoneDevice: true });
+    await expect(page.locator(".ev2s-sidebar")).toBeHidden();
+    await expect(page.locator(".ev2s-topbar")).toBeHidden();
+    await expect(page.locator(".ev2s-mobile-topbar")).toBeVisible();
+    await expect(page.locator(".ev2s-mobile-nav")).toBeVisible();
+    await expect(page.locator(".ev2s-workspace")).toHaveCSS("margin-left", "0px");
+    const reference = page.locator(".fpg9-home-reference").first();
+    await expect(reference).toBeVisible();
+    const columns = await reference.evaluate(node => getComputedStyle(node).gridTemplateColumns.split(" ").length);
+    expect(columns).toBe(1);
+  } finally {
+    await context.close();
+  }
+});
+
 test("Stage 4C Administration keeps essential bottom-nav labels readable at 320px", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 844 });
   await signIn(page, roles[2]);
