@@ -154,7 +154,7 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
 
   useEffect(() => {
     if (verifiedRosterScope !== scopeKey || !rows.length || person || detailLoading || initialEmployeeId || accessIntent || viewMode !== "directory") return;
-    if (initialSelectionScope.current === scopeKey || !window.matchMedia("(min-width: 901px)").matches) return;
+    if (initialSelectionScope.current === scopeKey || document.documentElement.classList.contains('ceac-physical-phone') || !window.matchMedia("(min-width: 901px)").matches) return;
     initialSelectionScope.current = scopeKey;
     void openPerson(rows[0]);
   }, [verifiedRosterScope, scopeKey, rows, person, detailLoading, initialEmployeeId, accessIntent, viewMode]);
