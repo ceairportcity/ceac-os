@@ -157,6 +157,18 @@ test("iPhone device width retains mobile layout when its page viewport is deskto
     await expect(page.locator(".ev2s-topbar")).toBeHidden();
     await expect(page.locator(".ev2s-mobile-topbar")).toBeVisible();
     await expect(page.locator(".ev2s-mobile-nav")).toBeVisible();
+    const labels = await page.locator(".ev2s-mobile-nav button span").evaluateAll(nodes =>
+      nodes.map(node => ({
+        text: node.textContent.trim(),
+        width: node.clientWidth,
+        scrollWidth: node.scrollWidth,
+        whiteSpace: getComputedStyle(node).whiteSpace,
+      }))
+    );
+    for (const label of labels) {
+      expect(label.whiteSpace, label.text + " must not wrap mid-word").toBe("nowrap");
+      expect(label.scrollWidth - label.width, label.text + " must fit its tab").toBeLessThanOrEqual(1);
+    }
     await expect(page.locator(".ev2s-workspace")).toHaveCSS("margin-left", "0px");
     const reference = page.locator(".fpg9-home-reference").first();
     await expect(reference).toBeVisible();
