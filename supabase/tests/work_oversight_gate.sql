@@ -60,6 +60,14 @@ begin
  perform public.add_work_oversight_entry(work,'accepted','Milestone accepted; continue the assignment',answer,milestone);
  begin perform public.add_work_oversight_entry(work,'changes_requested','Stale response',gen_random_uuid(),milestone);raise exception 'Second decision allowed';exception when invalid_parameter_value then null;end;
  execute 'reset role';
+ -- Device delivery uses the same scope even when Admin retains final review.
+ if not public.ceac_push_context_visible('work_item',admin_work,second_exec)
+ or not public.ceac_push_work_recipient(admin_work,second_exec,'work_oversight') then raise exception 'Named supervisor lost device visibility on Admin-assigned work';end if;
+ if public.ceac_push_context_visible('work_item',admin_work,outsider)
+ or public.ceac_push_context_visible('work_item',secret,second_exec)
+ or public.ceac_push_work_recipient(confidential_work,second_exec,'work_oversight') then raise exception 'Device oversight crossed tenant/privacy scope';end if;
+ if has_function_privilege('authenticated','public.ceac_push_context_visible(text,uuid,uuid)','execute')
+ or has_function_privilege('anon','public.ceac_push_context_visible(text,uuid,uuid)','execute') then raise exception 'Device scope helper became browser-callable';end if;
  select status into before_status from public.work_items where id=work;
  if before_status<>'in_progress' then raise exception 'Milestone changed whole assignment state';end if;
  if exists(select 1 from public.submissions where work_item_id=work) then raise exception 'Progress created a formal submission';end if;

@@ -50,3 +50,11 @@ Connected CEAC GitHub repository ownership and push authority verified. Publishe
 - Preview deployment READY: `dpl_vCFBMBbT4BJQXdRNcLGcNodu8L5k`, source exactly a44c969e. Production is still base e4a0130, deployment `dpl_8uzQKdQjqoNAr1QZtN7SiezdY6Zw`, retained as rollback candidate.
 - Vercel explicit historical team scope returned 403; project-scoped authenticated reads without that stale team selector succeeded and verified repository, commit, project and deployment. No access setting was changed.
 - Production migration is not applied. Current latest production migration: 20261106063621 notification_delivery_followups. Existing production ceac-web-push source/metadata captured for rollback before any replacement.
+
+## Device delivery integration correction
+
+Review found that `ceac_push_context_visible` still limited work notifications to assignee/final reviewer. A manager's named supervisor can differ from the final reviewer on Admin-assigned work, so the dispatcher could suppress an otherwise authorised attention request. Forward migration `20261106155308_work_oversight_device_visibility.sql` extends only its Work branch with the same active-actor, tenant and nonprivate/nonconfidential oversight predicate. The helper stays service-only; no new browser API grant is added. All other notification contexts retain their existing rules.
+
+Applied to staging and reran the rollback-only oversight integration gate: passed, including named-supervisor device visibility on Admin-assigned work, tenant/private/confidential denial and service-only helper grants. Affected source tests: 25/25 passed (`/tmp/ceac-oversight-device-focused.log`). Migration inventory explicitly includes both new filenames (237 total).
+
+Candidate dd7ed58 passed CI source/build, Account Security, clean Migration Replay and complete Level B SQL/authority contracts (job 127991160977); browser groups remain pending. These are historical results once the device visibility correction is committed, not certification of the later head.
