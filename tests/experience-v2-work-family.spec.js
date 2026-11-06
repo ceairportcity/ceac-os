@@ -170,7 +170,7 @@ for (const viewport of [
     const firstRow = page.locator(".s2-register-row:visible th button").first();
     await expect(firstRow).toBeVisible();
     await firstRow.click();
-    await expect(page.getByRole("complementary", { name: "Selected responsibility" })).toBeVisible();
+    await expect(page.getByRole("complementary", { name: "Work details" })).toBeVisible();
     await page.getByRole("button", { name: /Open full work record/ }).click();
 
     await expect(page.locator(".ev2-work-detail")).toBeVisible();
@@ -326,7 +326,7 @@ for (const viewport of [
       });
       expect(registerColumns.every(column => column.inside), 'Every displayed register column fits inside the register').toBe(true);
       expect(registerColumns.map(column => column.name)).toEqual(viewport.width < 560
-        ? ['Responsibility', 'Status'] : ['Responsibility', 'Project', 'Due', 'Status']);
+        ? ['Work item', 'Status'] : ['Work item', 'Project', 'Due', 'Status']);
 
       const smallest = await page.locator(".ev2-work-page").evaluate((root) => {
         const values = [...root.querySelectorAll("*")]
@@ -381,7 +381,7 @@ for (const viewport of [
     const firstRow = page.locator(".s2-register-row:visible th button").first();
     await expect(firstRow).toBeVisible();
     await firstRow.click();
-    await expect(page.getByRole("complementary", { name: "Selected responsibility" })).toBeVisible();
+    await expect(page.getByRole("complementary", { name: "Work details" })).toBeVisible();
     await page.getByRole("button", { name: /Open full work record/ }).click();
     await expect(page.locator(".ev2-work-detail")).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
