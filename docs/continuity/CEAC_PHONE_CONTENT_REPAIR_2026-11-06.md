@@ -18,3 +18,5 @@ Service-worker static cache generation advances to ceac-shell-v3-phone-content s
 - Browser, final security/replay and deployed-asset checks are pending. Do not infer physical iPhone success from deployment status alone.
 
 Use focused repairs and relevant reruns during iteration. Preserve existing final release gates and all raw failures.
+
+The stale-viewport browser case intentionally uses a desktop layout engine with iPhone UA/touch/screen signals, asserting that the >=900px media query remains true. This pins the reported mismatch even if Chromium would otherwise recover after the meta viewport reset. A recovered 390px viewport alone is not evidence for the 980px failure.

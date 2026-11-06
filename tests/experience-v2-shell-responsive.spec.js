@@ -469,7 +469,9 @@ test("installed iPhone restores handset Settings layout despite desktop CSS brea
   const context = await browser.newContext({
     viewport: { width: 980, height: 844 },
     screen: { width: 980, height: 844 },
-    isMobile: true,
+    // Desktop engine keeps the stale 980px media-query viewport pinned;
+    // the physical phone signal below must also fix page content.
+    isMobile: false,
     hasTouch: true,
     userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148",
   });
@@ -490,6 +492,7 @@ test("installed iPhone restores handset Settings layout despite desktop CSS brea
     }));
     // WebKit may recover its media-query viewport after the meta-tag reset;
     // either way the installed iPhone must retain its physical phone layout.
+    expect(mismatch.desktopLayoutQuery).toBe(true);
     expect(mismatch.phoneClass).toBe(true);
     expect(mismatch.physicalWidth).toBe("390px");
 

@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import {test,expect} from '@playwright/test';
 
 for(const viewportWidth of [390,980])test(`phone page content remains readable with ${viewportWidth}px CSS viewport`,async({browser})=>{
-  const context=await browser.newContext({viewport:{width:viewportWidth,height:844},screen:{width:viewportWidth,height:844},isMobile:true,hasTouch:true,userAgent:'Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148'});
+  const context=await browser.newContext({viewport:{width:viewportWidth,height:844},screen:{width:viewportWidth,height:844},isMobile:viewportWidth===390,hasTouch:true,userAgent:'Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148'});
   try{
     await context.addInitScript(()=>{
       Object.defineProperty(screen,'width',{configurable:true,value:390});
@@ -12,6 +12,7 @@ for(const viewportWidth of [390,980])test(`phone page content remains readable w
     const page=await context.newPage();
     await page.goto('/tests/fixtures/phone-content.html');
     await expect(page.locator('.fpg9-home-hero')).toBeVisible();
+    expect(await page.evaluate(()=>matchMedia('(min-width: 900px)').matches)).toBe(viewportWidth===980);
     await expect(page.getByText('Work is past due',{exact:true})).toBeVisible();
     const geometry=await page.evaluate(()=>{
       const rect=s=>document.querySelector(s).getBoundingClientRect().toJSON();
