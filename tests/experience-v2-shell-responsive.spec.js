@@ -469,7 +469,9 @@ test("installed iPhone restores handset Settings layout despite desktop CSS brea
   const context = await browser.newContext({
     viewport: { width: 980, height: 844 },
     screen: { width: 980, height: 844 },
-    isMobile: true,
+    // Desktop engine keeps the stale 980px media-query viewport pinned;
+    // the physical phone signal below must also fix page content.
+    isMobile: false,
     hasTouch: true,
     userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148",
   });
@@ -490,6 +492,7 @@ test("installed iPhone restores handset Settings layout despite desktop CSS brea
     }));
     // WebKit may recover its media-query viewport after the meta-tag reset;
     // either way the installed iPhone must retain its physical phone layout.
+    expect(mismatch.desktopLayoutQuery).toBe(true);
     expect(mismatch.phoneClass).toBe(true);
     expect(mismatch.physicalWidth).toBe("390px");
 
@@ -498,6 +501,14 @@ test("installed iPhone restores handset Settings layout despite desktop CSS brea
     await expect(page.locator(".ev2s-mobile-topbar")).toBeVisible();
     await expect(page.locator(".ev2s-mobile-nav")).toBeVisible();
     await expect(page.locator(".ev2s-workspace")).toHaveCSS("margin-left", "0px");
+    // The prior Settings-only assertion missed the desktop card layout inside
+    // a correctly narrow mobile shell. Verify actual signed-in page content.
+    await expect(page.locator(".fpg9-home-hero")).toHaveCSS("display", "block");
+    const dayWidths=await page.locator('.ceac-day-group').evaluateAll(rows=>rows.map(row=>row.getBoundingClientRect().width));
+    for(const width of dayWidths)expect(width).toBeGreaterThan(250);
+    await page.locator('.ev2s-mobile-nav').getByRole('button',{name:'Work',exact:true}).click();
+    await expect(page.locator('.ev2w-header')).toHaveCSS('display','grid');
+    expect((await page.locator('.ev2w-header p').boundingBox()).width).toBeGreaterThan(250);
     await page.locator(".ev2s-mobile-nav").getByRole("button", { name: "More", exact: true }).click();
     await page.getByRole("button", { name: "Settings", exact: true }).click();
     await expect(page.getByRole("heading", { name: "Settings", exact: true })).toBeVisible();

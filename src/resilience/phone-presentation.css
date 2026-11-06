@@ -205,6 +205,96 @@
   max-width: var(--ceac-phone-visible-width, 100%);
 }
 
+/* Content must follow the same physical-phone boundary as the shell. A 390px
+   frame with a 980px media-query viewport otherwise retains desktop columns.
+   These are component layouts, not a blanket rule flattening every grid. */
+:root.ceac-physical-phone :is(.body,.ev2-work-page,.managerv2) {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+:root.ceac-physical-phone .fpg9-home-hero {
+  display: block !important;
+  min-height: 0;
+  padding: 16px;
+  border-radius: 12px;
+}
+:root.ceac-physical-phone .fpg9-home-hero-copy {
+  width: 100%;
+  min-width: 0;
+}
+:root.ceac-physical-phone .fpg9-home-context {flex-wrap: wrap;gap: 6px 12px;}
+:root.ceac-physical-phone .fpg9-home-hero h1 {font-size: 28px;line-height: 1.15;}
+:root.ceac-physical-phone .fpg9-home-hero p {font-size: 14px;line-height: 1.5;}
+:root.ceac-physical-phone .fpg9-home-impact {
+  display: block;
+  position: relative;
+  box-sizing: border-box;
+  width: 100%;
+  margin-top: 16px;
+}
+:root.ceac-physical-phone .fpg9-home-hero-action .ev2c-button {
+  width: auto;
+  max-width: 100%;
+  min-height: 44px;
+  white-space: normal;
+}
+:root.ceac-physical-phone .fpg9-home-hero > .s2-scenic-photo {width: 64%;opacity: .65;}
+:root.ceac-physical-phone .fpg9-home-reference {gap: 12px;}
+:root.ceac-physical-phone .fpg9-workspace-previews {
+  display: grid;
+  grid-template-columns: minmax(0,1fr);
+}
+:root.ceac-physical-phone .fpg9-preview-card > header {flex-wrap: wrap;}
+:root.ceac-physical-phone .fpg9-module-strip > div {grid-template-columns: repeat(2,minmax(0,1fr));}
+:root.ceac-physical-phone .fpg9-module-strip button {
+  grid-template-columns: 30px minmax(0,1fr);
+  gap: 8px;
+}
+:root.ceac-physical-phone .fpg9-module-strip button > svg {display: none;}
+:root.ceac-physical-phone .fpg9-next-card {grid-template-columns: 80px minmax(0,1fr);}
+:root.ceac-physical-phone .fpg9-next-copy {padding: 12px;}
+
+:root.ceac-physical-phone .ceac-day-sections {grid-template-columns: minmax(0,1fr);}
+:root.ceac-physical-phone .ceac-glass-updates {padding: 12px;}
+:root.ceac-physical-phone .ceac-day-group {padding: 10px;}
+:root.ceac-physical-phone .ceac-day-group-head {flex-wrap: wrap;gap: 8px;}
+:root.ceac-physical-phone .ceac-day-group-head h3 {flex: 1 1 150px;}
+:root.ceac-physical-phone .ceac-glass-item {
+  display: grid;
+  grid-template-columns: 34px minmax(0,1fr);
+  align-items: start;
+  gap: 8px 10px;
+  padding: 10px;
+}
+:root.ceac-physical-phone .ceac-glass-priority {grid-column: 2;justify-self: start;}
+:root.ceac-physical-phone .ceac-glass-copy :is(strong,small) {
+  overflow-wrap: break-word;
+  word-break: normal;
+}
+:root.ceac-physical-phone .ceac-glass-empty {align-items: start;line-height: 1.5;}
+:root.ceac-physical-phone .ceac-glass-empty > svg {flex: none;margin-top: 2px;}
+
+:root.ceac-physical-phone .ev2-work-page {padding: 12px 12px calc(40px + var(--ev2s-mobile-nav-height));}
+:root.ceac-physical-phone .ev2w-header {display: grid;grid-template-columns: minmax(0,1fr);gap: 12px;}
+:root.ceac-physical-phone .ev2w-header-copy {width: 100%;max-width: none;}
+:root.ceac-physical-phone .ev2w-header p {max-width: none;}
+:root.ceac-physical-phone .ev2w-header-actions {
+  display: grid;
+  grid-template-columns: repeat(2,minmax(0,1fr));
+  width: 100%;
+  gap: 8px;
+}
+:root.ceac-physical-phone .ev2w-header-actions .ev2w-header-action {
+  width: 100%;min-width: 0;min-height: 44px;white-space: normal;
+}
+:root.ceac-physical-phone :is(.ev2w-toolbar,.s2-work-layout,.cw-oversight-columns.has-selection) {
+  grid-template-columns: minmax(0,1fr);
+}
+:root.ceac-physical-phone .s2-work-inspector {position: static;padding: 16px;}
+:root.ceac-physical-phone .s2-work-layout .s2-work-register > .ev2w-tabs {margin-inline: 12px;}
+
 @media print {
   :root.ceac-physical-phone .ev2s-mobile-nav {display: none !important;}
 }
