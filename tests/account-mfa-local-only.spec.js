@@ -94,7 +94,7 @@ test("universal Stage 2 gate enforces TOTP on initial and new-browser sign-in wi
     await page.getByRole("button",{name:"Verify authenticator"}).click();
     await expect(page.locator(".app")).toBeVisible({timeout:15000});
 
-    await page.goto("/?tab=account");
+    await page.goto("/?tab=account&preference=security");
     await expect(page.getByRole("heading",{name:"Your account"})).toBeVisible();
     await expect(page.getByText("This session has verified two-step access.")).toBeVisible();
 

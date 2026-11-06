@@ -2,7 +2,7 @@
 .ceac-premium-work-detail{width:min(100%,78rem);margin-inline:auto;padding:24px clamp(15px,2.5vw,36px) 72px}
 .ceac-premium-work-detail .ev2wd-back{min-height:38px;margin-bottom:20px;color:var(--ev2-text-secondary);font-size:12px;font-weight:680}
 .ceac-premium-work-detail .ev2wd-header{padding:25px 27px 28px;border:1px solid var(--ev2-line);border-radius:13px;background:var(--ev2-surface);box-shadow:0 4px 20px rgba(17,30,48,.025);margin-bottom:16px}
-.ceac-premium-work-detail .ev2wd-kicker{font-size:12px;letter-spacing:.095em;font-weight:720;text-transform:uppercase;color:var(--ev2-text-tertiary)}
+.ceac-premium-work-detail .ev2wd-kicker{font-size:12px;letter-spacing:.095em;font-weight:720;text-transform:uppercase;color:var(--appearance-ev2-text-tertiary)}
 .ceac-premium-work-detail .ev2wd-header h1{max-width:32ch;margin:11px 0 18px;font-size:clamp(27px,2.8vw,39px);line-height:1.16;letter-spacing:-.048em;font-weight:760;color:var(--ev2-text)}
 .ceac-premium-work-detail .ev2wd-header-meta{display:flex;align-items:center;flex-wrap:wrap;gap:10px;font-size:12px;color:var(--ev2-text-secondary)}
 .ceac-premium-work-detail>.work-room-entry{margin:12px 0 16px;min-height:72px;padding:17px 20px;border:1px solid var(--ev2-line);border-radius:11px;background:var(--ev2-surface);box-shadow:0 3px 15px rgba(17,30,48,.02)}

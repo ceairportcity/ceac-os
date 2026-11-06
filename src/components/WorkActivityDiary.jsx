@@ -268,8 +268,8 @@ function ActivityDiary({ me, item, prefillDate = "", prefillRequest = 0, compact
       </select></label>
       <p className="wide">Write a short description of what you did. The remaining details are optional.</p>
       <label className="wide">{entryKind==="milestone"?"What milestone was reached?":"What did you accomplish?"} <textarea autoFocus value={summary} onChange={(e) => setSummary(e.target.value)} maxLength={600} minLength={3} required rows={2} placeholder="What did you do?" /></label>
-      <details key={correctingId || "new"} className="wide" defaultOpen={Boolean(correctingId)} style={{padding:"12px 14px",border:"1px solid #e3eaf2",borderRadius:9,background:"#fbfdff"}}>
-        <summary style={{cursor:"pointer",fontWeight:650,minHeight:38}}>More details (optional)</summary>
+      <details key={correctingId || "new"} className="wide" defaultOpen={Boolean(correctingId)} style={{padding:"12px 14px",border:"1px solid light-dark(#e3eaf2,#414b58)",borderRadius:9,background:"light-dark(#fbfdff,#252a31)"}}>
+        <summary style={{cursor:"pointer",fontWeight:650,minHeight:44}}>More details (optional)</summary>
         <div className="s2-work-diary-fields" style={{marginTop:12}}>
       <label className="wide">What was the result? <textarea value={outcome} onChange={(e) => setOutcome(e.target.value)} maxLength={4000} rows={2} placeholder="What happened?" /></label>
       <label className="wide">What happens next? <textarea value={nextAction} onChange={(e) => setNextAction(e.target.value)} maxLength={1200} rows={2} /></label>
@@ -282,7 +282,7 @@ function ActivityDiary({ me, item, prefillDate = "", prefillRequest = 0, compact
       </details>
       </fieldset>
       <div className="wide"><PendingFilePicker compact files={files} onChange={setFiles} disabled={busy} label="Attach activity files"/></div>
-      <p className="wide" style={{fontSize:12,color:"#657c92",lineHeight:1.5,margin:"4px 0"}}>Saving progress does not submit the whole task for approval. When ready, open the full work record to finish or send it for review.</p>
+      <p className="wide" style={{fontSize:12,color:"light-dark(#657c92,#aeb8c5)",lineHeight:1.5,margin:"4px 0"}}>Saving progress does not submit the whole task for approval. When ready, open the full work record to finish or send it for review.</p>
       {writeError&&<p className="wide" role="alert">{writeError}</p>}
       {savedActivity.current&&<button className="btn btn-ghost btn-sm" type="button" disabled={busy} onClick={()=>{savedActivity.current=null;uploadAttempts.current.clear();setFiles([]);setEditor(false);setWriteError("");setSuccess("The activity is saved. You can plan its next action or attach files from its activity record later.");setReload(n=>n+1);}}>Keep saved activity; finish later</button>}
       <button type="submit" className="btn btn-sm" style={{width:"fit-content"}} disabled={busy || summary.trim().length < 3 || !date}>{busy ? "Saving..." : correctingId ? "Save correction" : "Save work update"}</button>

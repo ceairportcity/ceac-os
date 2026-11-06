@@ -225,23 +225,23 @@ function AnnouncementWorkspace({ me, back, createRequest = false, onCreateHandle
         const author=publisher(announcement);
         const priority=announcement.priority==="urgent"?"Urgent":announcement.priority==="important"?"Important":null;
         return <article className={`ceac-announcement-card row ${unread?"home-tone-info":""}`} key={announcement.id}
-          style={{background:"#fff",border:"1px solid #e3e9f1",borderLeft:priority==="Urgent"?"3px solid #b23b35":"1px solid #e3e9f1",borderRadius:13,padding:"16px 18px",boxShadow:"0 3px 13px rgba(22,44,65,.035)"}}>
+          style={{background:"light-dark(#fff,#1c1f24)",border:"1px solid #e3e9f1",borderLeft:priority==="Urgent"?"3px solid #b23b35":"1px solid #e3e9f1",borderRadius:13,padding:"16px 18px",boxShadow:"0 3px 13px rgba(22,44,65,.035)"}}>
           <button type="button" aria-label={announcement.title} style={{width:"100%",textAlign:"left",display:"grid",gap:8,background:"none",border:0,padding:0}}
             onClick={()=>openAnnouncement(announcement)}>
-            <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center",fontSize:12,color:"#6c7e91"}}>
-              {unread && <strong style={{color:"#145e9b"}}>Unread</strong>}
+            <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center",fontSize:12,color:"light-dark(#6c7e91,#aeb8c5)"}}>
+              {unread && <strong style={{color:"light-dark(#145e9b,#aeb8c5)"}}>Unread</strong>}
               {priority && <strong style={{color:priority==="Urgent"?"#a23a33":"#816129"}}>{priority}</strong>}
               <span>{announcement.status==="published"?"Published":announcement.status==="draft"?"Draft":"Closed"}</span>
               <time style={{marginLeft:"auto"}}>{formatDate(announcement.published_at||announcement.created_at)}</time>
             </div>
-            <h2 style={{margin:0,color:"#20384f",fontSize:17,fontWeight:700,lineHeight:1.4}}>{announcement.title}</h2>
-            <div style={{fontSize:13,color:"#4f6378"}}><strong>{author.name}</strong>{author.detail?" · "+author.detail:""}</div>
-            <div style={{fontSize:13,lineHeight:1.5,color:"#62768b",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",overflow:"hidden",whiteSpace:"pre-wrap"}}>{selected?.id===announcement.id ? null : announcement.body}</div>
+            <h2 style={{margin:0,color:"light-dark(#20384f,#e8ecf1)",fontSize:17,fontWeight:700,lineHeight:1.4}}>{announcement.title}</h2>
+            <div style={{fontSize:13,color:"light-dark(#4f6378,#aeb8c5)"}}><strong>{author.name}</strong>{author.detail?" · "+author.detail:""}</div>
+            <div style={{fontSize:13,lineHeight:1.5,color:"light-dark(#62768b,#aeb8c5)",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",overflow:"hidden",whiteSpace:"pre-wrap"}}>{selected?.id===announcement.id ? null : announcement.body}</div>
           </button>
           {canPublish && <div style={{display:"flex",gap:7,flexWrap:"wrap",alignItems:"center",marginTop:12}}>
             {announcement.status==="draft" && <><button className="btn btn-ghost btn-sm" onClick={()=>editAnnouncement(announcement)}>Edit</button><button className="btn btn-sm" onClick={()=>changeStatus(announcement,"publish")} disabled={busy}>Publish</button></>}
             {announcement.status==="published" && <button className="btn btn-ghost btn-sm" onClick={()=>changeStatus(announcement,"close")} disabled={busy}>Close</button>}
-            {announcement.requires_acknowledgement && <small style={{color:"#6c7e91"}}>Acknowledgement requested</small>}
+            {announcement.requires_acknowledgement && <small style={{color:"light-dark(#6c7e91,#aeb8c5)"}}>Acknowledgement requested</small>}
           </div>}
         </article>;
       })}

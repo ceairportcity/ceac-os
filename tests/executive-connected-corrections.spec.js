@@ -71,7 +71,7 @@ for (const width of [320,390,430,1440]) {
     expect(await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
     await page.keyboard.press('Escape');
     await expect(dialog).not.toBeVisible();
-    for (const [tab,heading] of [['exec-finance','Finance'],['exec-reports','Reports'],['exec-calendar','Calendar'],['account','Your account']]) {
+    for (const [tab,heading] of [['exec-finance','Finance'],['exec-reports','Reports'],['exec-calendar','Calendar'],['account','Settings']]) {
       await page.goto(`/?tab=${tab}`);
       const title=page.getByRole('heading',{name:heading,exact:true}).first();
       await expect(title).toBeVisible();

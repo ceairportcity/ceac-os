@@ -10,7 +10,7 @@ button.ceac-exec-metric{cursor:pointer}
 .ceac-exec-metric>span{font-size:12px;font-weight:700;color:var(--ev2-text-secondary)}
 .ceac-exec-metric>strong{font-size:clamp(24px,2.3vw,34px);letter-spacing:-.045em;line-height:1.15;font-variant-numeric:tabular-nums}
 .ceac-exec-metric>small{font-size:12px;line-height:1.4;color:var(--ev2-text-secondary)}
-.ceac-exec-metric>b{font-size:12px;color:var(--ev2-action)}
+.ceac-exec-metric>b{font-size:12px;color:var(--appearance-ev2-action)}
 .ceac-exec-two-col{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:start;gap:14px}
 .ceac-exec-panel,.ceac-exec-insight-card,.ceac-exec-dept-detail{min-width:0;padding:20px;border:1px solid var(--ev2-line);border-radius:12px;background:var(--ev2-surface)}
 .ceac-exec-panel-head{display:flex;gap:12px;align-items:center;justify-content:space-between;margin-bottom:10px}
@@ -22,10 +22,10 @@ button.ceac-exec-unit,button.ceac-exec-alert-row{cursor:pointer}
 .ceac-exec-unit-copy small,.ceac-exec-alert-row small{font-size:12px;line-height:1.4;color:var(--ev2-text-secondary)}
 .ceac-exec-unit-status,.ceac-exec-caution{font-size:12px;font-weight:700;white-space:normal;text-align:right}
 .ceac-exec-unit-status{color:var(--ev2-text-secondary)}
-.ceac-exec-unit-status.is-submitted{color:var(--ev2-action)}
-.ceac-exec-caution{color:var(--ev2-warning)}
+.ceac-exec-unit-status.is-submitted{color:var(--appearance-ev2-action)}
+.ceac-exec-caution{color:var(--appearance-ev2-warning)}
 .ceac-exec-unit-arrow{font-size:23px;color:var(--ev2-text-secondary)}
-.ceac-exec-link{border:0;background:transparent;color:var(--ev2-action);font:inherit;font-size:12px;font-weight:760;cursor:pointer;min-height:36px;text-align:left}
+.ceac-exec-link{border:0;background:transparent;color:var(--appearance-ev2-action);font:inherit;font-size:12px;font-weight:760;cursor:pointer;min-height:36px;text-align:left}
 .ceac-exec-brief-footer{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
 .ceac-exec-brief-footer p,.ceac-exec-empty{font-size:12px;line-height:1.6;color:var(--ev2-text-secondary);margin:8px 0}
 .ceac-exec-unavailable{border:1px solid var(--ev2-line);border-radius:9px;padding:15px;background:var(--ev2-surface-soft);color:var(--ev2-text-secondary);font-size:13px;line-height:1.5}
@@ -38,7 +38,7 @@ button.ceac-exec-unit,button.ceac-exec-alert-row{cursor:pointer}
 .ceac-exec-source-list li{display:grid;gap:4px;border-top:1px solid var(--ev2-line);padding:11px 0}
 .ceac-exec-source-list li strong{font-size:13px}
 .ceac-exec-source-list li span,.ceac-exec-source-list li small{font-size:12px;color:var(--ev2-text-secondary)}
-.ceac-exec-source-list button{justify-self:start;color:var(--ev2-action);font:inherit;font-size:12px;border:0;background:transparent;cursor:pointer}
+.ceac-exec-source-list button{justify-self:start;color:var(--appearance-ev2-action);font:inherit;font-size:12px;border:0;background:transparent;cursor:pointer}
 .ceac-exec-analysis-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
 .ceac-exec-insight-card{display:grid;gap:5px;align-content:start}
 .ceac-exec-insight-card h3{font-size:14px;margin:0}

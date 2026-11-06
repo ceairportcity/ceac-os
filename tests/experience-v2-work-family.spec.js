@@ -79,6 +79,8 @@ for (const viewport of [
       const { context, page } = await openWork(browser, role, { width: viewport.width, height: viewport.height });
 
       await expect(page.getByRole("heading", { name: "Work", exact: true })).toBeVisible();
+      await expect(page.getByRole("region", { name: "Work overview", exact: true })).toBeVisible();
+      await expect(page.locator(".s2-work-inspector")).toHaveCount(0);
       for (const label of role.tabs) {
         await expect(page.getByRole("tab", { name: new RegExp(label) }).first()).toBeVisible();
       }
@@ -125,6 +127,14 @@ for (const viewport of [
         path: `test-artifacts/redesign-r7-stage10a1-${role.key}-${viewport.name}.png`,
         fullPage: true,
       });
+      // The Work release must retain the shared Settings appearance contract.
+      await page.emulateMedia({ colorScheme: "dark" });
+      await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+      const overview = page.getByRole("region", { name: "Work overview", exact: true });
+      await expect(overview.locator("h2")).toHaveCSS("color", "rgb(232, 236, 241)");
+      await expect(overview.locator("strong").first()).toHaveCSS("color", "rgb(232, 236, 241)");
+      expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
+      await page.screenshot({ path: `test-artifacts/work-overview-dark-${role.key}-${viewport.name}.png`, fullPage: true });
       await context.close();
     });
   }

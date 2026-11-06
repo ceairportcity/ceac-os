@@ -9,7 +9,7 @@ const ROOT_COMPONENTS = Object.freeze({
     "Guide"
   ],
   "account": [
-    "AccountActivity"
+    "Settings"
   ],
   "achievements": [
     "PersonalAchievements"
@@ -39,6 +39,7 @@ const ROOT_COMPONENTS = Object.freeze({
     "AdminWork",
     "ExecutiveWork"
   ],
+  "personal-calendar": ["StaffCalendar"],
   "staff-calendar": [
     "StaffCalendar"
   ],
@@ -176,7 +177,7 @@ export function collectP0SourceInventory(root = process.cwd()) {
   const page = app.slice(begin, end);
   const branches = [...page.matchAll(/if\s*\(tab === "([^"]+)"(?:\s*&&\s*([^)]+))?\)/g)];
   const tabs = branches.map((b) => b[1]);
-  if (tabs.length !== 48 || new Set(tabs).size !== 48
+  if (tabs.length !== 49 || new Set(tabs).size !== 49
       || tabs.slice().sort().join("|") !== Object.keys(ROOT_COMPONENTS).sort().join("|")) {
     throw new Error("P0 root tab inventory changed; audit new or removed routes");
   }

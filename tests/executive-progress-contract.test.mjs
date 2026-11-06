@@ -1,3 +1,4 @@
+import {lightAppearanceCss} from "./helpers/lightAppearanceCss.mjs";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -47,7 +48,7 @@ test("Executive organisational overview explicitly scopes all read-context queri
 });
 
 test("Executive scenic hero reuses the local approved CEAC asset and keeps clean mobile composition", () => {
-  const css = readFileSync("src/experience-v2/executive-overview/executive-overview.css", "utf8");
+  const css = lightAppearanceCss(readFileSync("src/experience-v2/executive-overview/executive-overview.css", "utf8"));
   const svg = readFileSync("public/ceac-hero-landscape.svg", "utf8");
   assert.match(css, /url\('\/ceac-hero-landscape\.svg'\)/);
   assert.match(svg, /<svg xmlns="http:\/\/www\.w3\.org\/2000\/svg"/);

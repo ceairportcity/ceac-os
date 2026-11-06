@@ -36,7 +36,7 @@ const EMPTY_DETAILS = {
   social_handles: {},
 };
 
-export default function Me({ me, openGoal, openRecord, openPerformance, openWorkforce, openLearning, openAssets, openCompliance, onOpenWork, onOpenAchievements }) {
+export default function Me({ me, openSettings, openGoal, openRecord, openPerformance, openWorkforce, openLearning, openAssets, openCompliance, onOpenWork, onOpenAchievements }) {
   const [profile, setProfile] = useState(me);
   const [leavePolicy, setLeavePolicy] = useState(null);
   const [leavePolicyRules, setLeavePolicyRules] = useState([]);
@@ -44,6 +44,8 @@ export default function Me({ me, openGoal, openRecord, openPerformance, openWork
   const [myRequests, setMyRequests] = useState([]);
   const [goals, setGoals] = useState([]);
   const [reminders, setReminders] = useState([]);
+  const focusedReminder=new URLSearchParams(window.location.search).get("reminder");
+  useEffect(()=>{if(focusedReminder && /^[0-9a-f-]{36}$/i.test(focusedReminder))document.getElementById("reminder-"+focusedReminder)?.scrollIntoView({block:"center"});},[reminders,focusedReminder]);
   const [engagement, setEngagement] = useState(null);
   const [volunteerNotices, setVolunteerNotices] = useState([]);
   const [details, setDetails] = useState(EMPTY_DETAILS);
@@ -411,12 +413,11 @@ export default function Me({ me, openGoal, openRecord, openPerformance, openWork
         action={<Button variant="secondary" size="sm" onClick={() => setSheet("remind")} disabled={Boolean(datasetErrors.reminders)}>Add reminder</Button>}
       >
         {datasetErrors.reminders ? <div className="ev2pf-partial-error"><StatePanel state="error" title="Reminders could not be loaded" description={datasetErrors.reminders} actionLabel="Try again" onAction={load} icon="error" /></div>
-          : reminders.length ? reminders.map((reminder) => <PersonalRecordRow
-              key={reminder.id}
+          : reminders.length ? reminders.map((reminder) => <div key={reminder.id} id={"reminder-"+reminder.id}><PersonalRecordRow
               title={reminder.title}
               meta={new Date(reminder.remind_at).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}
               action={<Button variant="quiet" size="sm" onClick={(event) => { event.stopPropagation(); markReminderSeen(reminder.id); }}>Done</Button>}
-            />)
+            /></div>)
           : <PersonalEmpty title="No reminders are waiting" description="Add a private reminder when you want CEAC OS to keep something visible for you." />}
       </PersonalSection>
     </> : null}
@@ -498,7 +499,7 @@ export default function Me({ me, openGoal, openRecord, openPerformance, openWork
       <PersonalBoundary title="Protected HR records">
         Ghana Card, SSNIT, tax, banking, contracts, payslips and private documents use a separate protected HR system and are not stored in these ordinary profile details.
       </PersonalBoundary>
-      <div className="ev2pf-signout"><Button variant="quiet" onClick={() => supabase.auth.signOut()}>Sign out</Button></div>
+      <div className="ev2pf-signout"><Button variant="quiet" onClick={openSettings}>Settings</Button></div>
     </PersonalSection> : null}
 
     <ModalDialog

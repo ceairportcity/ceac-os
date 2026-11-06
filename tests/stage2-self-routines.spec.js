@@ -24,8 +24,6 @@ for (const actor of ['staff', 'manager', 'admin', 'exec']) {
       await expect(page.locator('.ev2s-workspace')).toBeVisible();
       await page.goto('/?tab=work');
       await page.getByRole('button',{name:'Add my work',exact:true}).click();
-  await page.locator("details.reference-disclosure").filter({hasText:"Schedule, project and other details (optional)"}).locator("summary").click();
-  await page.getByRole("checkbox",{name:/No steps needed/}).uncheck();
       await page.locator("details.reference-disclosure").filter({hasText:"Schedule, project and other details (optional)"}).locator("summary").click();
       await page.getByRole("checkbox",{name:/No steps needed/}).uncheck();
       if (actor === 'staff') {
@@ -196,6 +194,8 @@ test("custom self routine keeps exact interval/count/timezone and future edits p
   await page.getByRole("button",{name:"Add my work",exact:true}).click();
   await page.getByPlaceholder("What are you doing?").fill(title);
   await page.getByPlaceholder("What should be true when this is finished?").fill("Inspect the venue on each scheduled date.");
+  await page.locator("details.reference-disclosure").filter({hasText:"Schedule, project and other details (optional)"}).locator("summary").click();
+  await page.getByRole("checkbox",{name:/No steps needed/}).uncheck();
   await page.getByPlaceholder("What must be done?").fill("Inspect venue");
   await page.getByRole("checkbox",{name:"Repeat this responsibility"}).check();
   await page.getByRole("combobox",{name:"Repeat frequency"}).selectOption("daily");

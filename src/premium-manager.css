@@ -12,39 +12,39 @@
 .manager-person-detail>.h1{font-size:35px!important;letter-spacing:-.045em!important}
 .manager-person-detail .metric-grid{gap:8px!important}
 .manager-person-detail .metric{
-  border:1px solid #e4e9ef!important;border-radius:12px!important;background:#f9fbfd!important;box-shadow:none!important;
+  border:1px solid var(--c471)!important;border-radius:12px!important;background:var(--c489)!important;box-shadow:none!important;
 }
 .manager-person-detail>.row,.manager-person-detail>div>.row{
-  border-color:#e4e9ef!important;border-radius:12px!important;background:#fff!important;box-shadow:0 4px 16px rgba(35,53,79,.03)!important;
+  border-color:var(--c471)!important;border-radius:12px!important;background:var(--c1)!important;box-shadow:0 4px 16px rgba(35,53,79,.03)!important;
 }
 
 /* Projects */
 .manager-projects{max-width:1180px!important}
-.manager-projects .row,.manager-projects .card{border-color:#e2e7ee!important;box-shadow:0 5px 18px rgba(35,53,79,.035)!important}
+.manager-projects .row,.manager-projects .card{border-color:var(--c470)!important;box-shadow:0 5px 18px rgba(35,53,79,.035)!important}
 
 /* Calendar */
 .manager-calendar{max-width:1180px!important}
-.manager-calendar .calendar-shell,.manager-calendar .card{border-color:#e2e7ee!important;box-shadow:0 7px 22px rgba(35,53,79,.035)!important}
+.manager-calendar .calendar-shell,.manager-calendar .card{border-color:var(--c470)!important;box-shadow:0 7px 22px rgba(35,53,79,.035)!important}
 
 /* Budget */
 .manager-finance{max-width:1120px!important}
 .manager-finance>.h1,.manager-finance .h1{font-size:34px!important}
 .manager-finance-position-grid{gap:10px!important}
 .manager-finance-position-card{
-  border:1px solid #e1e7ee!important;border-radius:15px!important;background:#fff!important;
+  border:1px solid var(--c490)!important;border-radius:15px!important;background:var(--c1)!important;
   box-shadow:0 7px 24px rgba(35,53,79,.04)!important;
 }
-.manager-finance-position-facts{gap:1px!important;background:#edf0f4!important}
-.manager-finance-position-facts button{background:#fff!important;border:0!important}
+.manager-finance-position-facts{gap:1px!important;background:var(--c469)!important}
+.manager-finance-position-facts button{background:var(--c1)!important;border:0!important}
 
 /* Reports */
 .manager-reports{max-width:1180px!important}
 .manager-reports .metric-grid{gap:8px!important}
 .manager-reports .metric{
-  border:1px solid #e3e8ee!important;border-radius:12px!important;background:#fff!important;box-shadow:0 5px 18px rgba(35,53,79,.035)!important;
+  border:1px solid var(--c302)!important;border-radius:12px!important;background:var(--c1)!important;box-shadow:0 5px 18px rgba(35,53,79,.035)!important;
 }
 .manager-reports .report-analysis-toggle{
-  border:1px solid #e1e7ee!important;border-radius:13px!important;background:#f8fafc!important;
+  border:1px solid var(--c490)!important;border-radius:13px!important;background:var(--c245)!important;
 }
 
 @media(max-width:980px){

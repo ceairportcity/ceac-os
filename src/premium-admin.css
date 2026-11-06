@@ -11,22 +11,22 @@
 .office-app .main-col,.office-app .side-col{min-width:0}
 .office-app .metric-grid{gap:8px!important}
 .office-app .metric{
-  border:1px solid #e3e8ef!important;border-radius:12px!important;background:#fff!important;box-shadow:0 5px 18px rgba(35,53,79,.03)!important;
+  border:1px solid var(--c468)!important;border-radius:12px!important;background:var(--c1)!important;box-shadow:0 5px 18px rgba(35,53,79,.03)!important;
 }
 
 /* Workforce / Time & Leave */
 .office-app .workforce-page{max-width:1220px!important}
 .office-app .workforce-grid{gap:10px!important}
 .office-app .workforce-person{
-  border:1px solid #e3e8ef!important;border-radius:14px!important;background:#fff!important;box-shadow:0 6px 20px rgba(35,53,79,.035)!important;
+  border:1px solid var(--c468)!important;border-radius:14px!important;background:var(--c1)!important;box-shadow:0 6px 20px rgba(35,53,79,.035)!important;
 }
-.office-app .workforce-facts{gap:1px!important;background:#edf0f4!important;border-radius:10px!important;overflow:hidden!important}
-.office-app .workforce-facts span{background:#fafbfd!important}
-.office-app .workforce-calendar{border-color:#e2e7ee!important;border-radius:14px!important;overflow:hidden!important}
+.office-app .workforce-facts{gap:1px!important;background:var(--c469)!important;border-radius:10px!important;overflow:hidden!important}
+.office-app .workforce-facts span{background:var(--c220)!important}
+.office-app .workforce-calendar{border-color:var(--c470)!important;border-radius:14px!important;overflow:hidden!important}
 .office-app .workforce-setup-actions{gap:7px!important}
 
 /* Finance + Expenses */
-.office-app .body>.row{border-color:#e4e9ef!important;border-radius:11px!important;background:#fff!important}
+.office-app .body>.row{border-color:var(--c471)!important;border-radius:11px!important;background:var(--c1)!important}
 
 @media(max-width:980px){
   .office-app .admin-command-stats{grid-template-columns:repeat(2,minmax(0,1fr))!important}
@@ -54,47 +54,47 @@
    currencies remain separate, and "recorded movement" is never labelled a bank balance. */
 .office-app .fpg-finance-dashboard{display:grid;gap:12px;margin:16px 0 20px}
 .office-app .fpg-finance-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}
-.office-app .fpg-finance-metric{min-width:0;min-height:126px;padding:14px;border:1px solid #e5e8ed;border-radius:14px;background:#fff;box-shadow:0 8px 24px rgba(29,42,64,.045)}
+.office-app .fpg-finance-metric{min-width:0;min-height:126px;padding:14px;border:1px solid var(--c472);border-radius:14px;background:var(--c1);box-shadow:0 8px 24px rgba(29,42,64,.045)}
 .office-app .fpg-finance-metric>div:first-child{display:flex;align-items:center;justify-content:space-between;gap:8px}
-.office-app .fpg-finance-metric>div:first-child span{display:inline-flex;align-items:center;gap:5px;min-width:0;color:#6f5ce7;font-size:12px;font-weight:720}
+.office-app .fpg-finance-metric>div:first-child span{display:inline-flex;align-items:center;gap:5px;min-width:0;color:var(--c473);font-size:12px;font-weight:720}
 .office-app .fpg-finance-metric>div:first-child span svg{flex:none}
-.office-app .fpg-finance-metric>div:first-child small{color:#9aa1ab;font-size:12px;font-weight:650}
-.office-app .fpg-finance-metric>strong{display:block;margin-top:20px;overflow-wrap:anywhere;color:#161b24;font-size:clamp(18px,1.7vw,23px);line-height:1.05;letter-spacing:-.035em}
-.office-app .fpg-finance-metric>p{margin:7px 0 0;color:#939aa4;font-size:12px;line-height:1.4}
+.office-app .fpg-finance-metric>div:first-child small{color:var(--c474);font-size:12px;font-weight:650}
+.office-app .fpg-finance-metric>strong{display:block;margin-top:20px;overflow-wrap:anywhere;color:var(--c475);font-size:clamp(18px,1.7vw,23px);line-height:1.05;letter-spacing:-.035em}
+.office-app .fpg-finance-metric>p{margin:7px 0 0;color:var(--c476);font-size:12px;line-height:1.4}
 .office-app .fpg-finance-grid{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(280px,.55fr);gap:10px}
-.office-app .fpg-finance-panel{min-width:0;padding:17px;border:1px solid #e5e8ed;border-radius:14px;background:#fff;box-shadow:0 8px 24px rgba(29,42,64,.04)}
+.office-app .fpg-finance-panel{min-width:0;padding:17px;border:1px solid var(--c472);border-radius:14px;background:var(--c1);box-shadow:0 8px 24px rgba(29,42,64,.04)}
 .office-app .fpg-finance-panel>header{display:flex;justify-content:space-between;align-items:flex-start;gap:15px}
-.office-app .fpg-finance-panel>header span{display:block;color:#989fa9;font-size:12px;font-weight:650}
-.office-app .fpg-finance-panel>header h2{margin:3px 0 0;color:#1b2028;font-size:14px;letter-spacing:-.02em}
-.office-app .fpg-finance-panel>header small{color:#9aa1ab;font-size:12px}
+.office-app .fpg-finance-panel>header span{display:block;color:var(--c477);font-size:12px;font-weight:650}
+.office-app .fpg-finance-panel>header h2{margin:3px 0 0;color:var(--c478);font-size:14px;letter-spacing:-.02em}
+.office-app .fpg-finance-panel>header small{color:var(--c474);font-size:12px}
 .office-app .fpg-finance-trend{min-height:270px}
 .office-app .fpg-finance-legend{display:flex;justify-content:flex-end;gap:12px;margin:14px 0 3px}
-.office-app .fpg-finance-legend span{display:flex;align-items:center;gap:5px;color:#8f959e;font-size:12px}
+.office-app .fpg-finance-legend span{display:flex;align-items:center;gap:5px;color:var(--c479);font-size:12px}
 .office-app .fpg-finance-legend i{width:7px;height:7px;border-radius:2px;background:#6f5ce7}
-.office-app .fpg-finance-legend i.is-out{background:#aeb7c4}
+.office-app .fpg-finance-legend i.is-out{background:var(--c480)}
 .office-app .fpg-finance-chart{height:166px;display:grid;grid-template-rows:minmax(0,1fr) 18px;margin-top:4px}
 .office-app .fpg-finance-chart svg{width:100%;height:100%;overflow:visible}
 .office-app .fpg-finance-chart line{stroke:#eef0f3;stroke-width:1}
 .office-app .fpg-finance-chart .is-in-area{fill:rgba(111,92,231,.13)}
-.office-app .fpg-finance-chart .is-in-line{fill:none;stroke:#6f5ce7;stroke-width:2}
+.office-app .fpg-finance-chart .is-in-line{fill:none;stroke:var(--c473);stroke-width:2}
 .office-app .fpg-finance-chart .is-out-line{fill:none;stroke:#aeb7c4;stroke-width:1.7;stroke-dasharray:4 3}
-.office-app .fpg-finance-months{display:grid;grid-template-columns:repeat(12,1fr);border-top:1px solid #eceef1}
+.office-app .fpg-finance-months{display:grid;grid-template-columns:repeat(12,1fr);border-top:1px solid var(--c481)}
 .office-app .fpg-finance-months span{text-align:center;color:#a1a6ad;font-size:12px;line-height:18px}
 .office-app .fpg-finance-trend>p{margin:10px 0 0;color:#a0a6ae;font-size:12px;line-height:1.45}
 .office-app .fpg-budget-list{display:grid;gap:13px;margin-top:18px}
 .office-app .fpg-budget-list>div>div{display:flex;justify-content:space-between;align-items:center}
 .office-app .fpg-budget-list strong{font-size:12px}
-.office-app .fpg-budget-list span,.office-app .fpg-budget-list small{color:#9198a2;font-size:12px}
-.office-app .fpg-budget-list i{display:block;height:7px;margin:5px 0 4px;border-radius:5px;background:#f0f1f4;overflow:hidden}
+.office-app .fpg-budget-list span,.office-app .fpg-budget-list small{color:var(--c482);font-size:12px}
+.office-app .fpg-budget-list i{display:block;height:7px;margin:5px 0 4px;border-radius:5px;background:var(--c483);overflow:hidden}
 .office-app .fpg-budget-list i b{display:block;height:100%;border-radius:5px;background:#6f5ce7}
 .office-app .fpg-finance-recent{grid-column:1/-1}
-.office-app .fpg-recent-table{margin-top:13px;border-top:1px solid #eceef1}
+.office-app .fpg-recent-table{margin-top:13px;border-top:1px solid var(--c481)}
 .office-app .fpg-recent-head,.office-app .fpg-recent-row{display:grid;grid-template-columns:100px minmax(0,1fr) 130px 120px;gap:10px;align-items:center}
 .office-app .fpg-recent-head{min-height:30px;color:#a0a6ae;font-size:12px}
-.office-app .fpg-recent-row{min-height:39px;border-top:1px solid #f0f1f3;color:#777f89;font-size:12px}
-.office-app .fpg-recent-row strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#3a424d;font-size:12px;font-weight:620}
-.office-app .fpg-recent-row b{text-align:right;color:#323944;font-size:12px}
-.office-app .fpg-finance-empty{margin:12px 0;color:#9da3ab;font-size:12px}
+.office-app .fpg-recent-row{min-height:39px;border-top:1px solid var(--c484);color:var(--c485);font-size:12px}
+.office-app .fpg-recent-row strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--c486);font-size:12px;font-weight:620}
+.office-app .fpg-recent-row b{text-align:right;color:var(--c487);font-size:12px}
+.office-app .fpg-finance-empty{margin:12px 0;color:var(--c488);font-size:12px}
 @media(max-width:900px){.office-app .fpg-finance-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.office-app .fpg-finance-grid{grid-template-columns:1fr}.office-app .fpg-finance-recent{grid-column:auto}}
 @media(max-width:620px){.office-app .fpg-finance-metric{min-height:112px;padding:12px}.office-app .fpg-finance-metric>strong{margin-top:16px}.office-app .fpg-finance-chart{height:150px}.office-app .fpg-recent-head,.office-app .fpg-recent-row{grid-template-columns:72px minmax(0,1fr) 92px}.office-app .fpg-recent-head span:nth-child(3),.office-app .fpg-recent-row span:nth-child(3){display:none}}
 
@@ -179,6 +179,6 @@
   }
 }
 /* Retained owner mockups: catalogue first, focused course preparation. */
-.office-app .owner-learning-catalogue{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,430px),1fr));gap:16px;margin:16px 0}.office-app .owner-learning-catalogue .learning-course-row{display:flex;flex-direction:column;align-items:flex-start;text-align:left;gap:12px;overflow:hidden;padding:20px;border:1px solid var(--ev2-line,#dce5ef);border-radius:12px;background:#fff}.office-app .owner-course-cover{display:flex;align-items:center;padding:20px;width:100%;min-height:88px;background:var(--ev2-action);color:#fff;font-size:12px;letter-spacing:.06em}.office-app .owner-learning-workspace>[hidden]{display:none}.office-app .performance-review .ev2c-segmented{flex-wrap:wrap;margin:16px 0}.office-app .performance-review .ev2c-segmented-item{flex:1 1 115px;min-height:44px}
+.office-app .owner-learning-catalogue{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,430px),1fr));gap:16px;margin:16px 0}.office-app .owner-learning-catalogue .learning-course-row{display:flex;flex-direction:column;align-items:flex-start;text-align:left;gap:12px;overflow:hidden;padding:20px;border:1px solid var(--ev2-line,var(--c210));border-radius:12px;background:var(--c1)}.office-app .owner-course-cover{display:flex;align-items:center;padding:20px;width:100%;min-height:88px;background:var(--ev2-action);color:#fff;font-size:12px;letter-spacing:.06em}.office-app .owner-learning-workspace>[hidden]{display:none}.office-app .performance-review .ev2c-segmented{flex-wrap:wrap;margin:16px 0}.office-app .performance-review .ev2c-segmented-item{flex:1 1 115px;min-height:44px}
 
 .office-app .owner-course-heading h3{font-size:20px;line-height:1.4;margin:0}.office-app .owner-course-heading p{font-size:14px;line-height:1.6;color:var(--ev2-text-secondary);margin:8px 0}.office-app .owner-learning-catalogue .learning-course-row>small{font-size:13px}.office-app .learning-page>.ev2c-segmented,.office-app .admin-unit-detail>.ev2c-segmented{margin:20px 0;max-width:100%;flex-wrap:wrap}.office-app .admin-unit-overview-grid{gap:16px}.office-app .admin-unit-overview-card{border-radius:10px;padding:20px;gap:12px}.office-app .admin-unit-overview-card>span,.office-app .admin-unit-overview-card>small{font-size:12px}.office-app .admin-unit-overview-card>strong{font-size:20px}.office-app .admin-unit-detail .admin-workspace-area{padding:4px 2px 20px}

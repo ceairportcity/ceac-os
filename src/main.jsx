@@ -25,6 +25,10 @@ import "./experience-v2/integrations/integrations.css";
 import "./resilience/pwa-status.css";
 import "./experience-v2/ui-density-refinement.css";
 
+import {initialiseAppearance} from "./lib/appearance";
+import "./appearance.css";
+initialiseAppearance();
+
 const PwaStatus = lazy(() => import("./resilience/PwaStatus"));
 
 createRoot(document.getElementById("root")).render(

@@ -66,7 +66,9 @@ for (const viewport of [
 
     for (const control of [request, expense]) {
       const box = await control.boundingBox();
-      expect(box?.height || 0).toBeGreaterThanOrEqual(44);
+      // Ignore floating-point subtraction noise from the route translation,
+      // while retaining the full 44 CSS-pixel touch floor.
+      expect(Math.round((box?.height || 0) * 1000) / 1000).toBeGreaterThanOrEqual(44);
     }
 
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);

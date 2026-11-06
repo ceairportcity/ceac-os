@@ -76,7 +76,7 @@ const routeByLabel = {
   Units:"units", Projects:"admin-projects", Calendar:"admin-calendar",
   Reports:"reporting", Cost:"cost", Finance:"finance", Payroll:"payroll",
   Audit:"audit", Events:"events", Workflows:"workflows", Checks:"workflows", Authority:"authority",
-  "System rules":"policies", Integrations:"integrations", "Connected Apps":"integrations", "Control Center":"settings", Settings:"settings",
+  "System rules":"policies", Integrations:"integrations", "Connected Apps":"integrations", "Control Center":"settings", Settings:"account",
   Announcements:"announcements"
 };
 
@@ -205,7 +205,7 @@ test("Staff and Manager complete the real work loop, including return and approv
     const { context, page } = await openAs(browser, "staff@ceac.local.test");
     await go(page, "Work");
     await openCompleteWorkRecord(page, title);
-    await expect(page.getByText("Sent back by your manager")).toBeVisible();
+    await expect(page.getByText("Changes requested by your reviewer")).toBeVisible();
     await expect(page.getByText("Please correct the acceptance item.")).toBeVisible();
     await page.screenshot({ path: "test-artifacts/redesign-r7-stage10a3-returned-work.png", fullPage: true });
 
@@ -2346,6 +2346,7 @@ test("Administration surfaces use policy-safe HR states and real employee record
   await expect(page.getByRole("button", { name: "Configure leave policy", exact: true })).toBeVisible();
 
   await go(page, "Settings");
+  await page.getByRole("button", { name: /^Organisation settings/ }).click();
   await page.getByRole("button", { name: /^Alerts & reminders/ }).click();
   await expect(page.getByRole("heading", { name: "Alerts & reminders", exact: true })).toBeVisible();
 

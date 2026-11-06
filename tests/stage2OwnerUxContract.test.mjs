@@ -1,3 +1,4 @@
+import {lightAppearanceCss} from "./helpers/lightAppearanceCss.mjs";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync, existsSync } from "node:fs";
@@ -242,7 +243,7 @@ test("P0 route census continuously matches JSX branches, actual screens and dire
     "Guide"
   ],
   "account": [
-    "AccountActivity"
+    "Settings"
   ],
   "achievements": [
     "PersonalAchievements"
@@ -272,6 +273,7 @@ test("P0 route census continuously matches JSX branches, actual screens and dire
     "AdminWork",
     "ExecutiveWork"
   ],
+  "personal-calendar": ["StaffCalendar"],
   "staff-calendar": [
     "StaffCalendar"
   ],
@@ -396,9 +398,9 @@ test("P0 route census continuously matches JSX branches, actual screens and dire
   assert.ok(start >= 0 && end > start, "route dispatch no longer has its audited bounds");
   const dispatch = app.slice(start, end);
   const branchMatches = [...dispatch.matchAll(/if\s*\(tab === "([^"]+)"(?:\s*&&\s*([^)]+))?\)/g)];
-  assert.equal(branchMatches.length, 48);
+  assert.equal(branchMatches.length, 49);
   const actualKeys = branchMatches.map((m) => m[1]);
-  assert.equal(new Set(actualKeys).size, 48);
+  assert.equal(new Set(actualKeys).size, 49);
   assert.deepEqual(actualKeys.slice().sort(), Object.keys(matrix).sort());
 
   const lazyModules = new Map(
@@ -431,7 +433,7 @@ test("P0 executable census captures all mapped screen and direct data sources wi
   const { collectP0SourceInventory } = await import("../scripts/stage2/p0-source-inventory.mjs");
   const audit = collectP0SourceInventory();
   assert.equal(audit.status, "SOURCE_INVENTORY_ONLY");
-  assert.equal(audit.routeCount, 48);
+  assert.equal(audit.routeCount, 49);
   assert.deepEqual(audit.roleNavigationCounts, { staff: 8, manager: 11, admin: 13, executive: 12 });
   assert.equal(audit.overlays.length, 9);
   assert.ok(audit.routes.every((r) => r.components.length > 0
@@ -713,7 +715,7 @@ test("P7 legacy department, personal and project-screen CSS is retired only wher
 });
 
 test("P7 shared shell adopts the owner-approved light/blue Work navigation on all roles",()=>{
- const css=file("src/experience-v2/shell/shell.css");
+ const css=lightAppearanceCss(file("src/experience-v2/shell/shell.css"));
  assert.match(css,/\.ev2s-sidebar \{[\s\S]*?background: var\(--ev2-surface\)/);
  assert.match(css,/\.ev2s-sidebar-nav button\.is-active \{[\s\S]*?background: var\(--ev2-action-soft\)/);
  assert.match(css,/\.ev2s-sidebar-nav button\.is-active \{[\s\S]*?color: #1458b8/);

@@ -207,7 +207,7 @@
 
 .ev2c-input::placeholder,
 .ev2c-textarea::placeholder {
-  color: var(--ev2-text-tertiary);
+  color: var(--appearance-ev2-text-tertiary);
 }
 
 .ev2c-field-help,
@@ -217,11 +217,11 @@
 }
 
 .ev2c-field-help {
-  color: var(--ev2-text-tertiary);
+  color: var(--appearance-ev2-text-tertiary);
 }
 
 .ev2c-field-error {
-  color: var(--ev2-danger);
+  color: var(--appearance-ev2-danger);
   font-weight: 550;
 }
 
@@ -246,22 +246,22 @@
 
 .ev2c-status-action {
   background: var(--ev2-action-soft);
-  color: var(--ev2-action);
+  color: var(--appearance-ev2-action);
 }
 
 .ev2c-status-success {
   background: var(--ev2-success-soft);
-  color: var(--ev2-success);
+  color: var(--appearance-ev2-success);
 }
 
 .ev2c-status-warning {
   background: var(--ev2-warning-soft);
-  color: var(--ev2-warning);
+  color: var(--appearance-ev2-warning);
 }
 
 .ev2c-status-danger {
   background: var(--ev2-danger-soft);
-  color: var(--ev2-danger);
+  color: var(--appearance-ev2-danger);
 }
 
 .ev2c-surface {
@@ -354,7 +354,7 @@
 }
 
 .ev2c-segmented-item.is-selected {
-  color: var(--ev2-action);
+  color: var(--appearance-ev2-action);
 }
 
 .ev2c-segmented-indicator {
@@ -526,12 +526,12 @@ a.ev2c-stat {
 
 .ev2c-stat-icon-action {
   background: var(--ev2-action-soft);
-  color: var(--ev2-action);
+  color: var(--appearance-ev2-action);
 }
 
 .ev2c-stat-icon-success {
   background: var(--ev2-success-soft);
-  color: var(--ev2-success);
+  color: var(--appearance-ev2-success);
 }
 
 .ev2c-stat-copy {
@@ -625,7 +625,7 @@ button.ev2c-record-row {
   width: 2.75rem;
   height: 2.75rem;
   background: var(--ev2-action-soft);
-  color: var(--ev2-action);
+  color: var(--appearance-ev2-action);
 }
 
 .ev2c-focus-copy {
@@ -996,7 +996,7 @@ button.ev2c-record-row {
 }
 
 .ev2c-menu-item.is-danger {
-  color: var(--ev2-danger);
+  color: var(--appearance-ev2-danger);
 }
 
 .ev2c-menu-item:disabled {
@@ -1179,17 +1179,17 @@ button.ev2c-record-row {
 
 .ev2c-state-error .ev2c-state-icon {
   background: var(--ev2-danger-soft);
-  color: var(--ev2-danger);
+  color: var(--appearance-ev2-danger);
 }
 
 .ev2c-state-configuration .ev2c-state-icon {
   background: var(--ev2-action-soft);
-  color: var(--ev2-action);
+  color: var(--appearance-ev2-action);
 }
 
 .ev2c-state-success .ev2c-state-icon {
   background: var(--ev2-success-soft);
-  color: var(--ev2-success);
+  color: var(--appearance-ev2-success);
 }
 
 .ev2c-state-copy {
@@ -1235,11 +1235,11 @@ button.ev2c-record-row {
 }
 
 .ev2c-toast-success {
-  border-color: #cfe7da;
+  border-color: var(--c335);
 }
 
 .ev2c-toast-danger {
-  border-color: #efcfc5;
+  border-color: var(--c336);
 }
 
 .ev2c-toast-icon {
@@ -1254,12 +1254,12 @@ button.ev2c-record-row {
 
 .ev2c-toast-success .ev2c-toast-icon {
   background: var(--ev2-success-soft);
-  color: var(--ev2-success);
+  color: var(--appearance-ev2-success);
 }
 
 .ev2c-toast-danger .ev2c-toast-icon {
   background: var(--ev2-danger-soft);
-  color: var(--ev2-danger);
+  color: var(--appearance-ev2-danger);
 }
 
 .ev2c-toast-copy {
@@ -1282,7 +1282,7 @@ button.ev2c-record-row {
 .ev2c-toast-action {
   border: 0;
   background: transparent;
-  color: var(--ev2-action);
+  color: var(--appearance-ev2-action);
   font: 650 var(--ev2-type-supporting)/1 var(--ev2-font-sans);
   cursor: pointer;
 }
@@ -1506,7 +1506,7 @@ button.ev2c-record-row {
   padding: 5px 7px;
   border-radius: 7px;
   background: var(--ev2-action-soft);
-  color: var(--ev2-action);
+  color: var(--appearance-ev2-action);
 }
 .reference-kind-icon {
   width: 22px;
@@ -1514,7 +1514,7 @@ button.ev2c-record-row {
   display: inline-grid;
   place-items: center;
   border-radius: 6px;
-  background: #fff;
+  background: var(--c1);
   font-size: 12px;
   font-weight: 800;
 }
@@ -1527,7 +1527,7 @@ button.ev2c-record-row {
   height: 28px;
   border: 0;
   background: transparent;
-  color: var(--ev2-action);
+  color: var(--appearance-ev2-action);
   font: 700 12px/1 var(--ev2-font-sans);
   outline: none;
 }
@@ -1586,7 +1586,7 @@ button.ev2c-record-row {
 }
 .reference-disclosure summary::-webkit-details-marker { display: none; }
 .reference-disclosure summary > span:last-child {
-  color: var(--ev2-action);
+  color: var(--appearance-ev2-action);
   font-size: 12px;
   font-weight: 700;
   white-space: nowrap;
@@ -1714,7 +1714,7 @@ button.ev2c-record-row {
 .reference-audience-pills button.is-active {
   border-color: var(--ev2-action);
   background: var(--ev2-action-soft);
-  color: var(--ev2-action);
+  color: var(--appearance-ev2-action);
 }
 .reference-audience-options {
   max-height: 8rem;
@@ -1750,7 +1750,7 @@ button.ev2c-record-row {
 .reference-chip-check input:checked + span {
   border-color: var(--ev2-action);
   background: var(--ev2-action-soft);
-  color: var(--ev2-action);
+  color: var(--appearance-ev2-action);
   font-weight: 700;
 }
 .reference-message-box {

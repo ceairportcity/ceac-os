@@ -1,8 +1,21 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import {minify as minifyCss} from "csso";
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), {
+    name: "ceac-final-css-optimisation",
+    apply: "build",
+    enforce: "post",
+    generateBundle(_options, bundle) {
+      // Optimise complete CSS chunks so rules shared across source stylesheets
+      // can be merged. Keep all runtime CSS in its existing stylesheet assets.
+      for (const asset of Object.values(bundle)) {
+        if (asset.type === "asset" && asset.fileName.endsWith(".css"))
+          asset.source = minifyCss(String(asset.source)).css;
+      }
+    },
+  }],
   build: {
     // Dynamic module-preload links do not inherit a hash-authorised script's
     // CSP trust. Native module imports preserve on-demand loading without

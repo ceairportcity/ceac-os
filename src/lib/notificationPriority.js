@@ -2,8 +2,11 @@
 // bodies are exposed in the Overview or bell, even when the source includes them.
 const actionableDeadlineStatus = /^(not_started|in_progress|assigned)$/i;
 const cancelledMeeting = /cancelled|canceled|deleted/i;
-const decisions = new Set(["case_opened","case_referred","exception_requested","evidence_submitted"]);
+const decisions = new Set(["work_submitted","work_returned","leave_requested","case_opened","case_referred","exception_requested","evidence_submitted"]);
 const headings = {
+  room_activity:"New Room message",room_mention:"You were mentioned in a Room",meeting_invited:"Meeting invitation",meeting_changed:"Meeting updated",meeting_cancelled:"Meeting cancelled",leave_requested:"Leave request needs your review",leave_decided:"Your leave request has an outcome",
+  routine_reviewed:"Your scheduled responsibility was reviewed",
+  work_submitted:"Work is awaiting your review",work_returned:"Changes requested",work_approved:"Your work was approved",
   memo_sent:"New Memo", memo_response:"New reply to a Memo",
   work_assigned:"Work assigned to you", evidence_submitted:"Evidence needs your review",
   evidence_reviewed:"Your evidence was reviewed",
@@ -24,10 +27,15 @@ const within = (value,start,end) => {const t=ms(value);return t>=start&&t<=end;}
 export function defaultRoomLevel(me) {
   return me?.is_admin || me?.is_exec ? "mentions" : "all";
 }
+export function ceacNoticeTitle(row){return headings[row.kind||row.event_kind] || ({support_request_opened:"New Technical Support request"})[row.kind||row.event_kind] || "CEAC update";}
 export function ceacNoticeTarget(row) {
   const id=String(row?.context_id||row?.id||"");
   if (!validId(id)) return "/?tab=messages&updates=1";
   const encoded=encodeURIComponent(id);
+  if(row.context_kind==="routine_occurrence" && validId(row.target_work_id) && /^\d{4}-\d{2}-\d{2}$/.test(row.scheduled_on||""))return "/?tab=work&item="+encodeURIComponent(row.target_work_id)+"&routineDate="+row.scheduled_on;
+  if(row.context_kind==="room")return "/?tab=messages&room="+encoded;
+  if(row.context_kind==="meeting")return "/?tab=home&meeting="+encoded;
+  if(row.context_kind==="leave")return "/?tab=attendance&leave="+encoded;
   if(row.context_kind==="memo")return "/?tab=messages&memo="+encoded;
   if(row.context_kind==="support_case")return "/?tab=technical-support&case="+encoded;
   if(row.context_kind==="work_item")return "/?tab=work&item="+encoded;
@@ -52,9 +60,11 @@ export function buildCeacNotificationBriefing({
     if(ms(mention.created_at)<=(readByRoom.get(roomId)||0))continue;
     mentionByRoom.set(roomId,(mentionByRoom.get(roomId)||0)+1);
   }
-  const entries=[],roomSummary=[],unreadMemoIds=new Set();
+  const entries=[],roomSummary=[],unreadMemoIds=new Set(),seenContexts=new Set();
   for(const event of events){
-    if(event.read_at)continue;
+    if(event.read_at || event.context_kind==="room")continue;
+    const contextKey=event.context_kind+":"+event.context_id;
+    if(seenContexts.has(contextKey))continue;seenContexts.add(contextKey);
     const kind=event.kind||event.event_kind||"update";
     const isMemo=event.context_kind==="memo";
     // Multiple replies on one correspondence appear as one inbox notification.
@@ -80,7 +90,7 @@ export function buildCeacNotificationBriefing({
     entries.push(item("room:"+room.id,mentionCount>0?"personal":"activity",
       mentionCount>0?"You were mentioned in a Room":"New Room messages",
       (room.name||"Room")+" · "+amount+" unread",
-      "/?tab=messages",room.last_at||new Date(now).toISOString(),"room"));
+      "/?tab=messages&room="+encodeURIComponent(room.id),room.last_at||new Date(now).toISOString(),"room"));
   }
   for(const meeting of meetings){
     if(cancelledMeeting.test(meeting.status||""))continue;
@@ -140,13 +150,13 @@ export function buildCeacNotificationBriefing({
     || (ms(b.createdAt)||0)-(ms(a.createdAt)||0));
   // The badge counts individual Room messages at most once: a group card is
   // merely their preview. Keep this number bounded for device badges.
-  const personalItems=output.filter(e=>e.type!=="room").length;
+  const personalItems=new Set(events.filter(e=>!e.read_at).map(e=>e.context_kind+":"+e.context_id)).size;
   const roomUnread=roomSummary.reduce((sum,r)=>sum+r.unread,0);
   return {
     items:output,roomPreferences:roomSummary,defaultRoomLevel:defaultLevel,
     attention:output.filter(e=>e.level==="attention").length,
     personal:output.filter(e=>e.level==="personal").length,
     room:roomUnread,memo:unreadMemoIds.size,
-    count:Math.min(999,personalItems+roomUnread),
+    count:Math.min(999,personalItems),
   };
 }

@@ -7,7 +7,7 @@ import { humanError } from "../lib/productLanguage";
 import { readLocalMemoDraft, saveLocalMemoDraft, clearLocalMemoDraft } from "../lib/memoLocalDrafts";
 import { MEMO_STATUS_LABELS, eligibleMemoDecisionMakers, initials, memoInView, messageTimestamp, memoCurrentSubject, memoConversationGroups, memoCorrespondentIds, memoPersonIdentity } from "../lib/memos";
 
-const fresh = () => ({id:crypto.randomUUID(),versionId:null,updatedAt:null,subject:"",body:"",to:[],cc:[],decisionRequired:false,scope:"department",unitId:"",decisionMakerId:""});
+const fresh = () => ({id:crypto.randomUUID(),versionId:null,updatedAt:null,subject:"",body:"",to:[],cc:[],confidential:true,decisionRequired:false,scope:"department",unitId:"",decisionMakerId:""});
 
 // Basic formatting is parsed into React text nodes. Never render authored HTML.
 function MemoBody({body="",openWork}) {
@@ -112,9 +112,9 @@ export default function Memos({me,composeRequest,initialMemoId,openProject,openW
     })();return()=>{current=false;};
   },[me.id,me.org_id,me.is_admin,reload,pageSize]);
   useEffect(()=>{
-    const refresh=()=>{if(!writing.current && document.visibilityState=== "visible")setReload(n=>n+1);};window.addEventListener("focus",refresh);
+    const refresh=()=>{if(!writing.current && document.visibilityState=== "visible")setReload(n=>n+1);};window.addEventListener("focus",refresh);window.addEventListener("ceac:push-received",refresh);
     const timer=window.setInterval(refresh,180000);
-    return()=>{window.removeEventListener("focus",refresh);window.clearInterval(timer);};
+    return()=>{window.removeEventListener("focus",refresh);window.removeEventListener("ceac:push-received",refresh);window.clearInterval(timer);};
   },[]);
   useEffect(()=>{
     const warn=event=>{if(dirty || pendingFiles.length || reply.trim()){event.preventDefault();event.returnValue="";}};
@@ -212,7 +212,7 @@ export default function Memos({me,composeRequest,initialMemoId,openProject,openW
   function editMemo(m){
     if(!canLeave())return;const version=m.versions.find(v=>v.id===m.current_version_id);
     if(!version)return;
-    setForm({id:m.id,versionId:version.id,updatedAt:m.updated_at,subject:version.subject,body:version.body,to:m.memo_recipients.filter(r=>r.kind==="to").map(r=>r.profile_id),cc:m.memo_recipients.filter(r=>r.kind==="cc").map(r=>r.profile_id),decisionRequired:m.decision_required,scope:m.decision_scope,unitId:m.unit_id||"",decisionMakerId:m.decision_maker_id||"",revision:m.status==="changes_requested"});
+    setForm({id:m.id,versionId:version.id,updatedAt:m.updated_at,subject:version.subject,body:version.body,to:m.memo_recipients.filter(r=>r.kind==="to").map(r=>r.profile_id),cc:m.memo_recipients.filter(r=>r.kind==="cc").map(r=>r.profile_id),confidential:m.confidential!==false,decisionRequired:m.decision_required,scope:m.decision_scope,unitId:m.unit_id||"",decisionMakerId:m.decision_maker_id||"",revision:m.status==="changes_requested"});
     editorVersion.current=version.sent_at?null:version.id;
     setDraftFiles(version.sent_at ? [] : m.files[version.id] || []);setPendingFiles([]);setMissingUploads([]);setDirty(false);setSelected(null);setError("");
   }
@@ -225,6 +225,8 @@ export default function Memos({me,composeRequest,initialMemoId,openProject,openW
       if(!result.data?.version_id || !result.data.updated_at)throw new Error("Draft save could not be confirmed. Open Drafts before retrying.");
       const versionId=result.data.version_id;editorVersion.current=versionId;
       setForm(f=>({...f,versionId,updatedAt:result.data.updated_at}));setDirty(false);
+      const privacy=await supabase.rpc("set_memo_preview_privacy",{p_id:savedForm.id,p_confidential:savedForm.confidential!==false,p_expected_updated_at:result.data.updated_at});if(privacy.error)throw privacy.error;
+      setForm(f=>({...f,updatedAt:privacy.data}));
       for(const file of pendingFiles){
         setSendStage("Uploading attachment…");
         const retryState=uploadRetries.current.get(file) || {};
@@ -312,6 +314,7 @@ export default function Memos({me,composeRequest,initialMemoId,openProject,openW
         <RecipientPicker label="To" invalid={formIssues.some(x=>x.key==="to")} people={people.filter(p=>p.id!==me.id)} value={form.to} excluded={form.cc} disabled={form.revision} onChange={to=>change("to",to)}/>
         <RecipientPicker label="Cc (optional)" people={people.filter(p=>p.id!==me.id)} value={form.cc} excluded={form.to} disabled={form.revision} onChange={cc=>change("cc",cc)}/>
         <label className="memo-subject">Subject<input aria-invalid={formIssues.some(x=>x.key==="subject")} required maxLength={240} value={form.subject} onChange={e=>change("subject",e.target.value)} placeholder="Enter a clear subject"/></label>
+        <label className="memo-decision"><input type="checkbox" checked={form.confidential!==false} onChange={e=>change("confidential",e.target.checked)}/> Keep sender details private in phone notifications</label>
         <label className="memo-decision"><input type="checkbox" checked={form.decisionRequired} disabled={form.revision} onChange={e=>change("decisionRequired",e.target.checked)}/> Decision required</label>
         {form.decisionRequired && <div className="memo-route">
           <label>Proposal scope<select value={form.scope} disabled={form.revision} onChange={e=>change("scope",e.target.value)}><option value="department">Within one department</option><option value="cross_department">Cross-department</option></select></label>
