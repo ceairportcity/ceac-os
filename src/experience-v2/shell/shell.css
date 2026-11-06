@@ -670,7 +670,11 @@
   }
 }
 
-@media (max-width: 720px) {
+/* iOS installed apps can retain a desktop-sized layout viewport despite a
+   physically narrow phone screen (site zoom / desktop-site presentation).
+   Honor the real device width as well so the desktop rail never consumes
+   the phone's content area. */
+@media (max-width: 720px), (max-device-width: 720px) {
   .ev2s-mobile-search-drawer{padding-top:calc(var(--ev2-space-4) + env(safe-area-inset-top, 0px));top:0;bottom:0;width:100%;max-width:none;max-height:100dvh;border:0;border-radius:0}
 
   .ev2s-sidebar,
@@ -845,7 +849,7 @@
   }
 }
 
-@media (max-width: 340px) {
+@media (max-width: 340px), (max-device-width: 340px) {
   .ev2s-mobile-toprow,
   .ev2s-mobile-unit-context {
     padding-left: .75rem;
@@ -935,7 +939,7 @@
 
 /* iPad / tablet: keep laptop navigation with an accessible compact rail.
    Phones <=720px and desktop >=1024px retain their approved layouts. */
-@media (min-width: 721px) and (max-width: 1023px) {
+@media (min-width: 721px) and (max-width: 1023px) and (min-device-width: 721px) {
   :root { --ev2s-sidebar-width: 4.75rem; }
   .ev2s-sidebar { padding: .75rem .45rem; }
   .ev2s-sidebar-identity { padding-inline: 0; }
