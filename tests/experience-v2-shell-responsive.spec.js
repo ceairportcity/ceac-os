@@ -498,6 +498,14 @@ test("installed iPhone restores handset Settings layout despite desktop CSS brea
     await expect(page.locator(".ev2s-mobile-topbar")).toBeVisible();
     await expect(page.locator(".ev2s-mobile-nav")).toBeVisible();
     await expect(page.locator(".ev2s-workspace")).toHaveCSS("margin-left", "0px");
+    // The prior Settings-only assertion missed the desktop card layout inside
+    // a correctly narrow mobile shell. Verify actual signed-in page content.
+    await expect(page.locator(".fpg9-home-hero")).toHaveCSS("display", "block");
+    const dayWidths=await page.locator('.ceac-day-group').evaluateAll(rows=>rows.map(row=>row.getBoundingClientRect().width));
+    for(const width of dayWidths)expect(width).toBeGreaterThan(250);
+    await page.locator('.ev2s-mobile-nav').getByRole('button',{name:'Work',exact:true}).click();
+    await expect(page.locator('.ev2w-header')).toHaveCSS('display','grid');
+    expect((await page.locator('.ev2w-header p').boundingBox()).width).toBeGreaterThan(250);
     await page.locator(".ev2s-mobile-nav").getByRole("button", { name: "More", exact: true }).click();
     await page.getByRole("button", { name: "Settings", exact: true }).click();
     await expect(page.getByRole("heading", { name: "Settings", exact: true })).toBeVisible();
