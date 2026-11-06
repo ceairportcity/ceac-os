@@ -54,6 +54,7 @@ for(const width of [390,1440]){
   await page.goto('/tests/fixtures/phase1-corrections.html?screen=diary');
   await page.getByRole('textbox',{name:'Write a work update'}).focus();
   await page.getByLabel('What did you accomplish?').fill('Finished the supplier meeting');
+  await page.locator('.s2-work-diary details').filter({hasText:'More details (optional)'}).locator('summary').click();
   await page.getByLabel('What happens next?',{exact:true}).fill('Follow up next week');
   await page.getByLabel('Next action date (optional)').fill('2026-11-03');
   await page.locator('input[type=file]').setInputFiles({name:'evidence.pdf',mimeType:'application/pdf',buffer:Buffer.from('Synthetic evidence')});
