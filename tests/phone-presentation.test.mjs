@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {phonePresentationMetrics} from "../src/lib/phonePresentation.js";
+import {phonePresentationMetrics,needsPhoneViewportRepair} from "../src/lib/phonePresentation.js";
 
 test("installed iPhone stays in handset presentation even with a 980px layout viewport", () => {
   const phone = phonePresentationMetrics({
@@ -43,4 +43,16 @@ test("ordinary desktop and narrow desktop windows do not pretend to be iPhones",
     });
     assert.deepEqual(result,{phone:false,width:null});
   }
+});
+
+test("WebKit's restored 980px PWA viewport is detected without confusing pinch zoom", () => {
+  const stale={
+    screen:{width:390,height:844},
+    innerWidth:980,
+    visualViewport:{width:390},
+    navigator:{userAgent:"Mozilla/5.0 (iPhone)",maxTouchPoints:5},
+  };
+  assert.equal(needsPhoneViewportRepair(stale),true);
+  assert.equal(needsPhoneViewportRepair({...stale,innerWidth:390,visualViewport:{width:290}}),false);
+  assert.equal(needsPhoneViewportRepair({...stale,screen:{width:834,height:1194},navigator:{userAgent:"Mozilla/5.0 (iPad)",maxTouchPoints:5}}),false);
 });
