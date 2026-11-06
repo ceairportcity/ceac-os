@@ -393,7 +393,7 @@ export default function Work({ me, isManager = false, openItem }) {
     <WorkPageHeader
       eyebrow={me.unit_name}
       title="Work"
-      description="Plan, record, and finish your work. Keep every contribution connected to the right project."
+      description="See what needs doing, record progress and follow your approvals."
       actionLabel="Add my work"
       onAction={() => openCreate("unit")}
     />
