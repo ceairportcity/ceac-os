@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 import WorkActivityDiary from "./WorkActivityDiary";
+import WorkFocusPanel from "./WorkFocusPanel";
 import WorkProjectLink from "./WorkProjectLink";
 import WorkDetailsEditor from "./WorkDetailsEditor";
 import "./WorkRegisterInspector.css";
@@ -73,12 +74,14 @@ export function WorkRegisterInspector({ me, selectedId, onClose, openItem }) {
   </aside>;
 }
 
-export default function WorkRegisterLayout({ me, selectedId, onClose, openItem, children, tabs, recordCount }) {
-  return <div className={`s2-work-layout${selectedId ? " has-selection" : ""}`}>
+export default function WorkRegisterLayout({ me, selectedId, onClose, openItem, children, tabs, recordCount, rows = [], reviews = [], role = "staff" }) {
+  return <>
+    <WorkFocusPanel rows={rows} reviews={reviews} role={role} onOpen={openItem}/>
+    <div className={`s2-work-layout${selectedId ? " has-selection" : ""}`}>
     <div className="s2-work-register">
-      {tabs && <><header className="s2-register-heading"><h2>Responsibilities</h2><span>{recordCount} current records</span></header>{tabs}</>}
+      {tabs && <><header className="s2-register-heading"><h2>{role === "staff" ? "Your work" : "Work records"}</h2><span>{recordCount} items</span></header>{tabs}</>}
       {children}
     </div>
     {selectedId && <WorkRegisterInspector me={me} selectedId={selectedId} onClose={onClose} openItem={openItem}/> }
-  </div>;
+  </div></>;
 }
