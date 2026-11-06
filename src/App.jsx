@@ -126,6 +126,9 @@ export default function App() {
   const [me, setMe] = useState(null);
   const notificationCounts = useCeacUnreadNotifications(me);
   const [openUpdatesIntent,setOpenUpdatesIntent]=useState(false);
+  const [memoWorkContext,setMemoWorkContext]=useState(null);
+  const [calendarFocusDate,setCalendarFocusDate]=useState(null);
+  useEffect(()=>{setMemoWorkContext(null);},[me?.org_id,me?.id]);
   const [ready, setReady] = useState(false);
   const [bootError, setBootError] = useState(null);
   const initialRoute = routeFromLocation();
@@ -162,6 +165,12 @@ export default function App() {
 
   useEffect(() => {
     boot();
+    // Keep the previous JWT in RAM for a best-effort server revocation on logout.
+    let lastPushAuthToken = null;
+    // Separate token observer keeps the established Stage 2 Auth callback unchanged.
+    const { data: pushTokenSub } = supabase.auth.onAuthStateChange((_event, authSession) => {
+      if (authSession?.access_token) lastPushAuthToken = authSession.access_token;
+    });
     const { data: sub } = supabase.auth.onAuthStateChange((event) => {
       // boot() above already performs the initial, independently verified
       // account read. Supabase also emits INITIAL_SESSION on subscription:
@@ -170,6 +179,10 @@ export default function App() {
       // Continue handling all genuine identity and security state changes.
       if (event === "INITIAL_SESSION") return;
       if(event==="SIGNED_OUT"){
+        const previousToken = lastPushAuthToken;
+        lastPushAuthToken = null;
+        void import("./lib/ceacPush").then(({disconnectDevicePushOnSignOut})=>disconnectDevicePushOnSignOut(previousToken)).catch(()=>{});
+        setMemoWorkContext(null);
         if("clearAppBadge" in navigator)void navigator.clearAppBadge().catch(()=>{});
         if(draftActorRef.current){
           const actor=draftActorRef.current;
@@ -200,6 +213,7 @@ export default function App() {
     return () => {
       ++bootEpoch.current;
       sub.subscription.unsubscribe();
+      pushTokenSub.subscription.unsubscribe();
       window.removeEventListener("popstate", onPopState);
     };
   }, []);
@@ -520,7 +534,7 @@ export default function App() {
       if (isUnitManager) return <ManagerWork key={managerScopeKey} me={me} openItem={openItem} goAssign={startAssignment} />;
       return <Work key={managerScopeKey} me={me} isManager={false} openItem={openItem} />;
     }
-    if (tab === "staff-calendar" && isStaff) return <StaffCalendar me={me} openItem={openItem} openMeeting={openMeeting} />;
+    if (tab === "staff-calendar" && isStaff) return <StaffCalendar me={me} openItem={openItem} openMeeting={openMeeting} initialDate={calendarFocusDate} onFocusHandled={()=>setCalendarFocusDate(null)} />;
     if (tab === "messages") return <Inbox
       key={`${me.org_id}:${me.id}`}
       me={me}
@@ -532,6 +546,8 @@ export default function App() {
       openAnnouncements={() => go("announcements")}
       initialView={openUpdatesIntent ? "updates" : createIntent === "message_room" ? "rooms" : null}
       notificationCounts={notificationCounts}
+      memoWorkContext={memoWorkContext}
+      onMemoWorkContextHandled={()=>setMemoWorkContext(null)}
       onInitialViewHandled={() => {setCreateIntent(null);setOpenUpdatesIntent(false);}}
     />;
     if (tab === "projects" && isUnitManager) return <ManagerProjects key={managerScopeKey} me={me} openItem={openItem} goAssign={startAssignment} openMeeting={openMeeting} scheduleMeeting={startMeeting} openRoom={(projectId, reference) => openRoom({ kind: "project", projectId, reference })} />;
@@ -708,7 +724,7 @@ export default function App() {
           <RouteTransition routeKey={routeTransitionKey}>
           <Suspense fallback={<RouteFallback />}>
           <SettingsBack tab={tab} enabled={isAdmin && !overlay} go={go} returnTo={settingsReturn}>
-          {itemId ? <Item id={itemId} me={me} reviewOnly={isExec && tab === "exec-organisation"} session={session} isManager={isUnitManager} initialRoutineDate={itemRoutineDate} openRoom={openRoom} back={closeUrlOverlay} />
+          {itemId ? <Item id={itemId} me={me} reviewOnly={isExec && tab === "exec-organisation"} session={session} isManager={isUnitManager} initialRoutineDate={itemRoutineDate} openRoom={openRoom} onOpenCalendar={dueAt=>{setCalendarFocusDate(dueAt||null);navigate({tab:isExec?"exec-calendar":isAdmin?"admin-calendar":isUnitManager?"calendar":"staff-calendar"});}} onOpenMemo={work=>{setMemoWorkContext({id:work.id,ref:work.ref,title:work.title});navigate({tab:"messages"});}} back={closeUrlOverlay} />
             : assigning && (isExec || isAdmin) ? <ExecutiveAssign key={`${me.org_id}:${me.id}`} me={me} context={assigning} back={() => setAssigning(null)} />
             : assigning ? <Assign me={me}
                 initialProjectId={assigning.projectId}

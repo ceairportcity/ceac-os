@@ -524,7 +524,7 @@ test("Work full-detail remounts its independent async state on account, departme
   assert.match(item,/export default function Item\(props\)/);
   assert.match(item,/const scope = \[props\.me\?\.org_id, props\.me\?\.id, props\.me\?\.unit_id, props\.id, props\.initialRoutineDate \|\| ""\]\.join\(":"\)/);
   assert.match(item,/<ItemDetail key=\{scope\} \{\.\.\.props\} \/>/);
-  assert.match(item,/function ItemDetail\(\{ id, me, session, isManager = false, initialRoutineDate=null, openRoom, back \}\)/);
+  assert.match(item,/function ItemDetail\(\{ id, me, session, isManager = false, initialRoutineDate=null, openRoom, onOpenCalendar, onOpenMemo, back \}\)/);
   assert.match(item,/record_routine_occurrence/);
   assert.match(item,/change_routine_schedule/);
 });
@@ -537,4 +537,14 @@ test("restricted reviewer evidence shows a safe retry when the database request 
   assert.match(src,/setSourceNotes\(\[\]\)/);
   assert.match(src,/setCompletedReviewScope\(reviewScope\); setLoading\(false\)/);
   assert.match(src,/\{activeError && <p role="alert">/);
+});
+
+test("staff Work opens the selected deadline in Calendar without another data source",()=>{
+  const app=source("src/App.jsx"),detail=source("src/screens/Item.jsx"),calendar=source("src/screens/StaffCalendar.jsx");
+  assert.match(detail,/See in Calendar/);
+  assert.match(detail,/onOpenCalendar\(item\.due_at\)/);
+  assert.match(app,/calendarFocusDate/);
+  assert.match(app,/initialDate=\{calendarFocusDate\}/);
+  assert.match(calendar,/initialDate=null,onFocusHandled/);
+  assert.match(calendar,/const \[selectedDate,setSelectedDate\]=useState\(selectedInitial\)/);
 });

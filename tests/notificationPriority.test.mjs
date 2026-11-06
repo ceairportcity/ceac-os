@@ -1,3 +1,4 @@
+import {filterDayNotices} from "../src/lib/overviewDay.js";
 import {test} from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
@@ -51,9 +52,22 @@ test("An overdue assignment remains actionable; completed work disappears",()=>{
     {id:"work3",title:"Private records",due_at:iso(15),status:"assigned",confidential:true},
   ]});
   assert.equal(r.items.length,2);
-  assert.ok(r.items.every(x=>x.level==="attention"));
+  assert.equal(r.items.find(x=>x.id==="work:work1").level,"attention");
+  assert.equal(r.items.find(x=>x.id==="work:work3").level,"personal");
   assert.equal(r.items.find(x=>x.id==="work:work3").meta,"Confidential assigned task");
 });
+test("a Ghana date-only task is not overdue until the next calendar day",()=>{
+ const base=Date.parse("2026-11-05T13:00:00Z");
+ const task={id:"work-date",title:"Report",due_at:"2026-11-05",status:"in_progress"};
+ const today=buildCeacNotificationBriefing({me:person,now:base,workItems:[task]});
+ assert.equal(today.items.length,1);
+ assert.equal(today.items[0].level,"personal");
+ const overdue=buildCeacNotificationBriefing({me:person,now:Date.parse("2026-11-06T00:00:00Z"),workItems:[task]});
+ assert.equal(overdue.items[0].level,"attention");
+ const routine=buildCeacNotificationBriefing({me:person,now:base,workItems:[{...task,kind:"routine"}]});
+ assert.equal(routine.items.length,0);
+});
+
 test("Read notifications are removed, but their work deadline remains until done",()=>{
   const id="11111111-1111-4111-8111-111111111111";
   const r=buildCeacNotificationBriefing({me:person,now,events:[
@@ -191,6 +205,16 @@ test("review, returned and dependency items are not overdue work for staff",()=>
   assert.equal(isWorkOverdue({status:"not_started",due_at:past,kind:"routine"},now),false);
 });
 
+test("Ghana date-only deadlines remain actionable throughout their scheduled day",()=>{
+  const daytime=new Date("2026-11-05T14:00:00Z").getTime();
+  const followingDay=new Date("2026-11-06T00:00:00Z").getTime();
+  const task={kind:"task",status:"in_progress",due_at:"2026-11-05"};
+  assert.equal(isWorkOverdue(task,daytime),false);
+  assert.equal(isWorkOverdue(task,followingDay),true);
+  assert.equal(isWorkOverdue({...task,status:"in_review"},followingDay),false);
+  assert.equal(isWorkOverdue({...task,kind:"routine"},followingDay),false);
+});
+
 test("deadline notifications suppress work submitted for review or waiting on others",()=>{
   const states=["in_review","waiting_on","returned","completed","self_certified","cancelled"];
   const workItems=states.map((status,i)=>({id:"w"+i,title:status,due_at:iso(-25),status}));
@@ -261,4 +285,26 @@ test("support alerts are enriched with only permitted case metadata and open the
  assert.match(sql,/AFTER INSERT ON public\.support_cases/);
  assert.match(sql,/stm\.active/);
  assert.match(sql,/private\.ceac_notification_context_visible/);
+});
+
+
+test("staff Overview shows one actionable preview for repeated work notices",()=>{
+  const actions=[{id:"a",workItemId:"w1"}];
+  const notices=[
+    {id:"e1",url:"/?tab=work&item=w1",type:"event"},
+    {id:"e2",url:"/?tab=work&item=w2",type:"event"},
+    {id:"e3",url:"/?tab=work&item=w2",type:"event"},
+    {id:"memo1",url:"/?tab=messages&memo=m1",type:"event"},
+  ];
+  assert.deepEqual(filterDayNotices(notices,actions).map(row=>row.id),["e2","memo1"]);
+});
+
+
+test("staff Overview keeps core Work usable when optional information fails",()=>{
+  const home=readFileSync("src/screens/Home.jsx","utf8");
+  assert.match(home,/setItems\(requireResult\(itemResult, "Your work"\)\)/);
+  assert.match(home,/const optionalResult = \(result, label\) =>/);
+  assert.match(home,/setFeedback\(optionalResult\(feedbackResult/);
+  assert.match(home,/setUpcomingMeetings\(optionalResult\(meetingResult/);
+  assert.match(home,/if \(unavailableSections\.length\) setError/);
 });

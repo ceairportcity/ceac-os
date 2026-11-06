@@ -7,9 +7,9 @@ import Notifications from "./Notifications";
 import { initials, messageTimestamp, roomContext } from "../lib/memos";
 import "./MessagesWorkspace.css";
 
-export default function Inbox({ me, openRoom, openItem, openProject, scheduleMeeting, startWorkFromMessage, openAnnouncements, initialView, onInitialViewHandled, notificationCounts }) {
+export default function Inbox({ me, openRoom, openItem, openProject, scheduleMeeting, startWorkFromMessage, openAnnouncements, initialView, onInitialViewHandled, notificationCounts, memoWorkContext, onMemoWorkContextHandled }) {
   const linkedMemo = new URLSearchParams(window.location.search).get("memo");
-  const [section,setSection] = useState(new URLSearchParams(window.location.search).get("updates")==="1" ? "updates" : new URLSearchParams(window.location.search).get("room") ? "rooms" : "memos");
+  const [section,setSection] = useState(memoWorkContext ? "memos" : new URLSearchParams(window.location.search).get("updates")==="1" ? "updates" : new URLSearchParams(window.location.search).get("room") ? "rooms" : "memos");
   const [rooms,setRooms] = useState([]), [selected,setSelected] = useState(null);
   const [actions,setActions] = useState([]), [actionsOpen,setActionsOpen] = useState(false);
   const [query,setQuery] = useState(""), [error,setError] = useState(""), [loading,setLoading] = useState(true);
@@ -37,12 +37,12 @@ export default function Inbox({ me, openRoom, openItem, openProject, scheduleMee
     setLoading(true);setError("");
     (async () => {
       try {
-        const [result,attention] = await Promise.all([supabase.rpc("my_room_directory").abortSignal(controller.signal),supabase.rpc("my_work_attention_queue").abortSignal(controller.signal)]);
+        const [result,attention] = await Promise.all([section==="rooms" ? supabase.rpc("my_room_directory").abortSignal(controller.signal) : Promise.resolve({data:[],error:null}), supabase.rpc("my_work_attention_queue").abortSignal(controller.signal)]);
         if(result.error) throw result.error;
-        if(attention.error) throw attention.error;
+        if(attention.error && actionsOpen) throw attention.error;
         if(!active || serial !== request.current) return;
-        setRooms(result.data || []);setActions(attention.data || []);setLoadedScope(scope);
-        setSelected(current => (result.data || []).find(room => room.id === current?.id) || null);
+        if(section==="rooms") setRooms(result.data || []);setActions(attention.error ? [] : (attention.data || []));setLoadedScope(scope);
+        if(section==="rooms") setSelected(current => (result.data || []).find(room => room.id === current?.id) || null);
       } catch(failure) {
         if(active && serial === request.current) {setRooms([]);setLoadedScope(scope);setError(failure.message || "Rooms could not be loaded.");}
       } finally {if(active && serial === request.current)setLoading(false);}
@@ -94,7 +94,7 @@ export default function Inbox({ me, openRoom, openItem, openProject, scheduleMee
       <button type="button" aria-label="Memos" aria-current={section === "memos" ? "page" : undefined} onClick={()=>switchSection("memos")}><FileText size={16}/> Memos {notifications?.memo>0 && <span aria-hidden="true" className="ceac-notification-badge">{notifications.memo>99?"99+":notifications.memo}</span>}</button>
       <button type="button" aria-label="Rooms" aria-current={section === "rooms" ? "page" : undefined} onClick={()=>switchSection("rooms")}><MessageSquare size={16}/> Rooms {notifications?.room>0 && <span aria-hidden="true" className="ceac-notification-badge">{notifications.room>99?"99+":notifications.room}</span>}</button>
     </nav>
-    {section === "updates" ? <Notifications key={scope} me={me} notificationCounts={notificationCounts} /> : section === "memos" ? <Memos key={scope} me={me} composeRequest={composeMemo} initialMemoId={linkedMemo} openProject={openProject} leaveGuard={memoLeaveGuard}/>
+    {section === "updates" ? <Notifications key={scope} me={me} notificationCounts={notificationCounts} /> : section === "memos" ? <Memos key={scope} me={me} composeRequest={composeMemo} initialMemoId={linkedMemo} openProject={openProject} openWork={openItem} startWorkFromMemo={startWorkFromMessage} leaveGuard={memoLeaveGuard} relatedWork={memoWorkContext} onRelatedWorkHandled={onMemoWorkContextHandled}/>
       : <div className={`msg-layout ${selected && verified ? "has-selection" : ""}`}>
         <aside className="msg-directory" aria-label="Rooms">
           <label className="msg-search"><Search size={16}/><input type="search" aria-label="Search Rooms" placeholder="Search rooms…" value={query} onChange={e=>setQuery(e.target.value)}/></label>

@@ -25,6 +25,17 @@ const labelDay=(key)=>new Date(`${key}T12:00:00`).toLocaleDateString("en-GB",{we
 const shortDate=(key)=>new Date(`${key}T12:00:00`).toLocaleDateString("en-GB",{day:"numeric",month:"short"});
 const timeLabel=(value)=>value?String(value).slice(0,5):null;
 
+// Calendar mirrors Work's authoritative state; a submitted or approved item
+// must never look like unfinished work merely because its due date is visible.
+function calendarWorkStatus(status) {
+  if (["completed", "self_certified"].includes(status)) return "Completed";
+  if (status === "in_review") return "Waiting for approval";
+  if (status === "returned") return "Changes requested";
+  if (["waiting_on", "waiting", "blocked"].includes(status)) return "Waiting";
+  if (status === "cancelled") return "Cancelled";
+  return "Due";
+}
+
 const FILTER_ITEMS = [
   { value:"all", label:"All", icon:"calendar" },
   { value:"meeting", label:"Meetings", icon:"meeting" },
@@ -34,16 +45,19 @@ const FILTER_ITEMS = [
   { value:"leave", label:"Leave", icon:"time" },
 ];
 
-export default function StaffCalendar({me,openItem,openMeeting,statusLabel="Staff / Volunteer",scopeControl=null}){
+export default function StaffCalendar({me,openItem,openMeeting,statusLabel="Staff / Volunteer",scopeControl=null,initialDate=null,onFocusHandled}){
   const today=new Date();
-  const [cursor,setCursor]=useState(today);
-  const [selectedDate,setSelectedDate]=useState(dayKey(today));
+  const selectedInitial=/^\d{4}-\d{2}-\d{2}/.test(initialDate||"") ? initialDate.slice(0,10) : dayKey(today);
+  const [cursor,setCursor]=useState(()=>new Date(selectedInitial+"T12:00:00"));
+  const [selectedDate,setSelectedDate]=useState(selectedInitial);
+  useEffect(()=>{if(initialDate)onFocusHandled?.();},[]);
   const [events,setEvents]=useState([]);
   const [personalTasks,setPersonalTasks]=useState([]);
   const [dayNotes,setDayNotes]=useState([]);
   const [checklistRows,setChecklistRows]=useState([]);
   const [meetingNotes,setMeetingNotes]=useState([]);
   const [workOptions,setWorkOptions]=useState([]);
+  const [workOptionsLoading,setWorkOptionsLoading]=useState(false);
   const [projectOptions,setProjectOptions]=useState([]);
   const [dayTab,setDayTab]=useState("schedule");
   const [taskTitle,setTaskTitle]=useState("");
@@ -78,6 +92,23 @@ export default function StaffCalendar({me,openItem,openMeeting,statusLabel="Staf
   const calendarEvents=[...events,...routineCalendar.events];
 
   useEffect(()=>{load();},[me.id,me.unit_id,cursor.getFullYear(),cursor.getMonth()]);
+  // The visible calendar needs only dated Work in its visible window. Load the
+  // full available Work options only if the person is creating a private task.
+  useEffect(()=>{
+    if(!composer || composerType!=="task")return;
+    let active=true;setWorkOptionsLoading(true);
+    supabase.from("work_items").select("id,ref,title,project_id,projects(id,name)")
+      .eq("assignee_id",me.id).neq("visibility","private")
+      .then(({data,error:readError})=>{
+        if(!active)return;
+        if(readError){setWorkOptions([]);setProjectOptions([]);setError("Work links could not be loaded. You can still create a private task without linking one.");return;}
+        setWorkOptions(data||[]);
+        const projects=new Map();
+        (data||[]).forEach(item=>{if(item.projects?.id)projects.set(item.projects.id,item.projects.name);});
+        setProjectOptions([...projects.entries()].map(([id,name])=>({id,name})));
+      }).finally(()=>{if(active)setWorkOptionsLoading(false);});
+    return()=>{active=false;};
+  },[composer,composerType,me.id,me.org_id]);
   useEffect(()=>{
     const row=dayNotes.find(note=>note.note_date===selectedDate&&note.note_kind==="daily");
     setNoteDraft(row?.body||"");
@@ -93,7 +124,7 @@ export default function StaffCalendar({me,openItem,openMeeting,statusLabel="Staf
       const fromDay=dayKey(rangeStart);
       const toDay=dayKey(rangeEnd);
       const [work,meetings,ministry,leave]=await Promise.all([
-        supabase.from("work_items").select("id,ref,title,kind,status,due_at,project_id,projects(id,name)").eq("assignee_id",me.id).neq("visibility","private"),
+        supabase.from("work_items").select("id,ref,title,kind,status,due_at,project_id,projects(id,name)").eq("assignee_id",me.id).neq("visibility","private").gte("due_at",from).lt("due_at",to),
         supabase.from("meeting_sessions").select("id,title,scope,unit_id,project_id,starts_at,ends_at,status,provider,projects(name),units(name)").gte("starts_at",from).lt("starts_at",to).order("starts_at"),
         supabase.from("ministry_events").select("id,title,kind,scope,unit_id,starts_at,ends_at,all_day,location,cancelled").gte("starts_at",from).lt("starts_at",to).order("starts_at"),
         supabase.from("leave_requests").select("id,kind,start_date,end_date,status").eq("profile_id",me.id).eq("status","approved").order("start_date"),
@@ -152,16 +183,13 @@ export default function StaffCalendar({me,openItem,openMeeting,statusLabel="Staf
       if(privateMeetingNotes.error)throw privateMeetingNotes.error;
 
       const rows=[];
-      (work.data||[]).filter(item=>item.due_at&&item.kind!=="routine").forEach(item=>rows.push({id:`work-${item.id}`,kind:"work",date:accraDay(item.due_at),title:item.title,meta:`${item.ref}${item.projects?.name?` · ${item.projects.name}`:""}`,itemId:item.id,sortAt:item.due_at,time:new Date(item.due_at).toLocaleTimeString("en-GB",{timeZone:"Africa/Accra",hour:"2-digit",minute:"2-digit"})}));
+      (work.data||[]).filter(item=>item.due_at&&item.kind!=="routine").forEach(item=>rows.push({id:`work-${item.id}`,kind:"work",date:accraDay(item.due_at),title:item.title,meta:`${item.ref}${item.projects?.name?` · ${item.projects.name}`:""}`,workStatus:item.status,itemId:item.id,sortAt:item.due_at,time:new Date(item.due_at).toLocaleTimeString("en-GB",{timeZone:"Africa/Accra",hour:"2-digit",minute:"2-digit"})}));
       meetingRows.forEach(row=>rows.push({id:`meeting-${row.id}`,kind:"meeting",date:accraDay(row.starts_at),title:row.title,meta:`${new Date(row.starts_at).toLocaleTimeString("en-GB",{timeZone:"Africa/Accra",hour:"2-digit",minute:"2-digit"})}${row.ends_at?`–${new Date(row.ends_at).toLocaleTimeString("en-GB",{timeZone:"Africa/Accra",hour:"2-digit",minute:"2-digit"})}`:""}`,meetingId:row.id,sortAt:row.starts_at,time:new Date(row.starts_at).toLocaleTimeString("en-GB",{timeZone:"Africa/Accra",hour:"2-digit",minute:"2-digit"})}));
       (ministry.data||[]).filter(row=>row.scope==="church"||row.unit_id===me.unit_id).forEach(row=>rows.push({id:`ministry-${row.id}`,kind:"ministry",date:accraDay(row.starts_at),title:`${row.cancelled?"Cancelled · ":""}${row.title}`,meta:`${row.all_day?"All day":new Date(row.starts_at).toLocaleTimeString("en-GB",{timeZone:"Africa/Accra",hour:"2-digit",minute:"2-digit"})}${row.location?` · ${row.location}`:""}`,sortAt:row.starts_at,time:row.all_day?"All day":new Date(row.starts_at).toLocaleTimeString("en-GB",{timeZone:"Africa/Accra",hour:"2-digit",minute:"2-digit"})}));
       (leave.data||[]).forEach(row=>{let d=new Date(`${row.start_date}T00:00:00`),end=new Date(`${row.end_date}T00:00:00`);while(d<=end){rows.push({id:`leave-${row.id}-${dayKey(d)}`,kind:"leave",date:dayKey(d),title:`${row.kind} leave`,meta:"All day · Approved",sortAt:`${dayKey(d)}T00:00:00Z`,time:"All day"});d=addDays(d,1);}});
       privateTasks.filter(task=>task.plan_date).forEach(task=>rows.push({id:`personal-task-${task.id}`,kind:"personal",personalType:"task",date:task.plan_date,title:task.title,meta:task.planned_time?timeLabel(task.planned_time):"Private task",taskId:task.id,completed:Boolean(task.completed_at)}));
       (privateEvents.data||[]).forEach(event=>rows.push({id:`personal-event-${event.id}`,kind:"personal",personalType:"event",date:accraDay(event.starts_at),title:event.title,meta:`${new Date(event.starts_at).toLocaleTimeString("en-GB",{timeZone:"Africa/Accra",hour:"2-digit",minute:"2-digit"})}${event.ends_at?`–${new Date(event.ends_at).toLocaleTimeString("en-GB",{timeZone:"Africa/Accra",hour:"2-digit",minute:"2-digit"})}`:""}${event.location?` · ${event.location}`:""}`,privateEventId:event.id,raw:event,sortAt:event.starts_at,time:new Date(event.starts_at).toLocaleTimeString("en-GB",{timeZone:"Africa/Accra",hour:"2-digit",minute:"2-digit"})}));
-      const projects=new Map();
-      (work.data||[]).forEach(item=>{if(item.projects?.id)projects.set(item.projects.id,item.projects.name);});
-      setWorkOptions(work.data||[]);
-      setProjectOptions([...projects.entries()].map(([id,name])=>({id,name})));
+      // Work link choices load only when a task composer is opened.
       setChecklistRows(checklists.data||[]);
       setMeetingNotes((privateMeetingNotes.data||[]).map(note=>({...note,meeting:meetingRows.find(row=>row.id===note.meeting_id)||null})));
       setPersonalTasks(privateTasks);
@@ -297,8 +325,8 @@ export default function StaffCalendar({me,openItem,openMeeting,statusLabel="Staf
     ...event,
     icon:event.kind==="meeting"?"meeting":event.kind==="work"?"work":event.kind==="personal"?"check":event.kind==="ministry"?"ministry":"time",
     meta:`${includeDate?new Date(`${event.date}T12:00:00`).toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"})+" · ":""}${event.meta||""}`,
-    status:event.routineState?routineCalendarStatus(event.routineState):event.kind==="leave"?"Approved":event.kind==="meeting"?"Meeting":event.kind==="work"?"Due":event.kind==="personal"?(event.completed?"Done":"Private"):"Ministry",
-    statusTone:event.kind==="leave"?"success":event.kind==="meeting"?"action":event.kind==="personal"&&event.completed?"success":"neutral",
+    status:event.routineState?routineCalendarStatus(event.routineState):event.kind==="leave"?"Approved":event.kind==="meeting"?"Meeting":event.kind==="work"?calendarWorkStatus(event.workStatus):event.kind==="personal"?(event.completed?"Done":"Private"):"Ministry",
+    statusTone:event.kind==="leave"?"success":event.kind==="meeting"?"action":event.kind==="work"&&["completed","self_certified"].includes(event.workStatus)?"success":event.kind==="work"&&event.workStatus==="returned"?"warning":event.kind==="personal"&&event.completed?"success":"neutral",
     onClick:event.itemId||event.meetingId||event.privateEventId?()=>{setSelectedDate(event.date);setDayTab(event.kind==="work"?"tasks":"schedule");open(event);}:undefined,
   });
 
@@ -314,7 +342,7 @@ export default function StaffCalendar({me,openItem,openMeeting,statusLabel="Staf
   const checklistFor=(taskId)=>checklistRows.filter(row=>row.task_id===taskId);
   const noteCount=(noteDraft.trim()?1:0)+selectedMeetingNotes.length+generalNotes.length;
   const taskCount=selectedPrivate.length+selectedWork.length;
-  const upcoming=[...visible].filter(event=>event.date>=dayKey(new Date())&&event.kind!=="personal").sort((a,b)=>a.date.localeCompare(b.date)).slice(0,8).map(event=>displayEvent(event,true));
+  const upcoming=[...visible].filter(event=>event.date>=dayKey(new Date())&&event.kind!=="personal" && !(event.kind==="work" && ["completed","self_certified","cancelled"].includes(event.workStatus))).sort((a,b)=>a.date.localeCompare(b.date)).slice(0,8).map(event=>displayEvent(event,true));
 
   const moveMonth=(amount)=>{const next=new Date(cursor.getFullYear(),cursor.getMonth()+amount,1);setCursor(next);setSelectedDate(dayKey(next));};
   const goToday=()=>{const now=new Date();setCursor(now);setSelectedDate(dayKey(now));};
@@ -372,7 +400,7 @@ export default function StaffCalendar({me,openItem,openMeeting,statusLabel="Staf
             <section className="phase6-day-block">
               <div className="phase6-day-block-head"><h3>Today's tasks</h3><span>{selectedPrivate.length+selectedWork.length}</span></div>
               {selectedWork.map(event=><button key={event.id} type="button" className="phase6-day-shared-row" onClick={()=>open(event)}>
-                <span className="phase6-day-kind is-work">work</span><span><strong>{event.title}</strong><small>{event.meta}</small></span>
+                <span className="phase6-day-kind is-work">work</span><span><strong>{event.title}</strong><small>{event.meta} · {calendarWorkStatus(event.workStatus)}</small></span>
               </button>)}
               {selectedPrivate.map(task=><div key={task.id} className="phase6-private-task-card"><label className={task.completed_at?"phase6-private-task is-complete":"phase6-private-task"}><input type="checkbox" checked={Boolean(task.completed_at)} disabled={busy} onChange={()=>togglePersonalTask(task)}/><span><strong>{task.title}</strong><small>{[task.planned_time?timeLabel(task.planned_time):"Private personal task",task.reminder_at?"reminder set":null,task.linked_work_item_id?"linked CEAC Work":task.linked_project_id?"linked Project":null].filter(Boolean).join(" · ")}</small></span><em>Private</em></label>{checklistFor(task.id).length>0&&<div className="phase6-task-checklist">{checklistFor(task.id).map(row=><label key={row.id}><input type="checkbox" checked={Boolean(row.completed_at)} disabled={busy} onChange={()=>toggleChecklist(row)}/><span>{row.title}</span></label>)}</div>}<div className="phase6-private-task-actions"><Button variant="quiet" size="sm" disabled={busy} onClick={()=>setEditingPrivateItem({kind:"task",...task})}>Edit / delete</Button></div></div>)}
               {!selectedPrivate.length&&!selectedWork.length?<p className="phase6-day-empty">No task is planned or due on this day.</p>:null}
@@ -436,7 +464,7 @@ export default function StaffCalendar({me,openItem,openMeeting,statusLabel="Staf
         {composerType==="task"&&!composeUnscheduled&&<FieldGroup label="Time (optional)"><input className="field" aria-label="Task time" type="time" value={composeStart} onChange={event=>setComposeStart(event.target.value)} /></FieldGroup>}
         {composerType==="note"&&<FieldGroup label="Note type"><select className="field" aria-label="Note type" value={composeNoteKind} onChange={event=>setComposeNoteKind(event.target.value)}><option value="daily">Daily journal</option><option value="general">General note</option><option value="personal">Personal note</option></select></FieldGroup>}
         <FieldGroup label={composerType==="note"?"Note":"Details (optional)"}><textarea className="field" aria-label="Planning details" rows={composerType==="note"?8:4} value={composeDetails} maxLength={composerType==="note"?12000:4000} onChange={event=>setComposeDetails(event.target.value)} /></FieldGroup>
-        {composerType==="task"&&<><FieldGroup label="Checklist" hint="One private checklist item per line."><textarea className="field" aria-label="Task checklist" rows={3} value={composeChecklist} onChange={event=>setComposeChecklist(event.target.value)} /></FieldGroup><div className="phase6-composer-grid"><FieldGroup label="Link CEAC Work"><select className="field" aria-label="Link CEAC Work" value={composeWorkId} onChange={event=>setComposeWorkId(event.target.value)}><option value="">No Work link</option>{workOptions.map(item=><option key={item.id} value={item.id}>{item.ref} · {item.title}</option>)}</select></FieldGroup><FieldGroup label="Link Project"><select className="field" aria-label="Link Project" value={composeProjectId} onChange={event=>setComposeProjectId(event.target.value)}><option value="">No Project link</option>{projectOptions.map(project=><option key={project.id} value={project.id}>{project.name}</option>)}</select></FieldGroup></div></>}
+        {composerType==="task"&&<><FieldGroup label="Checklist" hint="One private checklist item per line."><textarea className="field" aria-label="Task checklist" rows={3} value={composeChecklist} onChange={event=>setComposeChecklist(event.target.value)} /></FieldGroup><div className="phase6-composer-grid"><FieldGroup label="Link CEAC Work">{workOptionsLoading&&<span role="status" className="screen-note">Loading available work…</span>}<select className="field" aria-label="Link CEAC Work" value={composeWorkId} onChange={event=>setComposeWorkId(event.target.value)}><option value="">No Work link</option>{workOptions.map(item=><option key={item.id} value={item.id}>{item.ref} · {item.title}</option>)}</select></FieldGroup><FieldGroup label="Link Project"><select className="field" aria-label="Link Project" value={composeProjectId} onChange={event=>setComposeProjectId(event.target.value)}><option value="">No Project link</option>{projectOptions.map(project=><option key={project.id} value={project.id}>{project.name}</option>)}</select></FieldGroup></div></>}
         <FieldGroup label="Reminder (optional)"><input className="field" aria-label="Planning reminder" type="datetime-local" value={composeReminder} onChange={event=>setComposeReminder(event.target.value)} /></FieldGroup>
         {error&&<ProductNotice tone="error" title="Could not save private planning">{error}</ProductNotice>}
         <div className="phase6-composer-actions"><Button variant="secondary" disabled={busy} onClick={()=>setComposer(null)}>Cancel</Button><Button disabled={busy||(composerType!=="note"&&!composeTitle.trim())||(composerType==="note"&&!composeDetails.trim())||(composerType==="event"&&(!composeDate||!composeStart||!composeEnd||composeEnd<composeStart))} onClick={saveComposer}>{busy?"Saving…":`Save ${composerType}`}</Button></div>

@@ -43,3 +43,5 @@
 .s2-progress-menu-actions button:hover{background:#f3f6fa}
 .s2-progress-remove{padding:12px;background:#f8fafc;border-radius:10px}
 .s2-work-diary-timeline li{padding-right:48px;border-bottom:1px solid #edf1f5}
+
+.s2-progress-inline textarea:focus-visible{outline:2px solid var(--ev2-action)}

@@ -96,7 +96,9 @@ for(const width of [1440,1024,900,320])test(`Memo reader keeps document and auth
  const document=await page.locator('.memo-document').boundingBox();
  const details=await page.locator('.memo-thread-details').boundingBox();
  const actions=await page.locator('.memo-response').boundingBox();
- expect(document).toBeTruthy();expect(details).toBeTruthy();expect(actions).toBeTruthy();
+ const composer=await page.locator('.memo-reply-composer').boundingBox();
+ expect(document).toBeTruthy();expect(details).toBeTruthy();expect(actions).toBeTruthy();expect(composer).toBeTruthy();
+ await expect(page.getByRole('textbox',{name:'Reply in this conversation'})).toBeVisible();
  await expect(page.locator('.memo-thread-timeline .memo-thread-entry')).toHaveCount(1);
  await expect(page.getByRole('complementary',{name:'Memo details'})).toBeVisible();
  await expect(page.getByRole('region',{name:'Memo attachments'})).toBeVisible();
@@ -108,8 +110,10 @@ for(const width of [1440,1024,900,320])test(`Memo reader keeps document and auth
   await expect(page.locator('.memo-reader[data-reading]')).toHaveCSS('display','grid');
   expect(details.x).toBeGreaterThanOrEqual(document.x+document.width-1);
   expect(details.width).toBeLessThanOrEqual(260);
+  expect(composer.x+composer.width).toBeLessThanOrEqual(details.x+1);
  } else {
-  expect(details.y).toBeGreaterThanOrEqual(document.y+document.height-1);
+  expect(composer.y).toBeGreaterThanOrEqual(document.y+document.height-1);
+  expect(details.y).toBeGreaterThanOrEqual(composer.y+composer.height-1);
   expect(document.width).toBeGreaterThan(250);
  }
  if(width<=760){

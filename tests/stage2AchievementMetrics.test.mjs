@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   ghanaDate, reportingRange, individualAchievementFacts, distinctVerifiedProjectOutcomes,
-  completedByDeadline, deadlineOverdue,
+  completedByDeadline, deadlineOverdue, isActionableDeadlineWork, isDeadlineWorkOverdue,
 } from "../src/lib/stage2AchievementMetrics.js";
 
 const range=reportingRange("quarterly","2026-08-15");
@@ -33,7 +33,8 @@ test("quarterly totals distinct work and do not multiply project output by emplo
   assert.equal(data.unknownDueVersion.length,1);
   assert.match(data.onTimeDisplay,/Not verified/);
   assert.equal(data.returned.length,1);
-  assert.equal(data.overdueNow.length,2);
+  assert.equal(data.overdueNow.length,0); // Submitted and returned work no longer counts as overdue staff action.
+  assert.equal(data.inReview.length,1);
   assert.deepEqual(data.projectIds,["p"]);
   assert.deepEqual(distinctVerifiedProjectOutcomes([
     {id:"books",verified:true,value:50},{id:"books",verified:true,value:50},
@@ -73,4 +74,22 @@ test("date-only personal deadlines include the full Ghana day; timed deadlines r
   assert.equal(deadlineOverdue("2026-10-18","2026-10-19T00:00:00Z"),true);
   assert.equal(completedByDeadline("invalid","2026-10-18"),false);
   assert.equal(deadlineOverdue("not-a-date","2026-10-19T00:00:00Z"),false);
+});
+
+
+test("review, returned and dependent work do not pollute overdue reporting",()=>{
+ const due="2026-11-02",asOf="2026-11-04T10:00:00Z";
+ for(const status of ["in_review","waiting_on","returned","completed","self_certified","cancelled"]){
+   assert.equal(isActionableDeadlineWork({status,kind:"task"}),false,status);
+   assert.equal(isDeadlineWorkOverdue({status,kind:"task",due_at:due},asOf),false,status);
+ }
+ assert.equal(isDeadlineWorkOverdue({status:"in_progress",kind:"routine",due_at:due},asOf),false);
+ assert.equal(isDeadlineWorkOverdue({status:"not_started",kind:"task",due_at:due},asOf),true);
+ assert.equal(isDeadlineWorkOverdue({status:"in_progress",kind:"task",due_at:"2026-11-04"},asOf),false);
+ const works=[{id:"submitted",status:"in_review",due_at:due},{id:"blocked",status:"waiting_on",due_at:due},{id:"returned",status:"returned",due_at:due},{id:"active",status:"not_started",due_at:due}];
+ const facts=individualAchievementFacts({works,range:reportingRange("monthly","2026-11-04"),asOf});
+ assert.deepEqual(facts.overdueNow.map(w=>w.id),["active"]);
+ assert.equal(facts.inReview.length,1);
+ assert.equal(facts.waiting.length,1);
+ assert.equal(facts.returned.length,1);
 });

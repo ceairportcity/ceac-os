@@ -46,7 +46,7 @@ export function WorkRegisterInspector({ me, selectedId, onClose, openItem }) {
       <span>Selected responsibility</span>
       {onClose && <button aria-label="Close responsibility inspector" type="button" onClick={onClose}>×</button>}
     </header>
-    {!selectedId && <p className="s2-work-inspector-empty">Choose a responsibility from the register to inspect it.</p>}
+    {!selectedId && <p className="s2-work-inspector-empty">Select work from the list to see its details.</p>}
     {checking && <p role="status">Loading selected responsibility…</p>}
     {activeError && <div role="alert">{activeError}<button type="button" onClick={() => setReload(n=>n+1)}>Retry</button></div>}
     {!checking && !activeError && work && <>
@@ -54,7 +54,7 @@ export function WorkRegisterInspector({ me, selectedId, onClose, openItem }) {
       <p className="s2-work-inspector-context">{work.ref} · {work.projects?.name || "No linked project"}</p>
       <WorkActivityDiary me={me} item={work} compact key={`${me.id}:${work.id}`} />
       <WorkProjectLink me={me} item={work} key={`${me.id}:${work.id}`} onLinked={() => setReload(n=>n+1)} />
-      <details className="s2-work-inspector-details"><summary>Responsibility details</summary>
+      <details className="s2-work-inspector-details"><summary>About this work</summary>
       <WorkDetailsEditor key={`${me.id}:${work.id}:${work.last_movement_at}`} me={me} item={work} onSaved={() => setReload(n=>n+1)} />
       <dl className="s2-work-inspector-facts">
         <div><dt>Person responsible</dt><dd>{work.assignee_id === me.id ? "You" : work.profiles?.full_name || "Authorised person"}</dd></div>
@@ -68,17 +68,17 @@ export function WorkRegisterInspector({ me, selectedId, onClose, openItem }) {
       <button className="btn btn-ghost" type="button" onClick={() => openItem?.(work.id)}>
         Open full work record →
       </button>
-      <footer><strong>Evidence & outcomes</strong> stay linked to the person and project.</footer>
+      <footer><strong>Updates and files</strong> stay linked to the person and project.</footer>
     </>}
   </aside>;
 }
 
 export default function WorkRegisterLayout({ me, selectedId, onClose, openItem, children, tabs, recordCount }) {
-  return <div className="s2-work-layout">
+  return <div className={`s2-work-layout${selectedId ? " has-selection" : ""}`}>
     <div className="s2-work-register">
       {tabs && <><header className="s2-register-heading"><h2>Responsibilities</h2><span>{recordCount} current records</span></header>{tabs}</>}
       {children}
     </div>
-    <WorkRegisterInspector me={me} selectedId={selectedId} onClose={onClose} openItem={openItem}/>
+    {selectedId && <WorkRegisterInspector me={me} selectedId={selectedId} onClose={onClose} openItem={openItem}/> }
   </div>;
 }

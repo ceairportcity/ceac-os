@@ -29,6 +29,8 @@ export default function WorkActivityDiary(props) {
 }
 function ActivityDiary({ me, item, prefillDate = "", prefillRequest = 0, compact = false, routineOccurrences = [] }) {
   const [sourceHistory, setSourceHistory] = useState([]);
+  const [historyLimit, setHistoryLimit] = useState(80);
+  const [historyTotal, setHistoryTotal] = useState(0);
   const [completedDiaryScope, setCompletedDiaryScope] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -91,28 +93,23 @@ function ActivityDiary({ me, item, prefillDate = "", prefillRequest = 0, compact
     setUnavailable(false);
     (async () => {
       try {
-        let all = [];
-        let total = null;
-        for (let page = 0; page < 20; page++) {
-          const start = page * 200;
-          const read = await supabase.from("work_activity_records")
-            .select("id,org_id,work_item_id,contributor_id,activity_date,activity_state,entry_kind,action_summary,outcome_note,next_action,next_action_on,duration_minutes,evidence_url,supersedes_id,recorded_at,contributor:profiles!work_activity_records_contributor_id_fkey(full_name)", { count: "exact" })
-            .eq("org_id", me.org_id).eq("work_item_id", item.id)
-            .order("recorded_at", { ascending: false })
-            .order("id", { ascending: false })
-            .range(start, start + 199);
-          if (read.error) throw read.error;
-          if (typeof read.count !== "number" || !Array.isArray(read.data))
-            throw new Error("Complete activity history could not be confirmed.");
-          if (total !== null && total !== read.count)
-            throw new Error("Activity history changed during reading. Please refresh.");
-          total = read.count;
-          all = [...all, ...read.data];
-          if (all.length === total) break;
-        }
-        if (all.length !== total) throw new Error("Activity history is incomplete. Please refresh.");
+        // Fetch only the latest page when a responsibility is opened. Earlier
+        // progress is available on demand, preserving the same audit records.
+        const read = await supabase.from("work_activity_records")
+          .select("id,org_id,work_item_id,contributor_id,activity_date,activity_state,entry_kind,action_summary,outcome_note,next_action,next_action_on,duration_minutes,evidence_url,supersedes_id,recorded_at,contributor:profiles!work_activity_records_contributor_id_fkey(full_name)", { count: "exact" })
+          .eq("org_id", me.org_id).eq("work_item_id", item.id)
+          .order("recorded_at", { ascending: false })
+          .order("id", { ascending: false })
+          .range(0, historyLimit - 1);
+        if (read.error) throw read.error;
+        if (typeof read.count !== "number" || !Array.isArray(read.data))
+          throw new Error("Recent activity history could not be confirmed.");
+        const all = read.data;
+        const total = read.count;
+
         if (!current) return;
         const revised = new Set(all.map((row) => row.supersedes_id).filter(Boolean));
+        setHistoryTotal(total);
         setSourceHistory(all.filter((row) => !revised.has(row.id))
           .sort((a,b) => b.activity_date.localeCompare(a.activity_date) || b.recorded_at.localeCompare(a.recorded_at)));
       } catch (e) {
@@ -127,7 +124,7 @@ function ActivityDiary({ me, item, prefillDate = "", prefillRequest = 0, compact
       }
     })();
     return () => { current = false; };
-  }, [me.id, me.org_id, item.id, reload]);
+  }, [me.id, me.org_id, item.id, reload, historyLimit]);
 
   const nextActions = outstandingActivityActions(history);
   const timeline = [
@@ -249,14 +246,14 @@ function ActivityDiary({ me, item, prefillDate = "", prefillRequest = 0, compact
   return <section ref={sectionRef} className="s2-work-diary" aria-label="Responsibility activity diary">
     {compact && <dl className="s2-work-inspector-facts">
       <div><dt>Work status</dt><dd>{RESPONSIBILITY_STATUS[item.status] || item.status?.replaceAll("_", " ") || "Not recorded"}</dd></div>
-      <div><dt>Recorded actions</dt><dd>{verified ? history.length : checking ? "Verifying…" : "Unavailable"}</dd></div>
+      <div><dt>Recent actions</dt><dd>{verified ? history.length : checking ? "Verifying…" : "Unavailable"}</dd></div>
     </dl>}
     {!compact && <header>
       <div><span className="eyebrow">Your work</span><h3>Progress history</h3>
         <p>Follow your progress, milestones and supporting evidence over time.</p>
       </div>
     </header>}
-    {!compact && inlineComposer}
+    {inlineComposer}
     {editor && verified && <div className="s2-progress-editor-heading"><strong>{correctingId?"Edit progress":"Your progress"}</strong><button type="button" disabled={busy} onClick={()=>setEditor(false)}>Cancel</button></div>}
     {editor && verified && <form className="s2-work-diary-form" onSubmit={save}>
       <fieldset disabled={busy || Boolean(savedActivity.current)} className="s2-work-diary-fields">
@@ -269,7 +266,9 @@ function ActivityDiary({ me, item, prefillDate = "", prefillRequest = 0, compact
       <label>Action state <select value={state} onChange={(e) => setState(e.target.value)}>
         {states.map(([value,label]) => <option key={value} value={value}>{label}</option>)}
       </select></label>
+      <p className="wide">Write a short description of what you did. The remaining details are optional.</p>
       <label className="wide">{entryKind==="milestone"?"What milestone was reached?":"What did you accomplish?"} <textarea autoFocus value={summary} onChange={(e) => setSummary(e.target.value)} maxLength={600} minLength={3} required rows={2} placeholder="What did you do?" /></label>
+      <p className="wide"><strong>More about this update (optional)</strong></p>
       <label className="wide">What was the result? <textarea value={outcome} onChange={(e) => setOutcome(e.target.value)} maxLength={4000} rows={2} placeholder="What happened?" /></label>
       <label className="wide">What happens next? <textarea value={nextAction} onChange={(e) => setNextAction(e.target.value)} maxLength={1200} rows={2} /></label>
       <label>Next action date (optional) <input type="date" value={nextActionOn} onChange={e => setNextActionOn(e.target.value)} disabled={!nextAction.trim()} /></label>
@@ -289,8 +288,8 @@ function ActivityDiary({ me, item, prefillDate = "", prefillRequest = 0, compact
     </p>}
     {visibleSuccess && <p role="status">{visibleSuccess}</p>}
     {!compact && verified && history.length > 0 && <div className="s2-work-diary-summary" aria-label="Recorded activity summary">
-      <div><span>Progress entries</span><strong>{timeline.length}</strong></div>
-      <div><span>Milestones</span><strong>{history.filter(entry=>entry.entry_kind==="milestone").length}</strong></div>
+      <div><span>{historyLimit < historyTotal ? "Recent progress entries" : "Progress entries"}</span><strong>{timeline.length}</strong></div>
+      <div><span>{historyLimit < historyTotal ? "Recent milestones" : "Milestones"}</span><strong>{history.filter(entry=>entry.entry_kind==="milestone").length}</strong></div>
     </div>}
     {verified && nextActions.length > 0 && <div className="s2-work-diary-next-action">
       <span>Recorded next actions</span>{nextActions.map(action => <p key={action.id}>{action.next_action_on ? `${action.next_action_on} · ` : ""}{action.next_action}{action.contributor_id===me.id&&<PlanFollowup activityId={action.id}/>}</p>)}
@@ -321,7 +320,10 @@ function ActivityDiary({ me, item, prefillDate = "", prefillRequest = 0, compact
           </div>}
       </li>)}
     </ol>}
-    {compact && inlineComposer}
+    {verified && historyLimit < historyTotal && <button type="button" className="btn btn-ghost btn-sm"
+      onClick={() => setHistoryLimit(n => n + 80)} disabled={loading}>
+      Show earlier progress
+    </button>}
   </section>;
 }
 

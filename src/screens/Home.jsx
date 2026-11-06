@@ -187,45 +187,53 @@ export default function Home({ me, notificationPanel, session, setSession, openI
       ];
 
       const [itemResult, completedResult, alertResult, feedbackResult, announcementResult, eventResult, meetingResult, memberResult, leaveResult, submissionResult, reviewFollowupResult, blockerResult, blockerFollowupResult, mentionResult] = await Promise.all(requests);
+      // Work is essential; failures in optional Overview sections must not
+      // hide the staff member's responsibilities or work-session controls.
+      const unavailableSections = [];
+      const optionalResult = (result, label) => {
+        if (result.error) { unavailableSections.push(label); return []; }
+        return result.data || [];
+      };
       setItems(requireResult(itemResult, "Your work"));
-      setCompletedThisWeek(requireResult(completedResult, "Completed work"));
-      setAlerts(requireResult(alertResult, "Alerts"));
-      setFeedback(requireResult(feedbackResult, "Feedback"));
-      setAnnouncements(requireResult(announcementResult, "Announcements"));
-      setReviewSubmissions(requireResult(submissionResult, "Submitted work"));
-      setReviewFollowups(requireResult(reviewFollowupResult, "Review follow-ups"));
-      setMyBlockers(requireResult(blockerResult, "Dependencies"));
-      setBlockerFollowups(requireResult(blockerFollowupResult, "Dependency follow-ups"));
-      const mentionRows = requireResult(mentionResult, "Room mentions");
+      setCompletedThisWeek(optionalResult(completedResult, "Completed work"));
+      setAlerts(optionalResult(alertResult, "Alerts"));
+      setFeedback(optionalResult(feedbackResult, "Feedback"));
+      setAnnouncements(optionalResult(announcementResult, "Announcements"));
+      setReviewSubmissions(optionalResult(submissionResult, "Submitted work"));
+      setReviewFollowups(optionalResult(reviewFollowupResult, "Review follow-ups"));
+      setMyBlockers(optionalResult(blockerResult, "Dependencies"));
+      setBlockerFollowups(optionalResult(blockerFollowupResult, "Dependency follow-ups"));
+      const mentionRows = optionalResult(mentionResult, "Room mentions");
       if (mentionRows.length) {
         const messageResult = await supabase.from("room_messages")
           .select("id,room_id,body,created_at,author_id,profiles!room_messages_author_id_fkey(full_name),rooms(id,kind,unit_id,sub_team_id,project_id,units(name),sub_teams(name),projects(name))")
           .in("id", mentionRows.map((row) => row.message_id));
-        const messageRows = requireResult(messageResult, "Room mention messages");
+        const messageRows = optionalResult(messageResult, "Room mention messages");
         const byId = new Map(messageRows.map((row) => [row.id,row]));
         setRoomMentions(mentionRows.map((row) => byId.get(row.message_id)).filter(Boolean));
       } else setRoomMentions([]);
 
-      const events = requireResult(eventResult, "Coming events").filter((event) => {
+      const events = optionalResult(eventResult, "Coming events").filter((event) => {
         const stillCurrent = new Date(event.ends_at || event.starts_at) >= rangeStart;
         const relevant = event.scope === "church" || event.unit_id === me.unit_id
           || (event.ministry_event_units || []).some((unit) => unit.unit_id === me.unit_id);
         return stillCurrent && relevant;
       });
       setCalendarEvents(events.slice(0, 4));
-      setUpcomingMeetings(requireResult(meetingResult, "Meetings").slice(0, 4));
+      setUpcomingMeetings(optionalResult(meetingResult, "Meetings").slice(0, 4));
       const birthdayEnd = new Date(rangeStart); birthdayEnd.setDate(birthdayEnd.getDate() + 7);
-      setBirthdays(requireResult(memberResult, "Birthdays")
+      setBirthdays(optionalResult(memberResult, "Birthdays")
         .map((member) => member.profiles).filter((profile) => profile?.birthday)
         .map((profile) => ({ ...profile, nextBirthday: nextBirthday(profile.birthday) }))
         .filter((profile) => profile.nextBirthday <= birthdayEnd)
         .sort((left, right) => left.nextBirthday - right.nextBirthday));
-      const leaveRows = requireResult(leaveResult, "Leave");
+      const leaveRows = optionalResult(leaveResult, "Leave");
       setUpcomingLeave(leaveRows.filter((request) => request.status === "approved"
         && new Date(`${request.start_date}T00:00:00`) >= rangeStart
         && new Date(`${request.start_date}T00:00:00`) <= rangeEnd).slice(0, 2));
       setLeaveUpdates(leaveRows.filter((request) => request.decided_at
         && new Date(request.decided_at) >= recentStart).slice(0, 2));
+      if (unavailableSections.length) setError("Some optional updates could not load: " + unavailableSections.join(", ") + ". Your work is still available.");
     } catch (err) {
       setLoadFailed(true);
       setError(humanError(err, "Home could not be loaded."));

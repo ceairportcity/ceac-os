@@ -80,7 +80,7 @@ export default function ResponsibilityRegister({rows,selectedId,onSelect,emptyAc
           </tr>)}
         </tbody></Fragment>)}
         {groups.length===0&&<tbody><tr><td colSpan={4} className="s2-register-empty">
-          {rows.length?'No responsibilities match these filters.':'No responsibilities recorded in this view.'}
+          {rows.length?'No work matches these filters.':'No work to show here yet.'}
           {(query||projectId||status)&&<button type="button" onClick={()=>filter({query:'',projectId:'',status:''})}>Clear filters</button>}
           {!rows.length&&emptyAction&&<button type="button" onClick={emptyAction.onClick}>{emptyAction.label}</button>}
         </td></tr></tbody>}

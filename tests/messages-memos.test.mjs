@@ -177,3 +177,35 @@ test('each Memo is shown as a distinct conversation with chronological entries a
  assert.doesNotMatch(memo,/subjectThread\?/);
  assert.match(memo,/respond_to_memo/);
 });
+
+
+test("Work-to-Memo drafting preserves private Work and existing drafts without extra backend tables",()=>{
+ const app=source("src/App.jsx"),item=source("src/screens/Item.jsx"),inbox=source("src/screens/Inbox.jsx"),memo=source("src/screens/Memos.jsx");
+ assert.match(item,/item.visibility === "unit" && !item.confidential/);
+ assert.match(item,/Write a Memo about this work/);
+ assert.match(app,/setMemoWorkContext\(null\)/);
+ assert.match(inbox,/relatedWork=\{memoWorkContext\}/);
+ assert.match(memo,/if\(recoveredDraft\?\.form\)/);
+ assert.match(memo,/Choose your Memo recipients/);
+ assert.match(memo,/Open linked Work/);
+ assert.ok(memo.includes("tab=work&item="));
+ assert.doesNotMatch(memo,/dangerouslySetInnerHTML/);
+});
+
+
+test("Memo can prepare a responsibility without secretly assigning or leaking recipient-only text",()=>{
+ const memo=source("src/screens/Memos.jsx"),inbox=source("src/screens/Inbox.jsx");
+ assert.match(inbox,/startWorkFromMemo=\{startWorkFromMessage\}/);
+ assert.match(memo,/Prepare a responsibility/);
+ assert.match(memo,/Nothing is assigned yet/);
+ assert.match(memo,/startWorkFromMemo && !\["draft","declined"\]\.includes\(active.status\)/);
+ assert.doesNotMatch(memo,/create_work_from_memo/);
+});
+
+test("Memo inbox initial pagination limits correspondence and attachment scanning",()=>{
+  const memo=source("src/screens/Memos.jsx");
+  assert.match(memo,/\[pageSize,setPageSize\]=useState\(50\)/);
+  assert.match(memo,/setPageSize\(count=>count\+50\)/);
+  assert.match(memo,/\.limit\(pageSize\)/);
+  assert.match(memo,/Load earlier correspondence/);
+});

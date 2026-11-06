@@ -53,6 +53,15 @@ export function deadlineOverdue(dueAt, asOf) {
   const deadline = new Date(dueAt);
   return Number.isFinite(deadline.getTime()) && deadline.getTime() < now.getTime();
 }
+// Past due dates remain historical facts, but only actionable employee work
+// belongs in the active overdue queue. Recurrences are assessed per date.
+const ACTIONABLE_DEADLINE_STATES = new Set(["not_started","in_progress","assigned"]);
+export function isActionableDeadlineWork(work) {
+  return Boolean(work && work.kind !== "routine" && ACTIONABLE_DEADLINE_STATES.has(work.status));
+}
+export function isDeadlineWorkOverdue(work, asOf = new Date()) {
+  return isActionableDeadlineWork(work) && deadlineOverdue(work.due_at, asOf);
+}
 /** All user-visible 'as-of' states describe NOW unless a frozen authorised snapshot is supplied. */
 export function individualAchievementFacts({ works = [], submissions = [], range, projectId = null, asOf = new Date() }) {
   if (!range?.start || !range?.end || range.start > range.end) throw new Error("Invalid reporting range.");
@@ -82,7 +91,7 @@ export function individualAchievementFacts({ works = [], submissions = [], range
     // Never label this partial coverage as an authoritative on-time percentage.
     onTimeDisplay: unknownDueVersion.length ? "Not verified — deadline revisions require history" :
       due.length ? `${finishedOnTime.length} of ${due.length} (current deadline; history not verified)` : "No dated commitments",
-    open, overdueNow: open.filter((w) => deadlineOverdue(w.due_at, now)),
+    open, overdueNow: open.filter((w) => isDeadlineWorkOverdue(w, now)),
     returned: open.filter((w) => w.status === "returned"),
     waiting: open.filter((w) => w.status === "waiting_on"),
     inReview: open.filter((w) => w.status === "in_review"),

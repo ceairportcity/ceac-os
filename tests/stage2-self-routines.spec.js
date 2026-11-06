@@ -108,7 +108,7 @@ for (const actor of ['staff', 'manager', 'admin', 'exec']) {
       await expect(dateProgress.getByRole('checkbox',{name:'Inspect the venue',exact:true})).toHaveCount(0);
       await dateProgress.getByLabel('Scheduled date',{exact:true}).fill(today);
       await expect(dateProgress.getByRole('checkbox',{name:'Inspect the venue',exact:true})).toBeChecked();
-      await page.getByRole('button',{name:'Record occurrence',exact:true}).click();
+      await page.getByRole('button',{name:'Record completed work',exact:true}).click();
       const dialog = page.getByRole('dialog');
       await dialog.getByPlaceholder('Note (optional)').fill('Venue inspected');
       await dialog.getByRole('button',{name:'Record occurrence',exact:true}).click();
@@ -253,7 +253,7 @@ test('Manager arranges one-date cover; colleague follows Work and Calendar, reco
   const originalDate=originalPage.getByRole('region',{name:'Progress for a routine date',exact:true});
   await expect(originalDate.getByText('Cover: Same Unit Fixture. Other dates keep their own assignment.',{exact:true})).toBeVisible();
   await expect(originalDate.getByRole('button',{name:'Save date progress',exact:true})).toHaveCount(0);
-  await expect(originalPage.getByRole('button',{name:'Record occurrence',exact:true})).toHaveCount(0);
+  await expect(originalPage.getByRole('button',{name:'Record completed work',exact:true})).toHaveCount(0);
   expect((await original.rpc('record_routine_occurrence',{p_work_item_id:id,p_occurred_on:today,p_note:'Original cannot claim cover'})).error?.code).toBe('42501');
   const coveredPage=await signIn('sameunit',390);await coveredPage.goto('/?tab=work');
   const recurring=coveredPage.getByRole('region',{name:'My scheduled recurring work',exact:true});await expect(recurring.getByRole('button').filter({hasText:title})).toBeVisible();
@@ -272,7 +272,7 @@ test('Manager arranges one-date cover; colleague follows Work and Calendar, reco
   const linked=await colleague.from('operational_file_links').select('file:operational_files!inner(storage_bucket,storage_path)').eq('context_type','routine_date_progress').eq('context_id',progress.data.id).single();expect(linked.error).toBeNull();
   const downloaded=await colleague.storage.from(linked.data.file.storage_bucket).download(linked.data.file.storage_path);expect(downloaded.error).toBeNull();expect(Buffer.from(await downloaded.data.arrayBuffer())).toEqual(bytes);
   expect((await original.rpc('register_operational_file',{p_context_type:'routine_date_progress',p_context_id:progress.data.id,p_relation:'routine_evidence',p_filename:'impersonate.txt',p_mime_type:'text/plain',p_size_bytes:12})).error?.code).toBe('42501');
-  await date.getByRole('button',{name:'Record occurrence',exact:true}).click();const dialog=coveredPage.getByRole('dialog');await dialog.getByPlaceholder('Note (optional)').fill('Cover colleague completed the inspection');await dialog.getByRole('button',{name:'Record occurrence',exact:true}).click();await expect(dialog).toHaveCount(0);
+  await date.getByRole('button',{name:'Record completed work',exact:true}).click();const dialog=coveredPage.getByRole('dialog');await dialog.getByPlaceholder('Note (optional)').fill('Cover colleague completed the inspection');await dialog.getByRole('button',{name:'Record occurrence',exact:true}).click();await expect(dialog).toHaveCount(0);
   const outcome=await colleague.from('operation_occurrences').select('id,recorded_by').eq('operation_id',operation.data.id).single();expect(outcome.error).toBeNull();expect(outcome.data.recorded_by).toBe('31000000-0000-4000-8000-000000000006');
   expect((await colleague.from('routine_occurrence_reviews').insert({org_id:'10000000-0000-4000-8000-000000000010',occurrence_id:outcome.data.id,reviewer_id:outcome.data.recorded_by,decision:'accepted'})).error?.code).toBe('42501');
   await page.reload();await page.getByRole('button',{name:'Review date',exact:true}).click();

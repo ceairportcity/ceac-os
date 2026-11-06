@@ -88,6 +88,7 @@ export default function Work({ me, isManager = false, openItem }) {
   const [brandbookContext, setBrandbookContext] = useState({ meetings: [], sessions: [], feedback: null });
   const [brandbookLoading, setBrandbookLoading] = useState(true);
   const [brandbookError, setBrandbookError] = useState(false);
+  const [contextOpen, setContextOpen] = useState(false);
 
   useEffect(() => { load(); return () => { loadSerial.current += 1; }; }, [mode, statusFilter, me.id, isManager]);
   useEffect(() => { loadProjects(); loadProposals(); }, [me.id, me.unit_id]);
@@ -122,7 +123,8 @@ export default function Work({ me, isManager = false, openItem }) {
     });
     return () => { current = false; };
   }, [sheet, createVisibility, projectId, me.org_id, me.unit_id]);
-  useEffect(() => { loadBrandbookContext(); }, [me.id]);
+  // Meeting, session and feedback context is optional; only fetch when opened.
+  useEffect(() => { if (contextOpen) loadBrandbookContext(); }, [me.id, contextOpen]);
   useEffect(() => {
     try { sessionStorage.setItem(viewKey, JSON.stringify({ mode })); } catch { /* Storage may be unavailable. */ }
   }, [viewKey, mode, statusFilter]);
@@ -362,7 +364,10 @@ export default function Work({ me, isManager = false, openItem }) {
     const b = right.due_at ? new Date(right.due_at).getTime() : Number.MAX_SAFE_INTEGER;
     return a - b || left.title.localeCompare(right.title);
   });
-  const selectedInView = selectedWorkId === "none" ? null : (visibleItems.some((item) => item.id === selectedWorkId) ? selectedWorkId : (visibleItems[0]?.id || null));
+  // Open the detail only after staff select a responsibility. The register should not
+  // prefetch an entire progress history simply because the Work tab opened.
+  const selectedInView = selectedWorkId && selectedWorkId !== "none" && visibleItems.some(item => item.id === selectedWorkId)
+    ? selectedWorkId : null;
 
   const sessionDays = Array.from({ length: 7 }, (_, index) => {
     const date = new Date();
@@ -420,7 +425,7 @@ export default function Work({ me, isManager = false, openItem }) {
     ]} />
     {(mode === "all" || mode === "assigned") && !loading && !loadError && <AssignedRoutineOccurrences me={me} onOpen={openItem} />}
 
-    <details className="s2-work-context"><summary>Schedule and recorded work context</summary>
+    <details className="s2-work-context" onToggle={event=>setContextOpen(event.currentTarget.open)}><summary>Schedule and recorded work context</summary>
     <section className="fpg-brandbook-dashboard" aria-label="Recorded work context">
       <article className="fpg-brandbook-card fpg-brandbook-schedule">
         <header><span>Weekly schedule</span><small>Next 7 days</small></header>

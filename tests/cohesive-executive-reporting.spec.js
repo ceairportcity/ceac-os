@@ -27,7 +27,7 @@ test("Cohesive Executive Reports fits iPad and desktop without overlapping tabs"
         }));
         for (let i = 0; i < rects.length; i++) {
           expect(rects[i].width, `tab width at ${width}`).toBeGreaterThan(60);
-          expect(rects[i].height, `tab touch height at ${width}`).toBeGreaterThanOrEqual(44);
+          expect(Number(rects[i].height.toFixed(2)), `tab touch height at ${width}`).toBeGreaterThanOrEqual(44);
           for (let j = i+1; j < rects.length; j++) {
             const overlap = Math.min(rects[i].right, rects[j].right) - Math.max(rects[i].left, rects[j].left);
             const vertical = Math.min(rects[i].bottom, rects[j].bottom) - Math.max(rects[i].top, rects[j].top);

@@ -42,16 +42,16 @@ function titleCase(value = "") {
 
 function workStatus(item) {
   if (!item) return { label: "", tone: "neutral" };
-  if (item.status === "returned") return { label: "Sent back", tone: "danger" };
+  if (item.status === "returned") return { label: "Changes requested", tone: "warning" };
   if (isWorkOverdue(item)) {
-    return { label: "Overdue", tone: "danger" };
+    return { label: "Past due — needs attention", tone: "warning" };
   }
 
   const statuses = {
     not_started: ["Not started", "neutral"],
     in_progress: ["In progress", "action"],
-    in_review: ["In review", "warning"],
-    waiting_on: ["Waiting", "neutral"],
+    in_review: ["Waiting for approval", "neutral"],
+    waiting_on: ["Waiting on someone else", "neutral"],
     completed: ["Completed", "success"],
     self_certified: ["Completed", "success"],
     cancelled: ["Cancelled", "neutral"],
@@ -128,6 +128,11 @@ export default function StaffTodayV2({
 }) {
   const todayKey = accraDateKey();
   const todaySchedule = [
+    // Work deadlines already loaded for the Overview belong in today's agenda.
+    // Avoid repeating the primary Next up responsibility or fetching extra data.
+    ...nextMoveItems.filter(item => item.id !== primaryNextItem?.id && item.due_at && accraDateKey(item.due_at) === todayKey).map(item => ({
+      id: `work-${item.id}`, type: "work", title: item.title, startsAt: item.due_at, source: item,
+    })),
     ...upcomingMeetings.map((meeting) => ({
       id: `meeting-${meeting.id}`,
       type: "meeting",
@@ -219,7 +224,7 @@ export default function StaffTodayV2({
       ? nextMeeting.title
       : "You're clear for now";
   const focusSupporting = primaryNextItem
-    ? `${primaryNextItem.ref} · ${dueLabel(primaryNextItem.due_at)}`
+    ? `${primaryNextItem.ref} · ${dueLabel(primaryNextItem.due_at, primaryNextItem.status)}`
     : nextMeeting
       ? `${formatDate(nextMeeting.starts_at, { weekday: "short", hour: "2-digit", minute: "2-digit" })} · ${nextMeeting.provider === "zoom" ? "Zoom" : "Meeting"}`
       : "No urgent work or upcoming meeting needs your action right now.";
@@ -249,7 +254,7 @@ export default function StaffTodayV2({
           <div className="staffv2-session-copy">
             <div className="staffv2-session-label">Work session</div>
             <div className="staffv2-session-line">
-              <strong>{!sessionVerified ? "Verification required" : session ? staleSession ? "Needs reconciliation" : since(session.started_at) : "Not working"}</strong>
+              <strong>{!sessionVerified ? "Verification required" : session ? staleSession ? "Check earlier workday" : since(session.started_at)  : "Not started"}</strong>
               <StatusBadge tone={!sessionVerified ? "warning" : staleSession ? "warning" : session ? "success" : "neutral"}>
                 {!sessionVerified ? "Unverified" : staleSession ? "Review needed" : session ? "Active" : "Not started"}
               </StatusBadge>
@@ -344,16 +349,17 @@ export default function StaffTodayV2({
               >
                 {todaySchedule.length ? todaySchedule.map((entry) => {
                   const isMeeting = entry.type === "meeting";
+                  const isWork = entry.type === "work";
                   const event = entry.source;
                   return (
                     <QueueRow
                       key={entry.id}
-                      icon={isMeeting ? "meeting" : "calendar"}
+                      icon={isWork ? "work" : isMeeting ? "meeting" : "calendar"}
                       title={entry.title}
                       meta={formatDate(entry.startsAt, { hour: "2-digit", minute: "2-digit" })}
-                      status={event.cancelled ? "Cancelled" : isMeeting ? "Meeting" : titleCase(event.kind || "Event")}
-                      statusTone={event.cancelled ? "danger" : isMeeting ? "action" : "neutral"}
-                      onClick={isMeeting
+                      status={isWork ? workStatus(event).label : event.cancelled ? "Cancelled" : isMeeting ? "Meeting" : titleCase(event.kind || "Event")}
+                      statusTone={isWork ? workStatus(event).tone : event.cancelled ? "danger" : isMeeting ? "action" : "neutral"}
+                      onClick={isWork ? () => onOpenItem?.(event.id) : isMeeting
                         ? () => onOpenMeeting?.(event.id)
                         : () => onOpenEvent?.(event)}
                     />
@@ -424,7 +430,7 @@ export default function StaffTodayV2({
                           <span>
                             <strong>{item.title}</strong>
                             <small>{item.ref} · sent {submission ? new Date(submission.submitted_at).toLocaleDateString("en-GB", { day: "numeric", month: "short" }) : "for review"}</small>
-                            <span>Waiting for your manager to check it.</span>
+                            <span>Your work has been sent for approval. No action is needed unless changes are requested.</span>
                           </span>
                         </button>
                         <div className="staffv2-wait-action">
@@ -520,10 +526,11 @@ export default function StaffTodayV2({
               ) : null}
             </div>
 
-            <div className="staffv2-secondary-grid">
+            <details className="reference-disclosure staffv2-more"><summary style={{minHeight:44,padding:"12px 16px",border:"1px solid var(--ev2-line)",borderRadius:12,background:"var(--ev2-surface)",fontWeight:650,cursor:"pointer"}}>More from your week</summary>
+            <div className="staffv2-secondary-grid" style={{display:"grid"}}>
               <DataPanel
                 className="staffv2-panel staffv2-week"
-                eyebrow="Your factual record"
+                eyebrow="Your activity"
                 title="This week"
               >
                 <div className="staffv2-week-stats">
@@ -598,6 +605,7 @@ export default function StaffTodayV2({
                 </section>
               ) : null}
             </div>
+            </details>
           </>
         ) : null}
       </div>
