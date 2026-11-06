@@ -27,7 +27,10 @@ import "./experience-v2/ui-density-refinement.css";
 
 import {initialiseAppearance} from "./lib/appearance";
 import "./appearance.css";
+import "./resilience/phone-presentation.css";
+import { installPhonePresentation } from "./lib/phonePresentation";
 initialiseAppearance();
+installPhonePresentation();
 
 const PwaStatus = lazy(() => import("./resilience/PwaStatus"));
 

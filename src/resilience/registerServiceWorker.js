@@ -21,7 +21,15 @@ export function registerCeacServiceWorker() {
         });
       });
 
-      window.addEventListener("online", () => registration.update().catch(() => {}));
+      // Home Screen apps frequently resume an existing document without navigating.
+      // Check the worker when CEAC returns to the foreground, not just after an
+      // offline-to-online transition. This surfaces the update banner safely.
+      const refreshWorker = () => registration.update().catch(() => {});
+      window.addEventListener("online", refreshWorker);
+      window.addEventListener("pageshow", refreshWorker);
+      document.addEventListener("visibilitychange", () => {
+        if (!document.hidden) refreshWorker();
+      });
     } catch (error) {
       console.warn("CEAC app installation support could not start.", error);
     }

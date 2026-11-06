@@ -1,0 +1,210 @@
+/* Last-resort iPhone layout invariant.
+   Applied only after JavaScript identifies a physical phone. Safari may restore
+   an installed app with a wide CSS layout viewport; tablet and laptop rules
+   must not make the desktop navigation visible in that case. */
+:root.ceac-physical-phone {
+  --ev2s-sidebar-width: 0px;
+}
+
+:root.ceac-physical-phone,
+:root.ceac-physical-phone body,
+:root.ceac-physical-phone #root {
+  width: var(--ceac-phone-visible-width, 100%) !important;
+  max-width: var(--ceac-phone-visible-width, 100%) !important;
+  min-width: 0 !important;
+  overflow-x: clip !important;
+}
+
+:root.ceac-physical-phone .app,
+:root.ceac-physical-phone .ev2s-workspace,
+:root.ceac-physical-phone .app-content.ev2s-content {
+  box-sizing: border-box;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  margin-left: 0 !important;
+  overflow-x: clip;
+}
+
+:root.ceac-physical-phone .ev2s-sidebar,
+:root.ceac-physical-phone .ev2s-topbar {
+  display: none !important;
+}
+
+:root.ceac-physical-phone .ev2s-mobile-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 55;
+  display: grid !important;
+  min-width: 0;
+  padding-top: var(--ceac-safe-area-top, env(safe-area-inset-top, 0px));
+  border-bottom: 1px solid var(--ev2-line);
+  background: var(--c460);
+  color: var(--ev2-text);
+  backdrop-filter: blur(16px);
+}
+
+:root.ceac-physical-phone .ev2s-mobile-toprow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ev2-space-2);
+  min-height: 3.25rem;
+  padding: var(--ev2-space-2) max(var(--ev2-phone-gutter), env(safe-area-inset-right))
+    var(--ev2-space-2) max(var(--ev2-phone-gutter), env(safe-area-inset-left));
+}
+:root.ceac-physical-phone .ev2s-mobile-identity {
+  display: flex;
+  align-items: center;
+  gap: var(--ev2-space-2);
+  min-width: 0;
+  flex: 1;
+}
+:root.ceac-physical-phone .ev2s-mobile-identity > span:last-child {
+  display: grid;
+  min-width: 0;
+}
+:root.ceac-physical-phone .ev2s-mobile-identity :is(strong,small) {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+:root.ceac-physical-phone .ev2s-mobile-identity small {
+  max-width: 55vw;
+}
+:root.ceac-physical-phone .ev2s-mobile-identity .ev2s-brand-mark {
+  width: 2rem;
+  height: 2rem;
+  flex: none;
+}
+:root.ceac-physical-phone .ev2s-mobile-actions {
+  display: flex;
+  gap: var(--ev2-space-1);
+  align-items: center;
+  flex: none;
+}
+:root.ceac-physical-phone .ev2s-mobile-profile {
+  display: grid;
+  place-items: center;
+  min-width: var(--ev2-control-min);
+  min-height: var(--ev2-control-min);
+  flex: none;
+}
+:root.ceac-physical-phone .ev2s-mobile-unit-context {
+  padding: 0 max(var(--ev2-phone-gutter), env(safe-area-inset-right))
+    var(--ev2-space-2) max(var(--ev2-phone-gutter), env(safe-area-inset-left));
+}
+
+:root.ceac-physical-phone .ev2s-mobile-nav {
+  position: fixed;
+  z-index: 70;
+  bottom: 0;
+  left: 0;
+  right: auto;
+  display: flex !important;
+  width: var(--ceac-phone-visible-width, 100%);
+  max-width: 100%;
+  min-height: var(--ev2s-mobile-nav-height);
+  justify-content: space-around;
+  align-items: stretch;
+  gap: var(--ev2-space-1);
+  padding: var(--ev2-space-1)
+    max(var(--ev2-space-2), env(safe-area-inset-right))
+    max(var(--ev2-space-1), env(safe-area-inset-bottom))
+    max(var(--ev2-space-2), env(safe-area-inset-left));
+  border-top: 1px solid var(--ev2-line);
+  background: var(--c461);
+  box-shadow: 0 -8px 24px rgba(15, 23, 35, .06);
+  backdrop-filter: blur(18px);
+}
+:root.ceac-physical-phone .ev2s-mobile-nav button {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ev2-space-1);
+  min-width: 0;
+  max-width: 6.5rem;
+  min-height: var(--ev2-control-min);
+  padding: var(--ev2-space-1);
+}
+:root.ceac-physical-phone .ev2s-mobile-nav button span {
+  max-width: 100%;
+  font-size: var(--ev2-type-label);
+  font-weight: 650;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  overflow-wrap: normal;
+  word-break: normal;
+  text-align: center;
+  line-height: 1.1;
+}
+:root.ceac-physical-phone .ev2s-content {
+  padding-bottom: calc(var(--ev2s-mobile-nav-height) + env(safe-area-inset-bottom, 0px));
+}
+
+/* Page composition must also use the handset width when a desktop media query
+   would otherwise be true. Settings is especially affected in the report. */
+:root.ceac-physical-phone .ceac-settings {
+  width: 100%;
+  min-width: 0;
+  padding: 16px;
+}
+:root.ceac-physical-phone .ceac-settings-layout {
+  display: block !important;
+}
+:root.ceac-physical-phone .ceac-settings-detail {
+  display: none !important;
+}
+:root.ceac-physical-phone .ceac-settings.has-section .ceac-settings-index {
+  display: none !important;
+}
+:root.ceac-physical-phone .ceac-settings.has-section .ceac-settings-detail {
+  display: block !important;
+}
+:root.ceac-physical-phone .ceac-settings-back {
+  display: flex !important;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+}
+:root.ceac-physical-phone .ceac-settings-detail > section {
+  padding: 16px;
+}
+:root.ceac-physical-phone .ceac-settings-identity {
+  min-width: 0;
+}
+:root.ceac-physical-phone .ceac-settings-identity > div {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+:root.ceac-physical-phone :is(
+  .fpg9-home-reference,
+  .fpg9-home-focus,
+  .fpg9-home-queues,
+  .managerv2-loading,
+  .adminv2-hero,
+  .adminv2-context-grid,
+  .adminv2-support-grid,
+  .staffv2-focus-grid
+) {
+  grid-template-columns: minmax(0, 1fr) !important;
+}
+:root.ceac-physical-phone .fpg9-calendar-card {
+  grid-column: auto !important;
+  grid-row: auto !important;
+}
+:root.ceac-physical-phone .fpg9-home-impact {
+  width: 100% !important;
+}
+:root.ceac-physical-phone :is(.ceac-pwa-status,.ev2s-mobile-search-drawer) {
+  max-width: var(--ceac-phone-visible-width, 100%);
+}
+
+@media print {
+  :root.ceac-physical-phone .ev2s-mobile-nav {display: none !important;}
+}

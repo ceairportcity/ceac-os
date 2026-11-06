@@ -1,5 +1,5 @@
 /* CEAC security-first service worker. Business/API data is never cached. */
-const VERSION = "ceac-shell-v1";
+const VERSION = "ceac-shell-v2-iphone";
 const SHELL_CACHE = `${VERSION}-static`;
 const DOCUMENT_CACHE = `${VERSION}-documents`;
 const OFFLINE_URL = "/offline.html";

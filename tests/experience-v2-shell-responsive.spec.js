@@ -157,6 +157,18 @@ test("iPhone device width retains mobile layout when its page viewport is deskto
     await expect(page.locator(".ev2s-topbar")).toBeHidden();
     await expect(page.locator(".ev2s-mobile-topbar")).toBeVisible();
     await expect(page.locator(".ev2s-mobile-nav")).toBeVisible();
+    const labels = await page.locator(".ev2s-mobile-nav button span").evaluateAll(nodes =>
+      nodes.map(node => ({
+        text: node.textContent.trim(),
+        width: node.clientWidth,
+        scrollWidth: node.scrollWidth,
+        whiteSpace: getComputedStyle(node).whiteSpace,
+      }))
+    );
+    for (const label of labels) {
+      expect(label.whiteSpace, label.text + " must not wrap mid-word").toBe("nowrap");
+      expect(label.scrollWidth - label.width, label.text + " must fit its tab").toBeLessThanOrEqual(1);
+    }
     await expect(page.locator(".ev2s-workspace")).toHaveCSS("margin-left", "0px");
     const reference = page.locator(".fpg9-home-reference").first();
     await expect(reference).toBeVisible();
@@ -448,4 +460,59 @@ test("Stage 4C canonical mobile overlays hide bottom navigation and return clean
   await expect(page.locator(".ev2s-mobile-nav")).toBeVisible();
   expect(new URL(page.url()).searchParams.has("roomKind")).toBe(false);
   expect(new URL(page.url()).searchParams.has("room")).toBe(false);
+});
+
+
+test("installed iPhone restores handset Settings layout despite desktop CSS breakpoints", async ({ browser }) => {
+  // The prior 390px viewport test was insufficient: the reported failure has a
+  // desktop navigation viewport but a physically narrow iPhone screen.
+  const context = await browser.newContext({
+    viewport: { width: 980, height: 844 },
+    screen: { width: 980, height: 844 },
+    isMobile: true,
+    hasTouch: true,
+    userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148",
+  });
+  try {
+    await context.addInitScript(() => {
+      Object.defineProperty(window.screen, "width", { configurable: true, value: 390 });
+      Object.defineProperty(window.screen, "height", { configurable: true, value: 844 });
+      if (window.visualViewport) {
+        Object.defineProperty(window.visualViewport, "width", { configurable: true, value: 390 });
+      }
+    });
+    const page = await context.newPage();
+    await signIn(page, roles[1]);
+    const mismatch = await page.evaluate(() => ({
+      desktopLayoutQuery: matchMedia("(min-width: 721px)").matches,
+      phoneClass: document.documentElement.classList.contains("ceac-physical-phone"),
+      physicalWidth: document.documentElement.style.getPropertyValue("--ceac-phone-visible-width"),
+    }));
+    // WebKit may recover its media-query viewport after the meta-tag reset;
+    // either way the installed iPhone must retain its physical phone layout.
+    expect(mismatch.phoneClass).toBe(true);
+    expect(mismatch.physicalWidth).toBe("390px");
+
+    await expect(page.locator(".ev2s-sidebar")).toBeHidden();
+    await expect(page.locator(".ev2s-topbar")).toBeHidden();
+    await expect(page.locator(".ev2s-mobile-topbar")).toBeVisible();
+    await expect(page.locator(".ev2s-mobile-nav")).toBeVisible();
+    await expect(page.locator(".ev2s-workspace")).toHaveCSS("margin-left", "0px");
+    await page.locator(".ev2s-mobile-nav").getByRole("button", { name: "More", exact: true }).click();
+    await page.getByRole("button", { name: "Settings", exact: true }).click();
+    await expect(page.getByRole("heading", { name: "Settings", exact: true })).toBeVisible();
+    await expect(page.locator(".ceac-settings-layout")).toHaveCSS("display", "block");
+    const geometry = await page.evaluate(() => ({
+      app: document.querySelector(".app")?.getBoundingClientRect().width,
+      settings: document.querySelector(".ceac-settings")?.getBoundingClientRect().width,
+      mobileNav: document.querySelector(".ev2s-mobile-nav")?.getBoundingClientRect().width,
+    }));
+    for (const [name,width] of Object.entries(geometry)) {
+      expect(width, `${name} must fit the phone's physical 390px screen`).toBeLessThanOrEqual(391);
+      expect(width, `${name} must remain usable`).toBeGreaterThan(260);
+    }
+    await page.screenshot({path:"test-artifacts/ceac-iphone-installed-settings-viewport.png",fullPage:true});
+  } finally {
+    await context.close();
+  }
 });
