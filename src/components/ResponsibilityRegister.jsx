@@ -93,7 +93,7 @@ export default function ResponsibilityRegister({rows,selectedId,onSelect,emptyAc
         <span>Page {currentPage+1} of {pageCount}</span>
         <button type="button" aria-label="Next responsibility page" disabled={currentPage===pageCount-1} onClick={()=>changePage(currentPage+1)}>Next</button>
       </nav>}
-      {onAdd&&<button type="button" onClick={onAdd}>Add my work</button>}
+      {/* The main page has one prominent Add my work action; do not duplicate it here. */}
     </footer>
   </>;
 }
