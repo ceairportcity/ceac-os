@@ -49,7 +49,13 @@ const budgets = {
   // of source CSS) and retained all core/gzip/JS/vendor limits. The prior
   // candidate measured 707,791 bytes before consolidation; permit only
   // 3 KiB more aggregate CSS for this approved functional design.
-  allCssRaw: 690 * KIB,
+  // 6 Nov phone restoration: the previous minifier silently removed every
+  // width media rule. Its size was not a complete application baseline.
+  // One supported compression pass preserves 359 width-media rules and emits
+  // 764,093 bytes locally. Bound the complete requested design to 750 KiB
+  // (3,907 bytes headroom); retain core/gzip/route/JS/vendor caps unchanged.
+  // Compiled phone browser checks now reject missing responsive compositions.
+  allCssRaw: 750 * KIB,
   executiveRouteCssRaw: 16 * KIB,
   executiveRedesignCssRaw: 28 * KIB,
   // The integrated product/security candidate measures 79,367 bytes on Node 22;

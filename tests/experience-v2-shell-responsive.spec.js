@@ -490,8 +490,7 @@ test("installed iPhone restores handset Settings layout despite desktop CSS brea
       phoneClass: document.documentElement.classList.contains("ceac-physical-phone"),
       physicalWidth: document.documentElement.style.getPropertyValue("--ceac-phone-visible-width"),
     }));
-    // WebKit may recover its media-query viewport after the meta-tag reset;
-    // either way the installed iPhone must retain its physical phone layout.
+    // Keep the stale native breakpoint active while original phone rules run.
     expect(mismatch.desktopLayoutQuery).toBe(true);
     expect(mismatch.phoneClass).toBe(true);
     expect(mismatch.physicalWidth).toBe("390px");
@@ -504,6 +503,9 @@ test("installed iPhone restores handset Settings layout despite desktop CSS brea
     // The prior Settings-only assertion missed the desktop card layout inside
     // a correctly narrow mobile shell. Verify actual signed-in page content.
     await expect(page.locator(".fpg9-home-hero")).toHaveCSS("display", "block");
+    await expect(page.locator('.fpg9-mobile-shortcuts')).toBeVisible();
+    await expect(page.locator('.fpg9-home-impact')).toBeHidden();
+    await expect(page.locator('.fpg9-workspace-previews')).toBeHidden();
     const dayWidths=await page.locator('.ceac-day-group').evaluateAll(rows=>rows.map(row=>row.getBoundingClientRect().width));
     for(const width of dayWidths)expect(width).toBeGreaterThan(250);
     await page.locator('.ev2s-mobile-nav').getByRole('button',{name:'Work',exact:true}).click();
