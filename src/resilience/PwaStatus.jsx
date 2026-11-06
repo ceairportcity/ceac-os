@@ -31,7 +31,16 @@ export default function PwaStatus() {
     window.addEventListener("online", markOnline);
     window.addEventListener("offline", markOffline);
     window.addEventListener(CEAC_PWA_UPDATE_EVENT, updateReady);
+    // This component is lazy: a worker may already be waiting before its
+    // event listener mounts. Read the real registration to avoid a missed update.
+    let active = true;
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.getRegistration("/").then(registration => {
+        if (active && registration?.waiting) setWaiting(registration.waiting);
+      }).catch(() => {});
+    }
     return () => {
+      active = false;
       window.removeEventListener("online", markOnline);
       window.removeEventListener("offline", markOffline);
       window.removeEventListener(CEAC_PWA_UPDATE_EVENT, updateReady);
