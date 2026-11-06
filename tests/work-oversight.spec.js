@@ -1,3 +1,4 @@
+import fs from 'node:fs';
 import {test,expect} from '@playwright/test';
 const staff='11111111-1111-4111-8111-111111111111',manager='22222222-2222-4222-8222-222222222222';
 for(const width of [320,768,1440])test(`shared Work oversight controls and milestones at ${width}px`,async({page})=>{
@@ -29,5 +30,6 @@ for(const width of [320,768,1440])test(`shared Work oversight controls and miles
  expect(writes.map(r=>r.args.p_kind)).toEqual(['update','milestone','accepted']);
  expect(writes[2].args.p_reply_to).toBe(writes[1].args.p_request_id);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth)).toBe(false);
- await page.screenshot({path:test.info().outputPath(`oversight-${width}.png`),fullPage:true});
+ fs.mkdirSync('test-artifacts',{recursive:true});
+ await page.screenshot({path:`test-artifacts/work-oversight-${width}.png`,fullPage:true});
 });
