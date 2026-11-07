@@ -112,11 +112,11 @@ test("Stage 12B calendar continuity remains functional under reduced motion", as
   await week.click();
   await expect(week).toHaveAttribute("aria-selected", "true");
   await expect(week.locator(".ev2c-segmented-indicator")).toHaveCount(1);
-  await expect(page.locator(".ev2cal-day")).toHaveCount(7);
+  await expect(page.locator(".ceac-calendar-week-date")).toHaveCount(7);
 
-  const selected = page.locator(".ev2cal-day-button[aria-pressed='true']");
+  const selected = page.locator(".ceac-calendar-week-date[aria-pressed='true']");
   await expect(selected).toHaveCount(1);
-  await expect(selected.locator(".ev2cal-selection-indicator")).toHaveCount(1);
+  await expect(selected).toHaveAttribute("aria-pressed","true");
 
   const period = page.locator(".ev2cal-period-label");
   const before = await period.textContent();
@@ -226,9 +226,9 @@ test("Stage 12C legacy Sheet keeps focus and Escape behaviour under reduced moti
 
   // A reduced-motion filter sheet only belongs to the settled Manager Calendar,
   // not a similarly named control elsewhere while the route is still loading.
-  await expect(page.locator(".ev2cal-toolbar")).toBeVisible({ timeout: 15000 });
-  await expect(page.locator(".ev2cal-role-layout")).toBeVisible({ timeout: 15000 });
-  const trigger = page.locator(".ev2cal-toolbar").getByRole("button", { name:"View All", exact:true });
+  await expect(page.locator(".ceac-calendar-controls")).toBeVisible({ timeout: 15000 });
+  await expect(page.locator(".ceac-calendar-planner")).toBeVisible({ timeout: 15000 });
+  const trigger = page.locator(".ceac-calendar-controls").getByRole("button", { name:/^Filter/ });
   await trigger.click();
 
   const dialog = page.getByRole("dialog");

@@ -82,7 +82,7 @@ test("Technical Help cannot accept a request draft while its Stage 1 service is 
 test("Calendar keeps shared commitments and visibly defers only private planning", () => {
   const calendar = source("src/screens/StaffCalendar.jsx");
   assert.match(calendar, /isMissingPersonalPlanningSchema/);
-  assert.match(calendar, /Shared calendar commitments remain available/);
+  assert.match(calendar, /Your shared calendar is available/);
   assert.match(calendar, /composer&&personalPlanningReady/);
 });
 

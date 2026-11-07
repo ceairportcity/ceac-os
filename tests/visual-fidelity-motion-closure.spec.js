@@ -103,7 +103,7 @@ for (const viewport of [
     await page.goto("/?tab=calendar");
     const calendar = page.locator(".ev2cal-manager-page");
     await expect(calendar).toBeVisible({ timeout: 15000 });
-    const trigger = calendar.getByRole("button", { name: "View All", exact: true });
+    const trigger = calendar.getByRole("button", { name: /^Filter/ });
     await expect(trigger).toBeVisible();
     await trigger.click();
 
@@ -302,7 +302,7 @@ for (const viewport of [
     await expect(day).toHaveAttribute("aria-pressed", "true");
     await expect(day.locator(".ev2cal-selection-indicator")).toBeVisible();
 
-    const trigger = calendar.getByRole("button", { name: /View / }).first();
+    const trigger = calendar.getByRole("button", { name: /^Filter/ }).first();
     await trigger.click();
     const sheet = page.locator(".sheet[role='dialog']");
     await expect(sheet).toBeVisible();

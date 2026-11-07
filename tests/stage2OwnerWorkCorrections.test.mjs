@@ -546,5 +546,5 @@ test("staff Work opens the selected deadline in Calendar without another data so
   assert.match(app,/calendarFocusDate/);
   assert.match(app,/initialDate=\{calendarFocusDate\}/);
   assert.match(calendar,/initialDate=null,onFocusHandled/);
-  assert.match(calendar,/const \[selectedDate,setSelectedDate\]=useState\(selectedInitial\)/);
+  assert.match(calendar,/useCalendarPosition\(me,"personal",initialDate\)/);
 });

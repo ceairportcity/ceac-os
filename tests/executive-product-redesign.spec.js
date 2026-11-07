@@ -72,7 +72,7 @@ test("Executive redesign is bound to the literal owner-approved reference", () =
   expect(ministry).toContain('executiveSurface ? "Priorities and goals" : "Strategic hierarchy"');
   expect(portfolio).toContain("See recorded project risks, delivery milestones and coordinated programmes. Open All projects to manage an individual project.");
   expect(organisation).toContain("Find people, explore departments and see how your organisation works together.");
-  expect(calendar).toContain("Your meetings, ministry events and project dates in one calendar.");
+  expect(calendar).toContain("Meetings, delivery dates and approved leave.");
   expect(finance).toContain("Review income, spending and requests awaiting your decision. Each currency stays separate.");
   expect(finance).toContain('supabase.from("income_lines")');
   expect(finance).toContain('label: "Received"');

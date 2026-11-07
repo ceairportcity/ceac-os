@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
-import { statusPill, ProductNotice, Avatar } from "../components/bits";
+import { statusPill, Avatar } from "../components/bits";
+import "../components/MeetingPlanning.css";
+import { downloadMeetingCalendar } from "../lib/calendarExport";
 import VoiceInput from "../components/VoiceInput";
 import { humanError } from "../lib/productLanguage";
 
@@ -26,6 +28,9 @@ function MeetingDetail({ me, meetingId, back, goAssign, openItem, openProject, o
   const [records, setRecords] = useState([]);
   const [links, setLinks] = useState([]);
   const [participants, setParticipants] = useState([]);
+  const [responses,setResponses]=useState([]);
+  const [responsesReady,setResponsesReady]=useState(false);
+  const [notice,setNotice]=useState("");
   const [privateNote, setPrivateNote] = useState("");
   const [decision, setDecision] = useState("");
   const [agendaDraft, setAgendaDraft] = useState("");
@@ -60,6 +65,9 @@ function MeetingDetail({ me, meetingId, back, goAssign, openItem, openProject, o
       if (linkResult.error) throw linkResult.error;
       if (participantResult.error) throw participantResult.error;
       if (privateNoteResult.error) throw privateNoteResult.error;
+      const responseResult=await supabase.from("meeting_responses").select("profile_id,response").eq("meeting_id",meetingId);
+      if(responseResult.error&&!["42P01","PGRST205"].includes(responseResult.error.code))throw responseResult.error;
+      setResponsesReady(!responseResult.error);setResponses(responseResult.data||[]);
       setMeeting(meetingResult.data);
       setAgendaDraft(meetingResult.data?.agenda || "");
       setRecords(recordResult.data || []);
@@ -82,8 +90,18 @@ function MeetingDetail({ me, meetingId, back, goAssign, openItem, openProject, o
   const meetingStarted = Boolean(meeting && Date.now() >= new Date(meeting.starts_at).getTime());
   const meetingEnded = Boolean(meeting?.ends_at && Date.now() > new Date(meeting.ends_at).getTime());
 
+  async function respond(response){
+    if(!canContribute||!responsesReady||busy||meeting.status==="cancelled")return;
+    setBusy(true);setError(null);setNotice("");
+    try{
+      const result=await supabase.from("meeting_responses").upsert({meeting_id:meeting.id,profile_id:me.id,org_id:me.org_id,response,updated_at:new Date().toISOString()},{onConflict:"meeting_id,profile_id"}).select("profile_id,response").single();
+      if(result.error)throw result.error;
+      setResponses(rows=>[...rows.filter(row=>row.profile_id!==me.id),result.data]);setNotice("Your response has been saved.");
+    }catch(err){setError(humanError(err,"Your response could not be saved."));}finally{setBusy(false);}
+  }
+
   async function savePrivateNote() {
-    if (!meeting || !canContribute || !meetingStarted) return;
+    if (!meeting || !canContribute || meeting.status==="cancelled") return;
     setBusy(true); setError(null);
     try {
       const result = await supabase.from("meeting_private_notes").upsert({
@@ -172,7 +190,10 @@ function MeetingDetail({ me, meetingId, back, goAssign, openItem, openProject, o
         {statusPill(meeting.status)}
         <span>{providerLabel(meeting)}</span>
       </div>
-      {meeting.location && <div className="meeting-location">{meeting.location}</div>}
+      {meeting.location && <div className="meeting-location">{meeting.location} <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(meeting.location)}`} target="_blank" rel="noreferrer">Get directions ↗</a></div>}
+      <details className="meeting-calendar-export"><summary>Add to another calendar</summary><p>Save a copy to Apple Calendar, Outlook or Google Calendar. Later changes stay in CEAC OS; this copy will not sync automatically.</p><button className="btn btn-ghost btn-sm" onClick={()=>downloadMeetingCalendar(meeting)}>Download calendar event</button><a className="btn btn-ghost btn-sm" href="https://calendar.google.com/calendar/u/0/r" target="_blank" rel="noreferrer">Open Google Calendar</a></details>
+      {canContribute&&responsesReady&&meeting.status!=="cancelled"&&<div className="meeting-response" role="group" aria-label="Your invitation response">{[["accepted","Accept"],["tentative","Maybe"],["declined","Decline"]].map(([value,label])=><button type="button" key={value} className="btn btn-ghost btn-sm" aria-pressed={responses.some(r=>r.profile_id===me.id&&r.response===value)} disabled={busy} onClick={()=>respond(value)}>{label}</button>)}</div>}
+      {notice&&<p role="status">{notice}</p>}
       {meeting.join_url && meeting.status !== "cancelled" && <a className="meeting-join" href={meeting.join_url} target="_blank" rel="noreferrer">
         Join {providerLabel(meeting)} <span aria-hidden="true">↗</span>
       </a>}
@@ -196,7 +217,7 @@ function MeetingDetail({ me, meetingId, back, goAssign, openItem, openProject, o
         : meeting.agenda ? <p className="meeting-agenda">{meeting.agenda}</p> : <div className="quiet-empty compact"><strong>No agenda recorded</strong><span>No shared agenda is on the record.</span></div>}
       {participants.length > 0 && <div className="meeting-participant-summary">
         <span>{participants.length === 1 && participants[0].profile_id === me.id ? "You are invited" : `${participants.length} participant${participants.length === 1 ? "" : "s"}`}</span>
-        {participants.length > 1 && <div>{participants.slice(0,8).map((participant) => <b key={participant.profile_id}>{participant.profiles?.full_name || "CEAC member"}</b>)}</div>}
+        {participants.length > 1 && <div>{participants.slice(0,8).map((participant) => <b key={participant.profile_id}>{participant.profiles?.full_name || "CEAC member"}{responses.find(r=>r.profile_id===participant.profile_id)?.response?` · ${responses.find(r=>r.profile_id===participant.profile_id).response}`:""}</b>)}</div>}
       </div>}
     </section>
     <aside className="meeting-panel" aria-label="Meeting details"><div className="meeting-section-head"><div><span>Meeting details</span><h2>{canManage?"Organiser view":"Viewer mode"}</h2></div></div>
@@ -209,12 +230,12 @@ function MeetingDetail({ me, meetingId, back, goAssign, openItem, openProject, o
     <section className="meeting-panel">
       <div className="meeting-section-head">
         <div><span>During</span><h2>Meeting workspace</h2></div>
-        <small>{meetingStarted ? (meetingEnded ? "Meeting time has passed" : "In session") : "Opens at the scheduled start"}</small>
+        <small>{meetingStarted ? (meetingEnded ? "Meeting time has passed" : "In session") : "Prepare your private notes"}</small>
       </div>
 
-      {!meetingStarted && <ProductNotice tone="info" title="Notes open when the meeting starts">Before the start time, the shared agenda is the meeting's writable preparation space. Personal notes and shared decisions remain closed.</ProductNotice>}
+      {!meetingStarted&&<p className="screen-note">Prepare your own notes now. Shared decisions open when the meeting starts.</p>}
 
-      {meetingStarted && canContribute && <div className="meeting-private-notes">
+      {canContribute && meeting.status!=="cancelled" && <div className="meeting-private-notes">
         <div className="meeting-private-note-head">
           <div><strong>My notes</strong><span>Only you can read these notes.</span></div>
           <span className="pill p-grey">Private</span>
@@ -265,8 +286,7 @@ function MeetingDetail({ me, meetingId, back, goAssign, openItem, openProject, o
     {meeting.project_id && openProject && <button className="meeting-project-link" onClick={() => openProject(meeting.project_id)}>Open project →</button>}
 
     <div className="meeting-provider-note">
-      <strong>Meeting provider boundary</strong>
-      <span>CEAC stores the operational record. Video transport remains with {providerLabel(meeting)}. A pasted link is not presented as a CEAC-created provider integration.</span>
+      <span>Video calls open in {providerLabel(meeting)}. Your agenda, decisions and follow-up work stay in CEAC OS.</span>
     </div>
   </div>;
 }

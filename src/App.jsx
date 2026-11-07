@@ -552,7 +552,7 @@ export default function App() {
       onInitialViewHandled={() => {setCreateIntent(null);setOpenUpdatesIntent(false);}}
     />;
     if (tab === "projects" && isUnitManager) return <ManagerProjects key={managerScopeKey} me={me} openItem={openItem} goAssign={startAssignment} openMeeting={openMeeting} scheduleMeeting={startMeeting} openRoom={(projectId, reference) => openRoom({ kind: "project", projectId, reference })} />;
-    if (tab === "calendar" && isUnitManager) return <ManagerCalendar key={managerScopeKey} me={me} openItem={openItem} openProject={openProject} openMeeting={openMeeting} scheduleMeeting={startMeeting} openPerson={(id, focus) => setPerson({ id, focus })} />;
+    if (tab === "calendar" && isUnitManager) return <ManagerCalendar key={managerScopeKey} initialDate={calendarFocusDate} onFocusHandled={()=>setCalendarFocusDate(null)} me={me} openItem={openItem} openProject={openProject} openMeeting={openMeeting} scheduleMeeting={startMeeting} openPerson={(id, focus) => setPerson({ id, focus })} />;
     if (tab === "manager-finance" && isUnitManager) return <ManagerFinance key={managerScopeKey} me={me} openProject={openProject} />;
     if (tab === "manager-reports" && isUnitManager) return <ManagerReports key={managerScopeKey} me={me} openItem={openItem} openProject={openProject} onOpenAchievements={() => openAchievements("manager-reports")} />;
     if (tab === "exec-projects" && isExec) return <ExecutiveProjectsWorkspace key={`${me.org_id}:${me.id}:executive-projects`} me={me} initialProjectId={projectId} openProject={id=>navigate({tab:"exec-projects",projectId:id})} scheduleMeeting={startMeeting} openItem={openItem} goAssign={startAssignment} openRoom={(id,reference)=>openRoom({kind:"project",projectId:id,reference})} />;
@@ -607,8 +607,8 @@ export default function App() {
     if (tab === "payroll" && canUsePayroll) return <AdminPayroll key={`${me.org_id}:${me.id}`} me={me} />;
     if (tab === "units" && isAdmin) return <Units me={me} openItem={openItem} openPeopleAccess={openPeopleAccess} openProject={(id) => navigate({tab:"admin-projects",projectId:id})} />;
     if (tab === "admin-projects" && isAdmin) return <AdminProjects key={`${me.org_id}:${me.id}`} me={me} initialProjectId={projectId} openProject={openProject} scheduleMeeting={startMeeting} openItem={openItem} goAssign={startAssignment} openRoom={(id, reference) => openRoom({kind:"project",projectId:id,reference})} />;
-    if (tab === "admin-calendar" && isAdmin) return <AdminCalendar me={me} openItem={openItem} openMeeting={openMeeting} scheduleMeeting={startMeeting} roleMode="admin" openProject={(id) => navigate({tab:"admin-projects",projectId:id})} />;
-    if (tab === "exec-calendar" && isExec) return <AdminCalendar me={me} openItem={openItem} openMeeting={openMeeting} scheduleMeeting={startMeeting} roleMode="executive" openProject={(id) => navigate({tab:"exec-projects",projectId:id})} />;
+    if (tab === "admin-calendar" && isAdmin) return <AdminCalendar initialDate={calendarFocusDate} onFocusHandled={()=>setCalendarFocusDate(null)} me={me} openItem={openItem} openMeeting={openMeeting} scheduleMeeting={startMeeting} roleMode="admin" openProject={(id) => navigate({tab:"admin-projects",projectId:id})} />;
+    if (tab === "exec-calendar" && isExec) return <AdminCalendar initialDate={calendarFocusDate} onFocusHandled={()=>setCalendarFocusDate(null)} me={me} openItem={openItem} openMeeting={openMeeting} scheduleMeeting={startMeeting} roleMode="executive" openProject={(id) => navigate({tab:"exec-projects",projectId:id})} />;
     if (tab === "audit" && canViewAudit) return <AdminAudit me={me} />;
     if (tab === "events" && canViewAudit) return <AdminEvents me={me} />;
     if (tab === "workflows" && canUseWorkflows) return <AdminWorkflows me={me} />;

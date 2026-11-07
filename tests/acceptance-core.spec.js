@@ -542,6 +542,7 @@ test("Experience Stage 8 removes the known navigation, Team and Calendar defects
 
     await go(page, "Calendar");
     await expect(page.getByText("Your Google Calendar", { exact: true })).toBeVisible();
+    await page.getByText("Your Google Calendar",{exact:true}).click();
     await expect(page.getByText(/Automatic personal sync is not connected yet/i)).toBeVisible();
     await expect(page.getByRole("link", { name: "Open Google Calendar", exact: true })).toBeVisible();
 
@@ -718,10 +719,11 @@ test("A Manager can schedule a Unit meeting with an explicit audience and Staff 
 
     await expect(page.getByRole("tab", { name: "Month", exact: true })).toBeVisible();
     await expect(page.getByRole("tab", { name: "Week", exact: true })).toBeVisible();
-    await expect(page.getByRole("button", { name: /View All/ })).toBeVisible();
-    await page.getByRole("button", { name: /View All/ }).click();
+    await expect(page.getByRole("button", { name: /^Filter/ })).toBeVisible();
+    await page.getByRole("button", { name: /^Filter/ }).click();
     const filterDialog = page.getByRole("dialog");
-    await filterDialog.getByRole("tab", { name: "Meetings", exact: true }).click();
+    await expect(filterDialog.getByRole("checkbox", { name: "Meetings", exact: true })).toBeChecked();
+    await filterDialog.getByRole("button",{name:"Done",exact:true}).click();
 
     await page.getByRole("button", { name: "Schedule meeting" }).click();
     const dialog = page.getByRole("dialog");
@@ -752,7 +754,8 @@ test("A Manager can schedule a Unit meeting with an explicit audience and Staff 
     await meetingRow.click();
     await expect(page.getByRole("heading", { name: title })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Meeting workspace" })).toBeVisible();
-    await expect(page.getByText("Notes open when the meeting starts", { exact: true })).toBeVisible();
+    await expect(page.getByText("Prepare your own notes now. Shared decisions open when the meeting starts.",{exact:true})).toBeVisible();
+    await expect(page.getByRole("button",{name:"Save my notes",exact:true})).toBeVisible();
     await expect(page.getByText("My notes", { exact: true })).toHaveCount(0);
     await context.close();
   }

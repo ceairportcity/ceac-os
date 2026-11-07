@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../lib/supabase";
+import "./MeetingPlanning.css";
+import { calendarDay, shiftCalendarDay, findCalendarConflicts } from "../lib/calendarPlanning";
 import VoiceInput from "./VoiceInput";
 
 function audienceKey(row) {
@@ -34,10 +36,12 @@ export default function MeetingScheduler({
   const [projectId, setProjectId] = useState(context.projectId || "");
   const [title, setTitle] = useState(context.title || "");
   const [agenda, setAgenda] = useState(context.agenda || "");
-  const [startsAt, setStartsAt] = useState(context.startsAt || "");
-  const [endsAt, setEndsAt] = useState(context.endsAt || "");
+  const [startsAt, setStartsAt] = useState((context.startsAt || "").slice(0,16));
+  const [endsAt, setEndsAt] = useState((context.endsAt || "").slice(0,16));
   const [joinUrl, setJoinUrl] = useState(context.joinUrl || "");
   const [location, setLocation] = useState("");
+  const [conflicts,setConflicts]=useState([]);
+  const [conflictState,setConflictState]=useState("");
   const [provider, setProvider] = useState("zoom");
   const [units, setUnits] = useState([]);
   const [projects, setProjects] = useState([]);
@@ -166,8 +170,8 @@ export default function MeetingScheduler({
         p_project_id: scope === "project" ? projectId || null : null,
         p_title: title.trim(),
         p_agenda: agenda.trim() || null,
-        p_starts_at: new Date(startsAt).toISOString(),
-        p_ends_at: endsAt ? new Date(endsAt).toISOString() : null,
+        p_starts_at: new Date(`${startsAt}:00Z`).toISOString(),
+        p_ends_at: endsAt ? new Date(`${endsAt}:00Z`).toISOString() : null,
         // Google Meet is a visible provider choice even before a connected-app
         // capability exists. The existing safe meeting contract stores pasted
         // Meet links as external links; it does not pretend CEAC created them.
@@ -205,9 +209,34 @@ export default function MeetingScheduler({
     return ids.size;
   }, [audience, me.id, orgPeople, unitMembers, subTeamMembers, projects]);
 
+  // Check only this person's own appointments. Other people's private titles
+  // and notes are never queried, and no background polling is introduced.
+  useEffect(()=>{
+    if(!startsAt){setConflicts([]);setConflictState("");return;}
+    let current=true;
+    setConflicts([]);setConflictState("checking");
+    const timer=setTimeout(async()=>{
+      try{
+        const from=new Date(`${startsAt}:00Z`);
+        if(!Number.isFinite(from.getTime())){if(current)setConflictState("");return;}
+        const to=endsAt?new Date(`${endsAt}:00Z`):new Date(from.getTime()+3600000);
+        const floor=new Date(from.getTime()-86400000).toISOString();
+        const [meetings,personal,leave]=await Promise.all([
+          supabase.from("meeting_sessions").select("id,title,starts_at,ends_at,status,meeting_participants!inner(profile_id)").eq("meeting_participants.profile_id",me.id).or(`ends_at.gt.${from.toISOString()},and(ends_at.is.null,starts_at.gte.${floor})`).lt("starts_at",to.toISOString()).neq("status","cancelled").limit(100),
+          supabase.from("personal_calendar_events").select("id,title,starts_at,ends_at").eq("profile_id",me.id).or(`ends_at.gt.${from.toISOString()},and(ends_at.is.null,starts_at.gte.${floor})`).lt("starts_at",to.toISOString()).limit(100),
+          supabase.from("leave_requests").select("id,start_date,end_date").eq("profile_id",me.id).eq("status","approved").gte("end_date",calendarDay(from)).lte("start_date",calendarDay(to)).limit(100),
+        ]);
+        if(!current)return;
+        if(meetings.error||personal.error||leave.error){setConflicts([]);setConflictState("unavailable");return;}
+        setConflicts(findCalendarConflicts([...(meetings.data||[]),...(personal.data||[]),...(leave.data||[]).map(row=>({id:row.id,title:"Approved leave",starts_at:`${row.start_date}T00:00:00Z`,ends_at:`${shiftCalendarDay(row.end_date,1)}T00:00:00Z`}))],from,to));setConflictState("ready");
+      }catch{if(current){setConflicts([]);setConflictState("unavailable");}}
+    },350);
+    return()=>{current=false;clearTimeout(timer);};
+  },[startsAt,endsAt,me.id]);
+
   const canSubmit = title.trim() && startsAt && audience.length
     && (scope !== "unit" || unitId)
-    && (scope !== "project" || projectId);
+    && (scope !== "project" || projectId) && (!endsAt || endsAt>startsAt);
 
   return <div className="meeting-scheduler" role="dialog" aria-modal="true" aria-label="Schedule meeting">
     <button type="button" className="meeting-scheduler-bg" aria-hidden="true" tabIndex={-1} onClick={onClose} />
@@ -246,8 +275,8 @@ export default function MeetingScheduler({
           </select>}
 
           <div className="meeting-time-grid">
-            <label className="small">Starts<input className="field" type="datetime-local" value={startsAt} onChange={(e) => setStartsAt(e.target.value)} /></label>
-            <label className="small">Ends (optional)<input className="field" type="datetime-local" value={endsAt} onChange={(e) => setEndsAt(e.target.value)} /></label>
+            <label className="small">Starts · Accra time<input className="field" type="datetime-local" value={startsAt} onChange={(e) => setStartsAt(e.target.value)} /></label>
+            <label className="small">Ends · Accra time (optional)<input className="field" type="datetime-local" value={endsAt} onChange={(e) => setEndsAt(e.target.value)} /></label>
           </div>
 
           <label className="assistive-field-label">
@@ -333,6 +362,9 @@ export default function MeetingScheduler({
         <button className="btn btn-ghost" onClick={onClose}>Cancel</button>
         <button className="btn" disabled={busy || !canSubmit} onClick={schedule}>{busy ? "Scheduling…" : "Schedule and notify"}</button>
       </footer>
+      {conflictState==="checking"&&<p className="screen-note" role="status">Checking your schedule…</p>}
+      {conflictState==="unavailable"&&<p className="screen-note" role="status">Your availability could not be checked. Review your calendar before scheduling.</p>}
+      {conflicts.length>0&&<div className="flag flag-amber" role="status"><strong>This overlaps your schedule</strong>{conflicts.map(event=><p key={event.id}>{event.title}</p>)}<small>You can choose another time or keep this overlap. Other invitees’ availability is not checked.</small></div>}
       <p className="meeting-scheduler-note">Participants will see this meeting inside CEAC OS automatically. External email/calendar delivery is not implied.</p>
     </section>
   </div>;

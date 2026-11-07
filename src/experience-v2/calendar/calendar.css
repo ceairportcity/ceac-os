@@ -530,127 +530,26 @@ button.ev2cal-event:hover {
   margin-top: calc(-1 * var(--ev2-space-1));
 }
 
-.ev2cal-role-layout {
-  min-width: 0;
-  display: grid;
-  grid-template-columns: minmax(0, 1.55fr) minmax(18rem, .65fr);
-  gap: var(--ev2-space-4);
-  align-items: start;
-}
 
-.ev2cal-side-stack {
-  min-width: 0;
-  display: grid;
-  gap: var(--ev2-space-4);
-}
 
-@media (min-width: 961px) {
-  .ev2cal-side-stack {
-    position: sticky;
-    top: calc(var(--ceac-topbar, 59px) + var(--ev2-space-4));
-  }
-}
 
-.ev2cal-toolbar {
-  min-width: 0;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--ev2-space-3);
-}
 
-.ev2cal-google {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: var(--ev2-space-4);
-  align-items: center;
-}
 
-.ev2cal-integration-copy {
-  min-width: 0;
-}
 
-.ev2cal-integration-copy strong {
-  display: block;
-  font-size: var(--ev2-type-row-desktop);
-  line-height: 1.35;
-}
 
-.ev2cal-integration-copy p {
-  max-width: 72ch;
-  margin: var(--ev2-space-1) 0 0;
-  color: var(--ev2-text-secondary);
-  font-size: var(--ev2-type-supporting);
-  line-height: 1.45;
-}
 
-.ev2cal-link-row {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: var(--ev2-space-2);
-}
 
-.ev2cal-external-link {
-  min-height: var(--ev2-control-compact);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0 var(--ev2-space-3);
-  border: 1px solid var(--ev2-line-strong);
-  border-radius: var(--ev2-radius-control);
-  background: var(--ev2-surface);
-  color: var(--appearance-ev2-action);
-  font-size: var(--ev2-type-supporting);
-  font-weight: 650;
-  line-height: 1.2;
-  text-decoration: none;
-}
 
-.ev2cal-external-link:hover {
-  background: var(--ev2-action-soft);
-}
 
-.ev2cal-external-link:focus-visible {
-  outline: 3px solid rgba(12, 93, 249, .20);
-  outline-offset: 2px;
-}
 
-.ev2cal-admin-range {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--ev2-space-4);
-}
 
-.ev2cal-admin-range > span {
-  color: var(--ev2-text-secondary);
-  font-size: var(--ev2-type-supporting);
-  line-height: 1.4;
-  text-align: right;
-}
+
 
 .ev2cal-admin-page .ev2cal-timeline {
   margin-top: var(--ev2-space-1);
 }
 
-@media (max-width: 960px) {
-  .ev2cal-role-layout {
-    grid-template-columns: 1fr;
-  }
 
-  .ev2cal-side-stack {
-    position: static;
-  }
-
-  .ev2cal-google {
-    grid-template-columns: 1fr;
-  }
-
-  .ev2cal-link-row {
-    justify-content: flex-start;
-  }
-}
 
 @media (max-width: 599px) {
   .ev2cal-role-page {
@@ -659,55 +558,18 @@ button.ev2cal-event:hover {
     padding-bottom: calc(var(--ev2-space-10) + env(safe-area-inset-bottom));
   }
 
-  .ev2cal-toolbar,
-  .ev2cal-admin-range {
-    display: grid;
-  }
-
-  .ev2cal-toolbar > .ev2c-button,
-  .ev2cal-external-link {
-    min-height: 44px;
-  }
-
-  .ev2cal-toolbar > .ev2c-button {
-    width: 100%;
-  }
-
-  .ev2cal-admin-range > span {
-    text-align: left;
-  }
-
-  .ev2cal-link-row {
-    display: grid;
-  }
-
-  .ev2cal-external-link {
-    width: 100%;
-  }
-}
 
 
-/* VF3D provisional — Manager Calendar hierarchy.
+
+
+
+}/* VF3D provisional — Manager Calendar hierarchy.
    Calendar and selected-date agenda are primary; Google linking is supporting context. */
-.ev2cal-manager-page .ev2cal-side-stack .ev2cal-google {
-  grid-template-columns: 1fr;
-  align-items: start;
-  gap: var(--ev2-space-3);
-}
 
-.ev2cal-manager-page .ev2cal-side-stack .ev2cal-link-row {
-  justify-content: flex-start;
-}
 
-.ev2cal-manager-page .ev2cal-side-stack .ev2cal-external-link {
-  flex: 1 1 9rem;
-}
 
-@media (max-width: 599px) {
-  .ev2cal-manager-page .ev2cal-side-stack .ev2cal-google {
-    padding: var(--ev2-space-3);
-  }
-}
+
+
 
 
 /* VF6C — Cross-role Calendar / schedule / meetings closure.
@@ -733,12 +595,7 @@ button.ev2cal-event:hover {
   align-self: start;
 }
 
-@media (min-width: 1040px) {
-  .ev2cal-admin-page .ev2cal-admin-range {
-    padding-bottom: var(--ev2-space-2);
-    border-bottom: 1px solid var(--ev2-line);
-  }
-}
+
 
 @media (max-width: 599px) {
   .ev2cal-agenda,
@@ -755,16 +612,7 @@ button.ev2cal-event:hover {
   margin-inline: auto;
 }
 
-.phase6-calendar-workspace {
-  display: grid;
-  grid-template-columns: minmax(0, 1.7fr) minmax(20rem, .85fr);
-  gap: var(--ev2-space-4);
-  align-items: start;
-}
 
-.phase6-calendar-month {
-  min-width: 0;
-}
 
 .phase6-day-workspace {
   min-width: 0;
@@ -1060,9 +908,7 @@ button.ev2cal-event:hover {
 }
 
 @media (max-width: 899px) {
-  .phase6-calendar-workspace {
-    grid-template-columns: 1fr;
-  }
+
 
   .phase6-day-workspace {
     order: 2;
@@ -1530,3 +1376,69 @@ button.phase6-note-card {
     padding-left: 2.25rem;
   }
 }
+
+/* Shared, dependency-free planning views. Keep these styles scoped to Calendar. */
+.ceac-calendar-explorer { min-width:0; display:grid; gap:16px; }
+.ceac-calendar-controls,.ceac-calendar-tools { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+.ceac-calendar-tools label { display:flex; align-items:center; gap:8px; font-size:12px; color:var(--ev2-text-secondary); }
+.ceac-calendar-tools select { padding:8px; color:var(--ev2-text); background:var(--ev2-surface); border:1px solid var(--ev2-line); border-radius:8px; }
+.ceac-calendar-layers { display:flex; flex-wrap:wrap; gap:12px 20px; border:1px solid var(--ev2-line); border-radius:12px; padding:12px 16px; margin:0; min-width:0; }
+.ceac-calendar-layers legend { font-size:12px; padding-inline:6px; }
+.ceac-calendar-layers label { display:flex; align-items:center; gap:8px; min-height:36px; font-size:13px; }
+.ceac-calendar-layers input[type="search"] { flex:1 1 180px; min-width:0; padding:10px 12px; color:var(--ev2-text); background:var(--ev2-surface); border:1px solid var(--ev2-line); border-radius:8px; }
+.ceac-calendar-planner { display:grid; grid-template-columns:minmax(0,1.7fr) minmax(280px,.85fr); gap:20px; align-items:start; }
+.ceac-calendar-main { min-width:0; }
+.ceac-calendar-main.density-compact .ev2cal-day { min-height:74px; }
+.ceac-calendar-main.density-compact .ev2cal-day-events { display:flex; flex-wrap:wrap; gap:4px; padding:4px 8px; }
+
+
+.ceac-calendar-main.density-compact .ev2cal-more { font-size:10px; padding:0; }
+.ceac-calendar-week-scroll { max-width:100%; max-height:690px; overflow:auto; border:1px solid var(--ev2-line); border-radius:12px; overscroll-behavior:contain; }
+.ceac-calendar-week { display:grid; grid-template-columns:52px repeat(7,minmax(90px,1fr)); min-width:720px; background:var(--ev2-surface); }
+.ceac-calendar-week-label { font-size:10px; color:var(--ev2-text-secondary); padding:12px 4px; }
+.ceac-calendar-week-date { padding:12px 4px; min-height:44px; font:inherit; font-size:12px; color:var(--ev2-text); border:0; border-bottom:1px solid var(--ev2-line); background:var(--ev2-surface); cursor:pointer; }
+.ceac-calendar-week-date[aria-pressed="true"] { color:var(--appearance-ev2-action,var(--ev2-action)); font-weight:700; box-shadow:inset 0 -2px currentColor; }
+.ceac-calendar-week-other { min-width:0; padding:4px; border-inline-start:1px solid var(--ev2-line); border-bottom:1px solid var(--ev2-line); }
+.ceac-calendar-week-other button { display:grid; width:100%; min-width:0; gap:3px; text-align:start; padding:6px; margin-block:3px; border:0; border-radius:6px; font:inherit; font-size:11px; background:var(--ev2-surface-soft); color:var(--ev2-text); overflow-wrap:anywhere; }
+.ceac-calendar-week-other small { font-size:10px; color:var(--ev2-text-secondary); }
+.ceac-calendar-hours time { display:block; height:64px; font-size:10px; text-align:center; padding-top:4px; color:var(--ev2-text-secondary); box-sizing:border-box; }
+.ceac-calendar-time-column { position:relative; min-width:0; border-inline-start:1px solid var(--ev2-line); }
+.ceac-calendar-hour-line { height:64px; border-top:1px solid var(--ev2-line); box-sizing:border-box; }
+.ceac-calendar-time-event { position:absolute; display:flex; flex-direction:column; text-align:start; gap:2px; box-sizing:border-box; overflow:hidden; border:1px solid var(--ev2-line); border-inline-start:3px solid var(--appearance-ev2-action,var(--ev2-action)); border-radius:6px; padding:4px; color:var(--ev2-text); background:var(--ev2-surface-soft); font:inherit; font-size:11px; cursor:pointer; }
+.ceac-calendar-time-event time { font-size:10px; }
+.ceac-calendar-time-event strong { overflow-wrap:anywhere; }
+.ceac-calendar-week button:disabled { opacity:1; cursor:default; }
+.ceac-calendar-planner.is-week { grid-template-columns:minmax(0,1fr); }
+.ceac-calendar-planner.is-week > .phase6-day-workspace { max-width:100%; }
+@media (max-width:899px) {
+ .ceac-calendar-planner { grid-template-columns:minmax(0,1fr); }
+}
+@media (max-width:599px) {
+ .ceac-calendar-explorer { gap:12px; }
+ .ceac-calendar-controls { align-items:stretch; }
+ .ceac-calendar-controls > * { max-width:100%; }
+ .ceac-calendar-controls .ev2c-segmented { width:100%; }
+ .ceac-calendar-tools { width:100%; }
+ .ceac-calendar-tools button,.ceac-calendar-tools select { min-height:44px; }
+ .ceac-calendar-main.density-compact .ev2cal-day { min-height:54px; }
+ .ceac-calendar-main.density-compact .ev2cal-day-events { padding:2px 4px; gap:3px; }
+ .ceac-calendar-main .ev2cal-day-button { min-height:36px; }
+ .ceac-calendar-main.density-details .ev2cal-day { min-height:84px; }
+ .ceac-calendar-main.density-details .ev2cal-event { font-size:10px; }
+ .ceac-calendar-planner { gap:12px; }
+ .ceac-calendar-layers { gap:4px 14px; }
+ .ceac-calendar-layers label { min-height:44px; }
+}
+.ceac-calendar-dots { display:flex; flex-wrap:wrap; align-items:center; gap:3px; }
+.ceac-calendar-dots i { width:5px; height:5px; background:var(--appearance-ev2-action,var(--ev2-action)); border-radius:50%; }
+.ceac-calendar-dots .is-personal { background:var(--ev2-text-secondary); }
+.ceac-calendar-dots .is-work,.ceac-calendar-dots .is-tasks { background:var(--appearance-ev2-warning,var(--ev2-warning)); }
+.ceac-calendar-dots small { font-size:9px; line-height:1; }
+@media (max-width:599px) { .ceac-calendar-main .ev2cal-day-button { min-height:44px; } }
+.ceac-calendar-collapse { display:none; }
+@media (max-width:599px) {
+ .ceac-calendar-collapse { display:block; min-height:44px; margin-bottom:4px; }
+ .ceac-calendar-main.is-month-collapsed .ev2cal-day:not(.is-current-week) { display:none; }
+}
+.ceac-calendar-connection { border-top:1px solid var(--ev2-line); padding-top:12px; font-size:13px; color:var(--ev2-text-secondary); }
+.ceac-calendar-connection summary { min-height:44px; display:list-item; align-content:center; cursor:pointer; }

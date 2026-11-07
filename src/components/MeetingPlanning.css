@@ -1,0 +1,5 @@
+.meeting-calendar-export { margin-block:12px; font-size:13px; }
+.meeting-calendar-export summary { cursor:pointer; padding-block:10px; }
+.meeting-calendar-export p { max-width:48ch; color:var(--ev2-text-secondary); }
+.meeting-response { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
+.meeting-response button[aria-pressed="true"] { box-shadow:inset 0 0 0 2px var(--appearance-ev2-action,var(--ev2-action)); }
