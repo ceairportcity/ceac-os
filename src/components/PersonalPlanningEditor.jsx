@@ -16,8 +16,8 @@ export default function PersonalPlanningEditor({ me, item, onClose, onChanged })
   const kind = item.kind;
   const [title,setTitle] = useState(item.title || "");
   const [details,setDetails] = useState(item.details || item.body || "");
-  const [date,setDate] = useState(kind === "event" ? dateAt(item.starts_at) : kind === "note" ? (item.note_date || "") : item.plan_date || "");
-  const [noteType,setNoteType] = useState(item.note_date ? "dated" : "standalone");
+  const [date,setDate] = useState(kind === "event" ? dateAt(item.starts_at) : kind === "note" ? (item.dated_for || item.note_date || "") : item.plan_date || "");
+  const [noteType,setNoteType] = useState((item.dated_for || item.note_date) ? "dated" : "standalone");
   const [time,setTime] = useState(kind === "event" ? timeAt(item.starts_at) : (item.planned_time || "").slice(0,5));
   const [endTime,setEndTime] = useState(kind === "event" ? timeAt(item.ends_at) : "");
   const [location,setLocation] = useState(item.location || "");
@@ -50,7 +50,7 @@ export default function PersonalPlanningEditor({ me, item, onClose, onChanged })
           starts_at:toAccraIso(date,time), ends_at:endTime ? toAccraIso(date,endTime) : null,
           location:location.trim() || null };
       } else values = { note_kind:noteType === "dated" ? "personal" : "general",
-        note_date:noteType === "dated" ? date : null, title:title.trim() || null, body:details.trim() };
+        note_date:null, dated_for:noteType === "dated" ? date : null, title:title.trim() || null, body:details.trim() };
       await finish(await supabase.from(table).update(values)
         .eq("id",item.id).eq("profile_id",me.id).select("id").single());
     } catch {

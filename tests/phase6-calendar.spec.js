@@ -77,7 +77,7 @@ test("Phase 6B one Staff account cannot read or mutate another account's persona
   const { data: note, error: noteError } = await staff.from("personal_day_notes").insert({
     org_id: "10000000-0000-4000-8000-000000000010",
     profile_id: "31000000-0000-4000-8000-000000000001",
-    note_kind: "personal", note_date: day, title: "Private dated note",
+    note_kind: "personal", note_date: null, dated_for: day, title: "Private dated note",
     body: "Staff private day note",
   }).select("id").single();
   expect(noteError).toBeNull();

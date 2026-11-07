@@ -37,13 +37,14 @@ async function mock(page,{failTaskUpdate=false,notesSeed=[]}={}){
   if(name==='meeting_responses')return reply(responses);
   if(name==='personal_day_notes'){
    let found=notes.filter(note=>{
-    const filters=url.searchParams.getAll('note_date');
-    if(filters.some(v=>v==='is.null')&&note.note_date)return false;
-    if(filters.some(v=>v==='not.is.null')&&!note.note_date)return false;
+    const filters=url.searchParams.getAll('note_date');const date=note.note_date||note.dated_for;
+    if(filters.some(v=>v==='is.null')&&date)return false;
+    if(filters.some(v=>v==='not.is.null')&&!date)return false;
     const lower=filters.find(v=>v.startsWith('gte.'))?.slice(4), upper=filters.find(v=>v.startsWith('lt.'))?.slice(3);
-    return (!lower||note.note_date>=lower)&&(!upper||note.note_date<upper);
+    return (!lower||date>=lower)&&(!upper||date<upper);
    });
    const pattern=url.searchParams.get('or');
+   if(pattern?.includes('note_date.not.is.null'))found=found.filter(note=>note.note_date||note.dated_for);
    if(pattern){const match=pattern.match(/title\.ilike\.%(.*?)%/);const term=match?.[1]?.toLowerCase();if(term)found=found.filter(note=>(note.title||'').toLowerCase().includes(term)||(note.body||'').toLowerCase().includes(term));}
    return reply(found);
   }
@@ -180,7 +181,7 @@ test('dated and standalone notes save separately, search by title, and can be mo
   await page.getByLabel('Planning date').fill('2026-11-08');
   await page.getByRole('button',{name:'Save note'}).click();
  }
- expect(fixture.getNotes().filter(note=>note.note_date==='2026-11-08')).toHaveLength(2);
+ expect(fixture.getNotes().filter(note=>note.dated_for==='2026-11-08')).toHaveLength(2);
  await page.getByRole('button',{name:'+ Add'}).click();
  await page.getByRole('tab',{name:'Note',exact:true}).click();
  await page.getByLabel('Note type').selectOption('standalone');
@@ -188,7 +189,7 @@ test('dated and standalone notes save separately, search by title, and can be mo
  await page.getByLabel('Planning title').fill('Undated preparation');
  await page.getByLabel('Planning details').fill('Searchable standalone text');
  await page.getByRole('button',{name:'Save note'}).click();
- expect(fixture.getNotes().find(note=>note.title==='Undated preparation').note_date).toBeNull();
+ expect(fixture.getNotes().find(note=>note.title==='Undated preparation').dated_for).toBeNull();
  await page.getByLabel('Search private notes').fill('Undated preparation');
  await expect(page.locator('.phase6-note-card').filter({hasText:'Undated preparation'})).toBeVisible();
  await page.getByLabel('Search private notes').fill('');
@@ -196,7 +197,7 @@ test('dated and standalone notes save separately, search by title, and can be mo
  await page.locator('.phase6-note-card').filter({hasText:'First dated note'}).click();
  await page.getByLabel('Edit note date').fill('2026-11-09');
  await page.getByRole('button',{name:'Save changes'}).click();
- expect(fixture.getNotes().find(note=>note.title==='First dated note').note_date).toBe('2026-11-09');
+ expect(fixture.getNotes().find(note=>note.title==='First dated note').dated_for).toBe('2026-11-09');
  const noteReads=fixture.requests.filter(req=>req.name==='personal_day_notes'&&req.method==='GET');
  expect(noteReads.every(req=>req.url.includes('profile_id=eq.'))).toBe(true);
 });

@@ -87,9 +87,9 @@ export default function StaffCalendar({me,openItem,openMeeting,statusLabel="Staf
   const calendarEvents=useMemo(()=>[
     ...events,
     ...routineCalendar.events.map(event=>({...event,kind:"work"})),
-    ...dayNotes.filter(note=>note.note_date).map(note=>({
+    ...dayNotes.filter(note=>note.note_date||note.dated_for).map(note=>({
       id:"note-"+note.id, kind:"personal", personalType:"note", noteId:note.id,
-      date:note.note_date, title:note.note_kind==="daily"?"Daily journal":note.title||"Private note",
+      date:note.note_date||note.dated_for, title:note.note_kind==="daily"?"Daily journal":note.title||"Private note",
       meta:"Private note", raw:note,
     })),
   ],[events,routineCalendar.events,dayNotes]);
@@ -172,7 +172,7 @@ export default function StaffCalendar({me,openItem,openMeeting,statusLabel="Staf
       let [tasks,unscheduledTasks,notes,privateEvents,overdueTasks]=await Promise.all([
         supabase.from("personal_day_tasks").select("id,plan_date,title,details,planned_time,reminder_at,linked_work_item_id,linked_project_id,completed_at,created_at,series_id,dismissed_at").eq("profile_id",me.id).is("dismissed_at",null).gte("plan_date",fromDay).lt("plan_date",toDay).order("plan_date").order("planned_time",{ascending:true,nullsFirst:false}),
         supabase.from("personal_day_tasks").select("id,plan_date,title,details,planned_time,reminder_at,linked_work_item_id,linked_project_id,completed_at,created_at,series_id,dismissed_at").eq("profile_id",me.id).is("plan_date",null).is("completed_at",null).is("dismissed_at",null).order("created_at",{ascending:false}).limit(30),
-        supabase.from("personal_day_notes").select("id,note_date,note_kind,title,body,reminder_at,updated_at").eq("profile_id",me.id).gte("note_date",fromDay).lt("note_date",toDay).order("updated_at",{ascending:false}),
+        supabase.from("personal_day_notes").select("id,note_date,dated_for,note_kind,title,body,reminder_at,updated_at").eq("profile_id",me.id).or(`and(note_date.gte.${fromDay},note_date.lt.${toDay}),and(dated_for.gte.${fromDay},dated_for.lt.${toDay})`).order("updated_at",{ascending:false}),
         supabase.from("personal_calendar_events").select("id,title,details,starts_at,ends_at,location,reminder_at").eq("profile_id",me.id).or(`ends_at.gte.${from},and(ends_at.is.null,starts_at.gte.${from})`).lt("starts_at",to).order("starts_at"),
         supabase.from("personal_day_tasks").select("id,plan_date,title,details,planned_time,reminder_at,linked_work_item_id,linked_project_id,completed_at,created_at,series_id,dismissed_at,series_id").eq("profile_id",me.id).lt("plan_date",accraDay(new Date())).is("completed_at",null).is("dismissed_at",null).order("plan_date",{ascending:false}).limit(500),
       ]);
@@ -264,7 +264,7 @@ export default function StaffCalendar({me,openItem,openMeeting,statusLabel="Staf
         const dated=composeNoteKind==="dated";
         const payload={
           org_id:me.org_id,profile_id:me.id,note_kind:dated?"personal":"general",
-          note_date:dated?composeDate:null,title:composeTitle.trim()||null,body:composeDetails.trim(),
+          note_date:null,dated_for:dated?composeDate:null,title:composeTitle.trim()||null,body:composeDetails.trim(),
           reminder_at:composeReminder?new Date(composeReminder).toISOString():null,
         };
         const {error:e}=await supabase.from("personal_day_notes").insert(payload).select("id").single();
@@ -384,7 +384,7 @@ export default function StaffCalendar({me,openItem,openMeeting,statusLabel="Staf
   const selectedWork=selectedShared.filter(event=>event.kind==="work");
   const selectedSchedule=[...selectedShared.filter(event=>event.kind!=="work"),...selectedPrivateEvents].sort((a,b)=>String(a.sortAt||a.date).localeCompare(String(b.sortAt||b.date)));
   const selectedMeetingNotes=meetingNotes.filter(note=>note.meeting&&accraDay(note.meeting.starts_at)===selectedDate&&note.body?.trim());
-  const datedNotes=dayNotes.filter(note=>note.note_kind!=="daily"&&note.note_date===selectedDate);
+  const datedNotes=dayNotes.filter(note=>note.note_kind!=="daily"&&(note.note_date||note.dated_for)===selectedDate);
   const checklistFor=(taskId)=>checklistRows.filter(row=>row.task_id===taskId);
   const noteCount=(journalRow?.body?.trim()?1:0)+selectedMeetingNotes.length+datedNotes.length;
   const taskCount=selectedPrivate.length+selectedWork.length;
