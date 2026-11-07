@@ -31,6 +31,8 @@ function MeetingDetail({ me, meetingId, back, goAssign, openItem, openProject, o
   const [responses,setResponses]=useState([]);
   const [responsesReady,setResponsesReady]=useState(false);
   const [notice,setNotice]=useState("");
+  const [editingDetails,setEditingDetails]=useState(false);
+  const [detailsDraft,setDetailsDraft]=useState({});
   const [privateNote, setPrivateNote] = useState("");
   const [decision, setDecision] = useState("");
   const [agendaDraft, setAgendaDraft] = useState("");
@@ -45,7 +47,7 @@ function MeetingDetail({ me, meetingId, back, goAssign, openItem, openProject, o
     try {
       const [meetingResult, recordResult, linkResult, participantResult, privateNoteResult] = await Promise.all([
         supabase.from("meeting_sessions")
-          .select("id,org_id,scope,unit_id,project_id,title,agenda,starts_at,ends_at,provider,provider_meeting_id,join_url,location,status,created_by,units(name),projects(name,lead_unit_id,project_units(unit_id))")
+          .select("id,org_id,scope,unit_id,project_id,title,agenda,starts_at,ends_at,provider,provider_meeting_id,join_url,location,status,created_by,updated_at,units(name),projects(name,lead_unit_id,project_units(unit_id))")
           .eq("id", meetingId).single(),
         supabase.from("meeting_records")
           .select("id,kind,body,author_id,created_at,profiles!meeting_records_author_id_fkey(full_name)")
@@ -65,7 +67,7 @@ function MeetingDetail({ me, meetingId, back, goAssign, openItem, openProject, o
       if (linkResult.error) throw linkResult.error;
       if (participantResult.error) throw participantResult.error;
       if (privateNoteResult.error) throw privateNoteResult.error;
-      const responseResult=await supabase.from("meeting_responses").select("profile_id,response").eq("meeting_id",meetingId);
+      const responseResult=await supabase.from("meeting_responses").select("profile_id,response,meeting_starts_at,meeting_ends_at").eq("meeting_id",meetingId);
       if(responseResult.error&&!["42P01","PGRST205"].includes(responseResult.error.code))throw responseResult.error;
       setResponsesReady(!responseResult.error);setResponses(responseResult.data||[]);
       setMeeting(meetingResult.data);
@@ -90,11 +92,25 @@ function MeetingDetail({ me, meetingId, back, goAssign, openItem, openProject, o
   const meetingStarted = Boolean(meeting && Date.now() >= new Date(meeting.starts_at).getTime());
   const meetingEnded = Boolean(meeting?.ends_at && Date.now() > new Date(meeting.ends_at).getTime());
 
+  const responseCurrent=row=>row&&new Date(row.meeting_starts_at).getTime()===new Date(meeting.starts_at).getTime()&&(row.meeting_ends_at?new Date(row.meeting_ends_at).getTime():null)===(meeting.ends_at?new Date(meeting.ends_at).getTime():null);
+  function editDetails(){setDetailsDraft({title:meeting.title,starts:meeting.starts_at.slice(0,16),ends:(meeting.ends_at||"").slice(0,16),location:meeting.location||""});setEditingDetails(true);}
+  async function saveDetails(){
+    if(!canManage||busy||!detailsDraft.title?.trim()||!detailsDraft.starts||detailsDraft.ends&&detailsDraft.ends<=detailsDraft.starts)return;
+    setBusy(true);setError(null);setNotice("");
+    try{
+      let write=supabase.from("meeting_sessions").update({title:detailsDraft.title.trim(),starts_at:new Date(`${detailsDraft.starts}:00Z`).toISOString(),ends_at:detailsDraft.ends?new Date(`${detailsDraft.ends}:00Z`).toISOString():null,location:detailsDraft.location.trim()||null,updated_by:me.id,updated_at:new Date().toISOString()}).eq("id",meeting.id).eq("starts_at",meeting.starts_at).eq("status","scheduled");
+      write=meeting.updated_at?write.eq("updated_at",meeting.updated_at):write.is("updated_at",null);
+      const result=await write.select("id,title,starts_at,ends_at,location,status,updated_at").single();
+      if(result.error)throw result.error;
+      setMeeting(current=>({...current,...result.data}));setEditingDetails(false);setNotice("Meeting updated. Participants will receive the change in CEAC OS.");
+    }catch(err){setError(humanError(err,"The meeting could not be updated. It may have changed since you opened it."));}finally{setBusy(false);}
+  }
+
   async function respond(response){
     if(!canContribute||!responsesReady||busy||meeting.status==="cancelled")return;
     setBusy(true);setError(null);setNotice("");
     try{
-      const result=await supabase.from("meeting_responses").upsert({meeting_id:meeting.id,profile_id:me.id,org_id:me.org_id,response,updated_at:new Date().toISOString()},{onConflict:"meeting_id,profile_id"}).select("profile_id,response").single();
+      const result=await supabase.from("meeting_responses").upsert({meeting_id:meeting.id,profile_id:me.id,org_id:me.org_id,response,updated_at:new Date().toISOString()},{onConflict:"meeting_id,profile_id"}).select("profile_id,response,meeting_starts_at,meeting_ends_at").single();
       if(result.error)throw result.error;
       setResponses(rows=>[...rows.filter(row=>row.profile_id!==me.id),result.data]);setNotice("Your response has been saved.");
     }catch(err){setError(humanError(err,"Your response could not be saved."));}finally{setBusy(false);}
@@ -112,6 +128,7 @@ function MeetingDetail({ me, meetingId, back, goAssign, openItem, openProject, o
         updated_at: new Date().toISOString(),
       }, { onConflict:"meeting_id,author_id" });
       if (result.error) throw result.error;
+      setNotice("Your private notes have been saved.");
     } catch (err) {
       setError(humanError(err, "Your private meeting notes could not be saved."));
     } finally {
@@ -192,7 +209,10 @@ function MeetingDetail({ me, meetingId, back, goAssign, openItem, openProject, o
       </div>
       {meeting.location && <div className="meeting-location">{meeting.location} <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(meeting.location)}`} target="_blank" rel="noreferrer">Get directions ↗</a></div>}
       <details className="meeting-calendar-export"><summary>Add to another calendar</summary><p>Save a copy to Apple Calendar, Outlook or Google Calendar. Later changes stay in CEAC OS; this copy will not sync automatically.</p><button className="btn btn-ghost btn-sm" onClick={()=>downloadMeetingCalendar(meeting)}>Download calendar event</button><a className="btn btn-ghost btn-sm" href="https://calendar.google.com/calendar/u/0/r" target="_blank" rel="noreferrer">Open Google Calendar</a></details>
-      {canContribute&&responsesReady&&meeting.status!=="cancelled"&&<div className="meeting-response" role="group" aria-label="Your invitation response">{[["accepted","Accept"],["tentative","Maybe"],["declined","Decline"]].map(([value,label])=><button type="button" key={value} className="btn btn-ghost btn-sm" aria-pressed={responses.some(r=>r.profile_id===me.id&&r.response===value)} disabled={busy} onClick={()=>respond(value)}>{label}</button>)}</div>}
+      {canContribute&&responsesReady&&meeting.status!=="cancelled"&&<div className="meeting-response" role="group" aria-label="Your invitation response">{[["accepted","Accept"],["tentative","Maybe"],["declined","Decline"]].map(([value,label])=><button type="button" key={value} className="btn btn-ghost btn-sm" aria-pressed={responses.some(r=>r.profile_id===me.id&&r.response===value&&responseCurrent(r))} disabled={busy} onClick={()=>respond(value)}>{label}</button>)}</div>}
+      {responses.some(r=>r.profile_id===me.id&&!responseCurrent(r))&&<p className="screen-note">The meeting time changed. Please respond to the new time.</p>}
+      {canManage&&!meetingStarted&&meeting.status==="scheduled"&&<button type="button" className="btn btn-ghost btn-sm" onClick={editDetails}>Edit meeting</button>}
+      {editingDetails&&<div className="meeting-details-editor"><label>Title<input className="field" value={detailsDraft.title} maxLength={220} onChange={e=>setDetailsDraft(d=>({...d,title:e.target.value}))}/></label><label>Starts · Accra time<input className="field" type="datetime-local" value={detailsDraft.starts} onChange={e=>setDetailsDraft(d=>({...d,starts:e.target.value}))}/></label><label>Ends · Accra time<input className="field" type="datetime-local" value={detailsDraft.ends} onChange={e=>setDetailsDraft(d=>({...d,ends:e.target.value}))}/></label><label>Location<input className="field" value={detailsDraft.location} onChange={e=>setDetailsDraft(d=>({...d,location:e.target.value}))}/></label><button className="btn" disabled={busy||!detailsDraft.title?.trim()||!detailsDraft.starts||Boolean(detailsDraft.ends&&detailsDraft.ends<=detailsDraft.starts)} onClick={saveDetails}>Save changes</button><button className="btn btn-ghost" disabled={busy} onClick={()=>setEditingDetails(false)}>Cancel editing</button></div>}
       {notice&&<p role="status">{notice}</p>}
       {meeting.join_url && meeting.status !== "cancelled" && <a className="meeting-join" href={meeting.join_url} target="_blank" rel="noreferrer">
         Join {providerLabel(meeting)} <span aria-hidden="true">↗</span>
@@ -217,7 +237,7 @@ function MeetingDetail({ me, meetingId, back, goAssign, openItem, openProject, o
         : meeting.agenda ? <p className="meeting-agenda">{meeting.agenda}</p> : <div className="quiet-empty compact"><strong>No agenda recorded</strong><span>No shared agenda is on the record.</span></div>}
       {participants.length > 0 && <div className="meeting-participant-summary">
         <span>{participants.length === 1 && participants[0].profile_id === me.id ? "You are invited" : `${participants.length} participant${participants.length === 1 ? "" : "s"}`}</span>
-        {participants.length > 1 && <div>{participants.slice(0,8).map((participant) => <b key={participant.profile_id}>{participant.profiles?.full_name || "CEAC member"}{responses.find(r=>r.profile_id===participant.profile_id)?.response?` · ${responses.find(r=>r.profile_id===participant.profile_id).response}`:""}</b>)}</div>}
+        {participants.length > 1 && <div>{participants.slice(0,8).map((participant) => <b key={participant.profile_id}>{participant.profiles?.full_name || "CEAC member"}{responses.find(r=>r.profile_id===participant.profile_id)?.response?` · ${responseCurrent(responses.find(r=>r.profile_id===participant.profile_id))?responses.find(r=>r.profile_id===participant.profile_id).response:"Awaiting new response"}`:""}</b>)}</div>}
       </div>}
     </section>
     <aside className="meeting-panel" aria-label="Meeting details"><div className="meeting-section-head"><div><span>Meeting details</span><h2>{canManage?"Organiser view":"Viewer mode"}</h2></div></div>

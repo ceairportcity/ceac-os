@@ -7,11 +7,13 @@ const id=n=>`20000000-0000-4000-8000-${String(n).padStart(12,'0')}`;
 const meeting=id(100),cancelled=id(101),foreign=id(102);
 try{
 await db.exec(`create role anon;create role authenticated;create role service_role;
-create schema auth;grant usage on schema auth,public to authenticated;
+create schema auth;create schema private;
+create table public.test_notices(recipient uuid,kind text);
+create function private.ceac_emit_notification(uuid,uuid,text,uuid,text,uuid) returns void language sql as $$insert into public.test_notices values($2,$5)$$;grant usage on schema auth,public to authenticated;
 create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;
 create table organisations(id uuid primary key);create table profiles(id uuid primary key,org_id uuid);
 create function public.app_org_id() returns uuid language sql stable security definer set search_path=public as $$select org_id from profiles where id=auth.uid()$$;
-create table meeting_sessions(id uuid primary key,org_id uuid,created_by uuid,starts_at timestamptz,status text);
+create table meeting_sessions(id uuid primary key,org_id uuid,created_by uuid,starts_at timestamptz,ends_at timestamptz,status text,title text,location text,join_url text);
 create table meeting_participants(meeting_id uuid,profile_id uuid,role text);
 create table meeting_private_notes(meeting_id uuid references meeting_sessions(id),org_id uuid,author_id uuid,body text,primary key(meeting_id,author_id));
 alter table meeting_private_notes enable row level security;
@@ -21,7 +23,7 @@ create policy meeting_private_notes_update on meeting_private_notes for update t
 grant select on meeting_sessions,meeting_participants to authenticated;grant select,insert,update on meeting_private_notes to authenticated;
 insert into organisations values('${org}'),('${otherOrg}');
 insert into profiles values('${id(1)}','${org}'),('${id(2)}','${org}'),('${id(3)}','${org}'),('${id(4)}','${otherOrg}');
-insert into meeting_sessions values('${meeting}','${org}','${id(1)}',now()+interval '1 day','scheduled'),('${cancelled}','${org}','${id(1)}',now()+interval '1 day','cancelled'),('${foreign}','${otherOrg}','${id(4)}',now()+interval '1 day','scheduled');
+insert into meeting_sessions(id,org_id,created_by,starts_at,status) values('${meeting}','${org}','${id(1)}',now()+interval '1 day','scheduled'),('${cancelled}','${org}','${id(1)}',now()+interval '1 day','cancelled'),('${foreign}','${otherOrg}','${id(4)}',now()+interval '1 day','scheduled');
 insert into meeting_participants values('${meeting}','${id(1)}','organiser'),('${meeting}','${id(2)}','participant'),('${cancelled}','${id(2)}','participant'),('${foreign}','${id(4)}','organiser');
 `);
 await db.exec(fs.readFileSync('supabase/migrations/20261107013000_calendar_meeting_responses.sql','utf8'));
@@ -38,6 +40,12 @@ await denied(2,`insert into meeting_responses(meeting_id,org_id,response) values
 await denied(2,`insert into meeting_responses(meeting_id,response) values('${cancelled}','accepted')`);
 await as(2,`update meeting_responses set response='tentative' where meeting_id='${meeting}'`);
 assert.equal((await as(1,'select response from meeting_responses')).rows[0].response,'tentative');
+const originalStart=(await as(2,'select meeting_starts_at from meeting_responses')).rows[0].meeting_starts_at.getTime();
+await db.exec(`update meeting_sessions set starts_at=starts_at+interval '1 hour',location='Changed location' where id='${meeting}'`);
+assert.equal((await db.query('select count(*)::int n from test_notices')).rows[0].n,2);
+assert.equal((await as(2,'select meeting_starts_at from meeting_responses')).rows[0].meeting_starts_at.getTime(),originalStart);
+await as(2,`update meeting_responses set response='accepted',meeting_starts_at='2000-01-01' where meeting_id='${meeting}'`);
+assert.notEqual((await as(2,'select meeting_starts_at from meeting_responses')).rows[0].meeting_starts_at.getTime(),originalStart);
 await as(2,`insert into meeting_private_notes values('${meeting}','${org}','${id(2)}','Private preparation before meeting')`);
 assert.equal((await as(2,'select * from meeting_private_notes')).rows.length,1);
 assert.equal((await as(1,'select * from meeting_private_notes')).rows.length,0);

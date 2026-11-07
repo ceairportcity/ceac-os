@@ -12,7 +12,8 @@ async function mock(page){
   const reply=data=>route.fulfill({status:200,contentType:'application/json',headers:{'content-range':Array.isArray(data)?`0-${Math.max(0,data.length-1)}/${data.length}`:'*/1'},body:JSON.stringify(data)});
   if(req.method()!=='GET'&&req.method()!=='HEAD'){
    const body=req.postDataJSON();writes.push({name,body});
-   if(name==='meeting_responses'){responses=[body];return reply(body);}
+   if(name==='meeting_sessions'){Object.assign(meeting,body);return reply(meeting);}
+   if(name==='meeting_responses'){responses=[{...body,meeting_starts_at:meeting.starts_at,meeting_ends_at:meeting.ends_at}];return reply(responses[0]);}
    if(name==='personal_day_tasks'&&req.method()==='PATCH'){privateTask={...privateTask,...body};return reply(privateTask);}
    return reply(null);
   }
@@ -71,10 +72,14 @@ test('private completion updates one row without reloading shared calendar',asyn
  expect(data.requests.filter(r=>r.method==='GET'&&r.name==='meeting_sessions')).toHaveLength(reads);
 });
 test('meeting response persists, calendar export is a real file, preparation note remains private',async({page})=>{
+ await page.clock.setFixedTime(new Date('2026-11-07T07:00:00Z'));
  const data=await mock(page);await page.goto('/tests/fixtures/calendar-planning.html?role=meeting');
  await page.getByRole('button',{name:'Accept',exact:true}).click();await expect(page.getByRole('button',{name:'Accept',exact:true})).toHaveAttribute('aria-pressed','true');
  await page.locator('.meeting-private-notes textarea').fill('Private preparation');await page.getByRole('button',{name:'Save my notes'}).click();
  expect(data.writes.find(w=>w.name==='meeting_private_notes').body.author_id).toBe(person);
+ await page.getByRole('button',{name:'Edit meeting',exact:true}).click();await page.getByLabel('Starts · Accra time',{exact:true}).fill('2026-11-07T09:30');await page.getByRole('button',{name:'Save changes',exact:true}).click();
+ await expect(page.getByText('The meeting time changed. Please respond to the new time.',{exact:true})).toBeVisible();
+ await expect(page.getByRole('button',{name:'Accept',exact:true})).toHaveAttribute('aria-pressed','false');
  await page.getByText('Add to another calendar',{exact:true}).click();
  const download=page.waitForEvent('download');await page.getByRole('button',{name:'Download calendar event'}).click();expect((await download).suggestedFilename()).toBe('ceac-meeting.ics');
 });
