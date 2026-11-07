@@ -9,7 +9,7 @@ async function mock(page,{failTaskUpdate=false}={}){
   const req=route.request(),url=new URL(req.url());
   if(!url.pathname.includes('/rest/v1/'))return ['127.0.0.1','localhost'].includes(url.hostname)?route.continue():route.abort();
   const name=url.pathname.split('/').pop();requests.push({name,url:req.url(),method:req.method()});
-  const reply=(data,status=200)=>route.fulfill({status,contentType:'application/json',headers:{'content-range':Array.isArray(data)?`0-${Math.max(0,data.length-1)}/${data.length}`:'*/1'},body:JSON.stringify(data)});
+  const reply=(data,status=200)=>route.fulfill({status,contentType:'application/json',headers:{'content-range':Array.isArray(data)?(data.length?`0-${data.length-1}/${data.length}`:'*/0'):'*/1'},body:JSON.stringify(data)});
   if(req.method()!=='GET'&&req.method()!=='HEAD'){
    const body=req.postDataJSON();writes.push({name,body});
    if(name==='meeting_sessions'){Object.assign(meeting,body);return reply(meeting);}
@@ -21,7 +21,7 @@ async function mock(page,{failTaskUpdate=false}={}){
   if(name==='meeting_sessions')return reply(url.searchParams.has('id')?meeting:[meeting,{...meeting,id:'meeting-b',title:'Overlapping planning',starts_at:'2026-11-07T10:00:00Z',ends_at:'2026-11-07T11:00:00Z'}]);
   if(name==='meeting_participants')return reply([{profile_id:person,role:'organiser',profiles:{full_name:'Synthetic Planner'}}]);
   if(name==='meeting_private_notes')return reply(url.searchParams.has('meeting_id')&&req.headers().accept?.includes('object')?null:[]);
-  if(name==='work_items')return reply(url.searchParams.get('kind')==='eq.routine'?[]:[{id:'work-review',org_id:org,unit_id:unit,assignee_id:person,ref:'IT-001',title:'Publicity awaiting review',kind:'task',status:'in_review',due_at:'2026-11-07T12:00:00Z'}]);
+  if(name==='work_items')return reply(req.headers().prefer?.includes('count=exact')||url.searchParams.get('kind')==='eq.routine'?[]:[{id:'work-review',org_id:org,unit_id:unit,assignee_id:person,ref:'IT-001',title:'Publicity awaiting review',kind:'task',status:'in_review',due_at:'2026-11-07T12:00:00Z'}]);
   if(name==='unit_memberships')return reply([{profile_id:person,unit_id:unit,role:'manager'}]);
   if(name==='leave_requests')return reply([{id:'leave',profile_id:person,kind:'annual',start_date:'2026-11-06',end_date:'2026-11-09',status:'approved',profiles:{full_name:'Synthetic Planner'}}]);
   if(name==='personal_day_tasks')return reply(url.searchParams.get('plan_date')==='is.null'||url.searchParams.get('plan_date')?.startsWith('lt.')?[]:[privateTask]);
@@ -52,6 +52,7 @@ for(const [role,width] of [['staff',390],['staff',1024],['manager',390],['manage
   return {largestUnusedGap:Math.max(0,...gaps),notices:[...document.querySelectorAll('.ev2cal-role-page .product-notice-error')].map(n=>n.innerText)};
  });
  if(spacing.notices.length)console.log('CALENDAR_NOTICES '+role+' '+width+' '+JSON.stringify(spacing.notices));
+ expect(spacing.notices,'Synthetic Calendar should not show routine-loading errors').toEqual([]);
  expect(spacing.largestUnusedGap,'Calendar must not insert empty space between visible controls').toBeLessThanOrEqual(24);
  if(width<600){
   await expect(page.getByRole('button',{name:'Show full month'})).toBeVisible();
