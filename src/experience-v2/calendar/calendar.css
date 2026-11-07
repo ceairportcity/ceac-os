@@ -1365,7 +1365,10 @@ button.phase6-note-card {
 }
 
 /* Shared, dependency-free planning views. Keep these styles scoped to Calendar. */
-.ceac-calendar-explorer { min-width:0; display:grid; gap:16px; }
+/* Keep controls directly below the page heading; implicit grid rows must not stretch. */
+.ev2cal-role-page { grid-auto-rows: max-content; }
+.ev2cal-role-page > .ceac-calendar-explorer { align-self: start; min-height: 0; }
+.ceac-calendar-explorer { min-width:0; display:grid; grid-auto-rows:max-content; align-content:start; gap:16px; }
 .ceac-calendar-controls,.ceac-calendar-tools { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
 .ceac-calendar-tools label { display:flex; align-items:center; gap:8px; font-size:12px; color:var(--ev2-text-secondary); }
 .ceac-calendar-tools select { padding:8px; color:var(--ev2-text); background:var(--ev2-surface); border:1px solid var(--ev2-line); border-radius:8px; }
