@@ -41,6 +41,14 @@ for(const [role,width] of [['staff',390],['staff',1024],['manager',390],['manage
  await expect(page.getByRole('grid')).toBeVisible();
  const heading=await page.locator('.ev2cal-page-head').boundingBox();
  const controls=await page.locator('.ceac-calendar-controls').boundingBox();
+ const spacing=await page.evaluate(()=>{
+  const explorer=document.querySelector('.ceac-calendar-explorer');
+  const header=document.querySelector('.ev2cal-page-head');
+  const nodes=[...explorer.parentElement.children].map(el=>({tag:el.tagName,cls:String(el.className).slice(0,120),y:Math.round(el.getBoundingClientRect().y),bottom:Math.round(el.getBoundingClientRect().bottom),height:Math.round(el.getBoundingClientRect().height),marginTop:getComputedStyle(el).marginTop,marginBottom:getComputedStyle(el).marginBottom,display:getComputedStyle(el).display}));
+  const ec=getComputedStyle(explorer);const parent=getComputedStyle(explorer.parentElement);
+  return {nodes,explorerY:explorer.getBoundingClientRect().top,headerBottom:header.getBoundingClientRect().bottom,explorerMargin:ec.marginTop,parentLayout:parent.display,parentGap:parent.gap};
+ });
+ console.log('CALENDAR_LAYOUT '+role+' '+width+' '+JSON.stringify(spacing));
  expect(controls.y-(heading.y+heading.height)).toBeLessThanOrEqual(80);
  if(width<600){
   await expect(page.getByRole('button',{name:'Show full month'})).toBeVisible();
@@ -68,6 +76,7 @@ for(const [role,width] of [['staff',390],['staff',1024],['manager',390],['manage
  if(role==='manager')await expect(page.getByText('Waiting for approval',{exact:true}).first()).toBeVisible();
  await page.reload();await expect(page.getByRole('tab',{name:'Agenda',exact:true})).toHaveAttribute('aria-selected','true');
  await page.getByRole('tab',{name:'Month',exact:true}).click();
+ if(width<600)await page.getByRole('button',{name:'Show full month'}).click();
  await page.locator('.ev2cal-day-button').nth(15).click();
  const selected=await page.locator('.ev2cal-day-button[aria-pressed="true"]').getAttribute('aria-label');
  await page.reload();await expect(page.locator('.ev2cal-day-button[aria-pressed="true"]')).toHaveAttribute('aria-label',selected);
