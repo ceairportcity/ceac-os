@@ -109,6 +109,8 @@ for (const viewport of [
 
     const sheet = page.getByRole("dialog");
     await expect(sheet).toBeVisible();
+    await expect(sheet).toHaveCSS("opacity", "1");
+    await expect(sheet).toHaveCSS("transform", "none");
     const close = sheet.getByRole("button", { name: "Close", exact: true });
     const closeBox = await close.boundingBox();
     expect(closeBox?.width || 0).toBeGreaterThanOrEqual(44);

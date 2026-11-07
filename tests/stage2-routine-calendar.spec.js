@@ -72,7 +72,7 @@ test("real organisational routine dates appear in Staff and Unit Calendar withou
 
   const unit=await signIn(browser,"manager@ceac.local.test",1366);contexts.push(unit.context);
   await unit.page.goto("/?tab=calendar");
-  const agenda=unit.page.locator(".ev2cal-side-stack .ev2cal-agenda");
+  const agenda=unit.page.locator(".ceac-calendar-planner .ev2cal-agenda");
   await expect(agenda).toContainText(title);
   await expect(agenda).toContainText(colleagueTitle);
   await expect(agenda).toContainText("Outcome recorded");
