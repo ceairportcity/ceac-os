@@ -32,14 +32,26 @@ async function mock(page,{failTaskUpdate=false}={}){
  });
  return {requests,writes};
 }
-for(const [role,width] of [['staff',390],['staff',1024],['manager',390],['manager',1440],['admin',390],['executive',1440]])test(`${role} Calendar views, layers, date context and phone containment at ${width}`,async({page})=>{
+for(const [role,width] of [['staff',390],['staff',1024],['manager',390],['manager',1024],['manager',1440],['admin',390],['admin',1024],['executive',390],['executive',1024],['executive',1440]])test(`${role} Calendar views, layers, date context and phone containment at ${width}`,async({page})=>{
  await page.clock.setFixedTime(new Date("2026-11-07T12:00:00Z"));
  await page.setViewportSize({width,height:950});const data=await mock(page);
  const errors=[];page.on('pageerror',error=>errors.push(error.message));
  await page.goto(`/tests/fixtures/calendar-planning.html?role=${role}`);
  await expect(page.getByRole('heading',{name:'Calendar',exact:true})).toBeVisible();
  await expect(page.getByRole('grid')).toBeVisible();
- if(width<600){await page.getByRole('button',{name:'Collapse month'}).click();await expect(page.locator('.ev2cal-day:visible')).toHaveCount(7);await page.getByRole('button',{name:'Show full month'}).click();}
+ const heading=await page.locator('.ev2cal-page-head').boundingBox();
+ const controls=await page.locator('.ceac-calendar-controls').boundingBox();
+ expect(controls.y-(heading.y+heading.height)).toBeLessThanOrEqual(80);
+ if(width<600){
+  await expect(page.getByRole('button',{name:'Show full month'})).toBeVisible();
+  await expect(page.locator('.ev2cal-day:visible')).toHaveCount(7);
+  const day=await page.locator('.phase6-day-workspace,.ev2cal-agenda').first().boundingBox();
+  expect(day.y).toBeLessThan(950);
+  await page.getByRole('button',{name:'Show full month'}).click();
+  expect(await page.locator('.ev2cal-day:visible').count()).toBeGreaterThan(7);
+  await page.getByRole('button',{name:'Collapse month'}).click();
+  await expect(page.locator('.ev2cal-day:visible')).toHaveCount(7);
+ }
  await page.getByRole('tab',{name:'Week',exact:true}).click();
  await expect(page.getByLabel('Weekly time schedule, Africa/Accra')).toBeVisible();
  const appointments=page.locator('.ceac-calendar-time-event');await expect(appointments).toHaveCount(2);
