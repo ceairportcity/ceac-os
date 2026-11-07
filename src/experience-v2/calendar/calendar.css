@@ -1422,7 +1422,7 @@ button.phase6-note-card {
 .ceac-calendar-dots i { width:5px; height:5px; background:var(--appearance-ev2-action,var(--ev2-action)); border-radius:50%; }
 .ceac-calendar-dots .is-personal { background:var(--ev2-text-secondary); }
 .ceac-calendar-dots .is-work,.ceac-calendar-dots .is-tasks { background:var(--appearance-ev2-warning,var(--ev2-warning)); }
-.ceac-calendar-dots small { font-size:9px; line-height:1; }
+.ceac-calendar-dots small { font-size:12px; line-height:1; }
 @media (max-width:599px) { .ceac-calendar-main .ev2cal-day-button { min-height:44px; } }
 .ceac-calendar-collapse { display:none; }
 @media (max-width:599px) {
