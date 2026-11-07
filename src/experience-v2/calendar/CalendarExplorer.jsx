@@ -48,9 +48,9 @@ export default function CalendarExplorer({me,scope,events,layers,cursor,setCurso
   const visible=useMemo(()=>events.filter(e=>active.includes(e.kind)&&(!query.trim()||`${e.title} ${e.meta||''}`.toLowerCase().includes(query.trim().toLowerCase()))),[events,chosen,query]);
   const index=useMemo(()=>indexCalendarEvents(visible),[visible]);
   const days=useMemo(()=>calendarDays(cursor,currentView==='month'||currentView==='agenda'?'month':'week'),[cursor,currentView]);
-  const changeDate=key=>{onSelectDate(key);if(currentView==='week'||key.slice(0,7)!==calendarDay(cursor).slice(0,7))setCursor(calendarDate(key));};
-  const move=amount=>{let key;if(currentView==='week')key=shiftCalendarDay(selectedDate,amount*7);else{const d=calendarDate(calendarDay(cursor));d.setUTCMonth(d.getUTCMonth()+amount,1);key=calendarDay(d);}setCursor(calendarDate(key));onSelectDate(key);};
-  const today=()=>{const key=calendarDay();setCursor(calendarDate(key));onSelectDate(key);};
+  const changeDate=key=>{if(onSelectDate(key)===false)return;if(currentView==='week'||key.slice(0,7)!==calendarDay(cursor).slice(0,7))setCursor(calendarDate(key));};
+  const move=amount=>{let key;if(currentView==='week')key=shiftCalendarDay(selectedDate,amount*7);else{const d=calendarDate(calendarDay(cursor));d.setUTCMonth(d.getUTCMonth()+amount,1);key=calendarDay(d);}if(onSelectDate(key)===false)return;setCursor(calendarDate(key));};
+  const today=()=>{const key=calendarDay();if(onSelectDate(key)===false)return;setCursor(calendarDate(key));};
   const month=cursor.toLocaleDateString('en-GB',{timeZone:'Africa/Accra',month:'long',year:'numeric'});
   const firstDay=days[0],lastDay=days[6];
   const short=value=>value.toLocaleDateString('en-GB',{timeZone:'Africa/Accra',day:'numeric',month:'short'});

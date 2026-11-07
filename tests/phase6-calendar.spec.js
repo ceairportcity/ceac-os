@@ -74,12 +74,12 @@ test("Phase 6B one Staff account cannot read or mutate another account's persona
   }).select("id").single();
   expect(insertError).toBeNull();
 
-  const { data: note, error: noteError } = await staff.from("personal_day_notes").upsert({
+  const { data: note, error: noteError } = await staff.from("personal_day_notes").insert({
     org_id: "10000000-0000-4000-8000-000000000010",
     profile_id: "31000000-0000-4000-8000-000000000001",
-    note_date: day,
+    note_kind: "personal", note_date: null, dated_for: day, title: "Private dated note",
     body: "Staff private day note",
-  }, { onConflict: "profile_id,note_date" }).select("id").single();
+  }).select("id").single();
   expect(noteError).toBeNull();
 
   const otherTask = await other.from("personal_day_tasks").select("id,title").eq("id", task.id);
@@ -89,6 +89,9 @@ test("Phase 6B one Staff account cannot read or mutate another account's persona
   const otherNote = await other.from("personal_day_notes").select("id,body").eq("id", note.id);
   expect(otherNote.error).toBeNull();
   expect(otherNote.data).toEqual([]);
+  const otherNoteUpdate = await other.from("personal_day_notes").update({ body:"Cross-account note mutation" }).eq("id", note.id).select("id");
+  expect(otherNoteUpdate.error).toBeNull();
+  expect(otherNoteUpdate.data).toEqual([]);
 
   const otherUpdate = await other.from("personal_day_tasks").update({ title: "Cross-account mutation" }).eq("id", task.id).select("id");
   expect(otherUpdate.error).toBeNull();
