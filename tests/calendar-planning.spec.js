@@ -2,8 +2,8 @@ import {test,expect} from '@playwright/test';
 import fs from 'node:fs';
 test.use({launchOptions:process.env.CEAC_CHROMIUM_EXECUTABLE_PATH?{executablePath:process.env.CEAC_CHROMIUM_EXECUTABLE_PATH}:undefined});
 const person='11111111-1111-4111-8111-111111111111',org='22222222-2222-4222-8222-222222222222',unit='33333333-3333-4333-8333-333333333333';
-async function mock(page,{failTaskUpdate=false}={}){
- const requests=[],writes=[];let responses=[];let privateTask={id:'private-task',title:'Prepare privately',plan_date:'2026-11-07',completed_at:null};
+async function mock(page,{failTaskUpdate=false,notesSeed=[]}={}){
+ const requests=[],writes=[];let responses=[],notes=[...notesSeed];let privateTask={id:'private-task',title:'Prepare privately',plan_date:'2026-11-07',completed_at:null};
  const meeting={id:'meeting-a',org_id:org,title:'Media preparation',starts_at:'2026-11-07T09:00:00Z',ends_at:'2026-11-07T10:30:00Z',status:'scheduled',scope:'unit',created_by:person,unit_id:unit,provider:'external',join_url:'https://meet.google.com/example',location:'Church office',meeting_participants:[{profile_id:person,role:'organiser'}]};
  await page.route('**/*',async route=>{
   const req=route.request(),url=new URL(req.url());
@@ -14,10 +14,39 @@ async function mock(page,{failTaskUpdate=false}={}){
    const body=req.postDataJSON();writes.push({name,body});
    if(name==='meeting_sessions'){Object.assign(meeting,body);return reply(meeting);}
    if(name==='meeting_responses'){responses=[{...body,meeting_starts_at:meeting.starts_at,meeting_ends_at:meeting.ends_at}];return reply(responses[0]);}
+   if(name==='personal_day_notes'){
+    const id=url.searchParams.get('id')?.replace('eq.','');
+    if(req.method()==='POST'){
+     const record={...body,id:'note-'+(notes.length+1),created_at:'2026-11-07T12:00:00Z',updated_at:'2026-11-07T12:00:00Z'};
+     notes.push(record);return reply(record);
+    }
+    if(req.method()==='PATCH'){
+     const index=notes.findIndex(note=>note.id===id);
+     if(index<0)return reply({code:'PGRST116',message:'No row'},406);
+     notes[index]={...notes[index],...body,updated_at:'2026-11-07T12:00:00Z'};return reply(notes[index]);
+    }
+    if(req.method()==='DELETE'){
+     const index=notes.findIndex(note=>note.id===id);
+     if(index<0)return reply({code:'PGRST116',message:'No row'},406);
+     return reply(notes.splice(index,1)[0]);
+    }
+   }
    if(name==='personal_day_tasks'&&req.method()==='PATCH'){if(failTaskUpdate)return reply({code:'42501',message:'Synthetic task update refused'},403);privateTask={...privateTask,...body};return reply(privateTask);}
    return reply(null);
   }
   if(name==='meeting_responses')return reply(responses);
+  if(name==='personal_day_notes'){
+   let found=notes.filter(note=>{
+    const filters=url.searchParams.getAll('note_date');
+    if(filters.some(v=>v==='is.null')&&note.note_date)return false;
+    if(filters.some(v=>v==='not.is.null')&&!note.note_date)return false;
+    const lower=filters.find(v=>v.startsWith('gte.'))?.slice(4), upper=filters.find(v=>v.startsWith('lt.'))?.slice(3);
+    return (!lower||note.note_date>=lower)&&(!upper||note.note_date<upper);
+   });
+   const pattern=url.searchParams.get('or');
+   if(pattern){const match=pattern.match(/title\.ilike\.%(.*?)%/);const term=match?.[1]?.toLowerCase();if(term)found=found.filter(note=>(note.title||'').toLowerCase().includes(term)||(note.body||'').toLowerCase().includes(term));}
+   return reply(found);
+  }
   if(name==='meeting_sessions')return reply(url.searchParams.has('id')?meeting:[meeting,{...meeting,id:'meeting-b',title:'Overlapping planning',starts_at:'2026-11-07T10:00:00Z',ends_at:'2026-11-07T11:00:00Z'}]);
   if(name==='meeting_participants')return reply([{profile_id:person,role:'organiser',profiles:{full_name:'Synthetic Planner'}}]);
   if(name==='meeting_private_notes')return reply(url.searchParams.has('meeting_id')&&req.headers().accept?.includes('object')?null:[]);
@@ -30,7 +59,7 @@ async function mock(page,{failTaskUpdate=false}={}){
   if(name==='units')return reply([{id:unit,name:'Synthetic IT',active:true}]);
   return reply([]);
  });
- return {requests,writes};
+ return {requests,writes,getNotes:()=>notes};
 }
 for(const [role,width] of [['staff',390],['staff',1024],['manager',390],['manager',1024],['manager',1440],['admin',390],['admin',1024],['executive',390],['executive',1024],['executive',1440]])test(`${role} Calendar views, layers, date context and phone containment at ${width}`,async({page})=>{
  await page.clock.setFixedTime(new Date("2026-11-07T12:00:00Z"));
@@ -115,4 +144,59 @@ test('meeting response persists, calendar export is a real file, preparation not
  await expect(page.getByRole('button',{name:'Accept',exact:true})).toHaveAttribute('aria-pressed','false');
  await page.getByText('Add to another calendar',{exact:true}).click();
  const download=page.waitForEvent('download');await page.getByRole('button',{name:'Download calendar event'}).click();expect((await download).suggestedFilename()).toBe('ceac-meeting.ics');
+});
+
+test('saved journal is discoverable by its calendar date and protected from accidental discard',async({page})=>{
+ await page.clock.setFixedTime(new Date('2026-11-07T12:00:00Z'));
+ const source={id:'saved-journal',note_date:'2026-11-08',note_kind:'daily',title:null,
+   body:'Saved for Sunday rather than Saturday',updated_at:'2026-11-07T00:42:00Z',created_at:'2026-11-07T00:42:00Z'};
+ const fixture=await mock(page,{notesSeed:[source]});
+ await page.goto('/tests/fixtures/calendar-planning.html?role=staff');
+ await page.getByRole('button',{name:'Notes',exact:true}).click();
+ await expect(page.getByRole('heading',{name:'Notes',exact:true})).toBeVisible();
+ await expect(page.getByText('For 8 Nov 2026')).toBeVisible();
+ await page.locator('.phase6-note-card').filter({hasText:'Saved for Sunday'}).click();
+ await expect(page.getByRole('tab',{name:'Notes',exact:true}).last()).toHaveAttribute('aria-selected','true');
+ const journal=page.getByLabel('Private day notes');
+ await expect(journal).toHaveValue('Saved for Sunday rather than Saturday');
+ await journal.fill('An unsaved journal edit');
+ page.once('dialog',dialog=>dialog.dismiss());
+ await page.locator('.ev2cal-day-button').nth(15).click();
+ await expect(journal).toHaveValue('An unsaved journal edit');
+ await page.getByRole('button',{name:'Save journal'}).click();
+ await expect(journal).toHaveValue('An unsaved journal edit');
+ expect(fixture.getNotes()[0].body).toBe('An unsaved journal edit');
+ expect(fixture.getNotes()[0].note_date).toBe('2026-11-08');
+});
+test('dated and standalone notes save separately, search by title, and can be moved',async({page})=>{
+ await page.clock.setFixedTime(new Date('2026-11-07T12:00:00Z'));
+ const fixture=await mock(page);
+ await page.goto('/tests/fixtures/calendar-planning.html?role=staff');
+ for(const title of ['First dated note','Second dated note']){
+  await page.getByRole('button',{name:'+ Add'}).click();
+  await page.getByRole('tab',{name:'Note',exact:true}).click();
+  await page.getByLabel('Planning title').fill(title);
+  await page.getByLabel('Planning details').fill('Private information for the eighth');
+  await page.getByLabel('Planning date').fill('2026-11-08');
+  await page.getByRole('button',{name:'Save note'}).click();
+ }
+ expect(fixture.getNotes().filter(note=>note.note_date==='2026-11-08')).toHaveLength(2);
+ await page.getByRole('button',{name:'+ Add'}).click();
+ await page.getByRole('tab',{name:'Note',exact:true}).click();
+ await page.getByLabel('Note type').selectOption('standalone');
+ await expect(page.getByLabel('Planning date')).toHaveCount(0);
+ await page.getByLabel('Planning title').fill('Undated preparation');
+ await page.getByLabel('Planning details').fill('Searchable standalone text');
+ await page.getByRole('button',{name:'Save note'}).click();
+ expect(fixture.getNotes().find(note=>note.title==='Undated preparation').note_date).toBeNull();
+ await page.getByLabel('Search private notes').fill('Undated preparation');
+ await expect(page.locator('.phase6-note-card').filter({hasText:'Undated preparation'})).toBeVisible();
+ await page.getByLabel('Search private notes').fill('');
+ await page.getByRole('tab',{name:'Dated',exact:true}).click();
+ await page.locator('.phase6-note-card').filter({hasText:'First dated note'}).click();
+ await page.getByLabel('Edit note date').fill('2026-11-09');
+ await page.getByRole('button',{name:'Save changes'}).click();
+ expect(fixture.getNotes().find(note=>note.title==='First dated note').note_date).toBe('2026-11-09');
+ const noteReads=fixture.requests.filter(req=>req.name==='personal_day_notes'&&req.method==='GET');
+ expect(noteReads.every(req=>req.url.includes('profile_id=eq.'))).toBe(true);
 });
