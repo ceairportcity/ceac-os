@@ -38,7 +38,9 @@ export default function CalendarExplorer({me,scope,events,layers,cursor,setCurso
   const [density,setDensity]=useCalendarPreference(me,scope,'density','compact');
   const [chosen,setChosen]=useCalendarPreference(me,scope,'layers',defaultLayers||layers.map(l=>l.value));
   const [query,setQuery]=useState('');
-  const [monthOpen,setMonthOpen]=useState(true);
+  // Keep the selected day close to hand on phones. Desktop and iPad always retain the full month.
+  // Remember only presentation preferences; no calendar or private-task data is stored.
+  const [monthOpen,setMonthOpen]=useCalendarPreference(me,scope,'phoneMonthExpanded',false);
   const [agendaLimit,setAgendaLimit]=useState(100);
   const [showFilters,setShowFilters]=useState(false);
   const active=Array.isArray(chosen)?chosen:layers.map(l=>l.value);
@@ -72,7 +74,7 @@ export default function CalendarExplorer({me,scope,events,layers,cursor,setCurso
         {currentView==='month'&&<button className="btn btn-ghost btn-sm ceac-calendar-collapse" type="button" aria-expanded={monthOpen} onClick={()=>setMonthOpen(!monthOpen)}>{monthOpen?'Collapse month':'Show full month'}</button>}
         {currentView==='month'?<CalendarMonthGrid days={days} currentMonth={cursor.getUTCMonth()} selectedDateKey={selectedDate} onSelectDate={changeDate} getEvents={key=>index.get(key)||[]} compact={density!=="details"} ariaLabel={scope==='personal'?"Personal month calendar":scope==='unit'?"Unit month calendar":"Organisation month calendar"}/>:currentView==='week'?<CalendarWeek days={days} index={index} selectedDate={selectedDate} onSelectDate={changeDate}/>:groups.length?<><CalendarTimeline groups={agendaGroups}/>{agendaTotal>agendaLimit&&<button type="button" className="btn btn-ghost" onClick={()=>setAgendaLimit(limit=>limit+100)}>Show more · {agendaTotal-agendaLimit} remaining</button>}</>:<p className="screen-note" role="status">No matching items this month. Change the filters or add a plan.</p>}
       </div>
-      {(typeof children==='function'?children(visible,active):children)||<CalendarAgenda title={labelDay(selectedDate)} description="Meetings, plans and due work for this day." events={index.get(selectedDate)||[]} emptyTitle="Your day is clear" emptyDescription="No matching items for this date."/>}
+      {(typeof children==='function'?children(visible,active):children)||<CalendarAgenda title={labelDay(selectedDate)} description="Meetings, plans and due work for this day." events={index.get(selectedDate)||[]} emptyTitle="Nothing scheduled for this day" emptyDescription="Choose another date or change the calendar filters."/>}
     </div>
     {footer?.(visible)}
   </section>;
