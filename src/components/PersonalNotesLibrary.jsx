@@ -29,9 +29,12 @@ export default function PersonalNotesLibrary({ me, revision = 0, onClose, onNew,
     // PostgREST OR grammar: strip operators rather than inserting arbitrary user text.
     const term = debounced.trim().replace(/[^\p{L}\p{N} -]/gu, " ").trim().slice(0, 80);
     let query = supabase.from("personal_day_notes").select(columns).eq("profile_id", me.id);
-    if (filter === "dated") query = query.or("note_date.not.is.null,dated_for.not.is.null");
+    const match = "or(title.ilike.%" + term + "%,body.ilike.%" + term + "%)";
     if (filter === "standalone") query = query.is("note_date", null).is("dated_for", null);
-    if (term) query = query.or("title.ilike.%" + term + "%,body.ilike.%" + term + "%");
+    if (filter === "dated" && term) {
+      query = query.or("and(note_date.not.is.null," + match + "),and(dated_for.not.is.null," + match + ")");
+    } else if (filter === "dated") query = query.or("note_date.not.is.null,dated_for.not.is.null");
+    else if (term) query = query.or("title.ilike.%" + term + "%,body.ilike.%" + term + "%");
     query.order("updated_at", { ascending: false }).range(0, limit - 1)
       .then(({ data, error: readError }) => {
         if (!active) return;

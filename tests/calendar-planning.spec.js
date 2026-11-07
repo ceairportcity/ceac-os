@@ -194,7 +194,10 @@ test('dated and standalone notes save separately, search by title, and can be mo
  await expect(page.locator('.phase6-note-card').filter({hasText:'Undated preparation'})).toBeVisible();
  await page.getByLabel('Search private notes').fill('');
  await page.getByRole('tab',{name:'Dated',exact:true}).click();
- await page.locator('.phase6-note-card').filter({hasText:'First dated note'}).click();
+ await page.getByLabel('Search private notes').fill('Undated preparation');
+ await expect(page.getByText('No saved notes match this view.')).toBeVisible();
+ await page.getByLabel('Search private notes').fill('');
+ await page.locator('[aria-label="Saved private notes"] button.phase6-note-card').filter({hasText:'First dated note'}).click();
  await page.getByLabel('Edit note date').fill('2026-11-09');
  await page.getByRole('button',{name:'Save changes'}).click();
  expect(fixture.getNotes().find(note=>note.title==='First dated note').dated_for).toBe('2026-11-09');
