@@ -16,7 +16,8 @@ export default function PersonalPlanningEditor({ me, item, onClose, onChanged })
   const kind = item.kind;
   const [title,setTitle] = useState(item.title || "");
   const [details,setDetails] = useState(item.details || item.body || "");
-  const [date,setDate] = useState(kind === "event" ? dateAt(item.starts_at) : item.plan_date || "");
+  const [date,setDate] = useState(kind === "event" ? dateAt(item.starts_at) : kind === "note" ? (item.note_date || "") : item.plan_date || "");
+  const [noteType,setNoteType] = useState(item.note_date ? "dated" : "standalone");
   const [time,setTime] = useState(kind === "event" ? timeAt(item.starts_at) : (item.planned_time || "").slice(0,5));
   const [endTime,setEndTime] = useState(kind === "event" ? timeAt(item.ends_at) : "");
   const [location,setLocation] = useState(item.location || "");
@@ -29,7 +30,8 @@ export default function PersonalPlanningEditor({ me, item, onClose, onChanged })
 
   const valid = Boolean(
     kind === "note" ? details.trim() : title.trim()
-  ) && (kind !== "event" || (date && time && (!endTime || endTime >= time)));
+  ) && (kind !== "event" || (date && time && (!endTime || endTime >= time)))
+    && (kind !== "note" || noteType !== "dated" || Boolean(date));
   async function finish(result) {
     if (result.error) throw result.error;
     await onChanged?.();
@@ -47,9 +49,10 @@ export default function PersonalPlanningEditor({ me, item, onClose, onChanged })
         values = { title:title.trim(), details:details.trim() || null,
           starts_at:toAccraIso(date,time), ends_at:endTime ? toAccraIso(date,endTime) : null,
           location:location.trim() || null };
-      } else values = { title:item.note_kind === "daily" ? null : title.trim() || null, body:details };
+      } else values = { note_kind:noteType === "dated" ? "personal" : "general",
+        note_date:noteType === "dated" ? date : null, title:title.trim() || null, body:details.trim() };
       await finish(await supabase.from(table).update(values)
-        .eq("id",item.id).eq("profile_id",me.id));
+        .eq("id",item.id).eq("profile_id",me.id).select("id").single());
     } catch {
       setError("This private change could not be confirmed. Refresh before retrying.");
     } finally { setBusy(false); }
@@ -82,6 +85,23 @@ export default function PersonalPlanningEditor({ me, item, onClose, onChanged })
         <input className="field" aria-label="Edit private item title" maxLength={220}
           value={title} onChange={e=>setTitle(e.target.value)}/>
       </label>}
+      {kind === "note" && <>
+        <label>Title (optional)
+          <input className="field" aria-label="Edit note title" maxLength={220} value={title}
+            onChange={e=>setTitle(e.target.value)} />
+        </label>
+        <label>Note type
+          <select className="field" aria-label="Edit note type" value={noteType}
+            onChange={e=>setNoteType(e.target.value)}>
+            <option value="dated">Dated note</option>
+            <option value="standalone">Standalone note</option>
+          </select>
+        </label>
+        {noteType === "dated" && <label>Calendar date
+          <input type="date" className="field" aria-label="Edit note date" value={date}
+            onChange={e=>setDate(e.target.value)}/>
+        </label>}
+      </>}
       {kind === "task" && <div className="phase6-composer-grid">
         <label>Planned date (optional)
           <input type="date" className="field" aria-label="Edit private task date" value={date}
