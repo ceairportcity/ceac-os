@@ -1,4 +1,5 @@
 import "./calendar.css";
+import { calendarDay, calendarDays, calendarDate } from "../../lib/calendarPlanning";
 import { useId } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { Button, IconButton, QueueRow, SegmentedControl, StatusBadge } from "../components";
@@ -6,9 +7,7 @@ import { CeacIcon } from "../icons";
 import { EV2_TRANSITIONS } from "../motion";
 
 export function calendarDateKey(date) {
-  const value = date instanceof Date ? date : new Date(date);
-  const pad = (part) => String(part).padStart(2, "0");
-  return `${value.getFullYear()}-${pad(value.getMonth() + 1)}-${pad(value.getDate())}`;
+  return calendarDay(date);
 }
 
 export function CalendarPageHeader({
@@ -124,8 +123,10 @@ export function CalendarMonthGrid({
   todayKey = calendarDateKey(new Date()),
   maxEventsPerDay = 3,
   ariaLabel = "Calendar month",
+  compact = false,
 }) {
   const instanceId = useId().replace(/:/g, "");
+  const selectedWeek=selectedDateKey?new Set(calendarDays(calendarDate(selectedDateKey),"week").map(calendarDay)):new Set();
   const reduceMotion = useReducedMotion();
 
   return (
@@ -139,10 +140,11 @@ export function CalendarMonthGrid({
         {days.map((date) => {
           const key = calendarDateKey(date);
           const events = getEvents(key) || [];
-          const muted = Number.isInteger(currentMonth) && date.getMonth() !== currentMonth;
+          const muted = Number.isInteger(currentMonth) && date.getUTCMonth() !== currentMonth;
           const selected = key === selectedDateKey;
           const today = key === todayKey;
           const dateLabel = date.toLocaleDateString("en-GB", {
+            timeZone:"Africa/Accra",
             weekday: "long",
             day: "numeric",
             month: "long",
@@ -154,6 +156,7 @@ export function CalendarMonthGrid({
               role="gridcell"
               className={[
                 "ev2cal-day",
+                selectedWeek.has(key)?"is-current-week":"",
                 muted ? "is-muted" : "",
                 selected ? "is-selected" : "",
                 today ? "is-today" : "",
@@ -165,6 +168,13 @@ export function CalendarMonthGrid({
                 aria-label={`${dateLabel}${events.length ? `, ${events.length} recorded item${events.length === 1 ? "" : "s"}` : ""}`}
                 aria-pressed={selected}
                 aria-current={today ? "date" : undefined}
+                onKeyDown={event=>{
+                  const offsets={ArrowLeft:-1,ArrowRight:1,ArrowUp:-7,ArrowDown:7};
+                  if(!(event.key in offsets))return;
+                  const buttons=[...event.currentTarget.closest('[role="grid"]').querySelectorAll('.ev2cal-day-button')];
+                  const next=buttons[buttons.indexOf(event.currentTarget)+offsets[event.key]];
+                  if(next){event.preventDefault();next.click();next.focus();}
+                }}
                 onClick={() => onSelectDate?.(key, date)}
               >
                 {selected ? (
@@ -175,10 +185,11 @@ export function CalendarMonthGrid({
                     aria-hidden="true"
                   />
                 ) : null}
-                <span className="ev2cal-day-number">{date.getDate()}</span>
+                <span className="ev2cal-day-number">{date.getUTCDate()}</span>
                 {today ? <small>Today</small> : null}
               </button>
               <div className="ev2cal-day-events">
+                {compact?<span className="ceac-calendar-dots" aria-hidden="true">{events.slice(0,3).map(event=><i key={event.id} className={`is-${event.kind||"neutral"}`}/>)}{events.length>3?<small>+{events.length-3}</small>:null}</span>:<>
                 {events.slice(0, maxEventsPerDay).map((event) => (
                   <EventChip key={event.id} event={event} onOpen={onOpenEvent} />
                 ))}
@@ -186,12 +197,20 @@ export function CalendarMonthGrid({
                   <button
                     type="button"
                     className="ev2cal-more"
-                    onClick={() => onSelectDate?.(key, date)}
+                    onKeyDown={event=>{
+                  const offsets={ArrowLeft:-1,ArrowRight:1,ArrowUp:-7,ArrowDown:7};
+                  if(!(event.key in offsets))return;
+                  const buttons=[...event.currentTarget.closest('[role="grid"]').querySelectorAll('.ev2cal-day-button')];
+                  const next=buttons[buttons.indexOf(event.currentTarget)+offsets[event.key]];
+                  if(next){event.preventDefault();next.click();next.focus();}
+                }}
+                onClick={() => onSelectDate?.(key, date)}
                     aria-label={`Show all ${events.length} items on ${dateLabel}`}
                   >
                     +{events.length - maxEventsPerDay} more
                   </button>
                 ) : null}
+                </>}
               </div>
             </div>
           );

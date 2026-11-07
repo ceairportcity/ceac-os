@@ -47,7 +47,10 @@ test.describe("Premium redesign R1 Staff",()=>{
     await side(page,"Calendar");
     await expect(page.getByRole("heading",{name:"Calendar",exact:true})).toBeVisible();
     await expect(page.getByLabel("Personal month calendar")).toBeVisible();
-    for(const label of ["All","Meetings","Work","Ministry","Leave"]) await expect(page.getByRole("tab",{name:label,exact:true})).toBeVisible();
+    await page.getByRole("button",{name:/^Filter/}).click();
+    const filters=page.getByRole("dialog");
+    for(const label of ["Meetings","Work","Ministry","Leave"]) await expect(filters.getByRole("checkbox",{name:label,exact:true})).toBeChecked();
+    await filters.getByRole("button",{name:"Done",exact:true}).click();
     await page.screenshot({path:"test-artifacts/redesign-r1-staff-calendar.png",fullPage:true});
     await context.close();
   });

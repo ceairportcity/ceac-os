@@ -265,7 +265,8 @@ test('Manager arranges one-date cover; colleague follows Work and Calendar, reco
   await recurring.getByRole('button').filter({hasText:title}).click();
   const date=coveredPage.getByRole('region',{name:'Progress for a routine date',exact:true});await expect(date.getByText('Cover assigned to you. Other dates keep their own assignment.',{exact:true})).toBeVisible();
   await coveredPage.goto('/?tab=staff-calendar');
-  const calendarCover=coveredPage.locator('.phase6-schedule-row button').filter({hasText:title});await expect(calendarCover).toBeVisible();
+  await coveredPage.getByRole('tab',{name:'Tasks',exact:true}).click();
+  const calendarCover=coveredPage.locator('.phase6-day-shared-row').filter({hasText:title});await expect(calendarCover).toBeVisible();
   await calendarCover.click();await expect(date.getByLabel('Scheduled date',{exact:true})).toHaveValue(today);
   await date.getByLabel('Progress note',{exact:true}).fill('Actual cover inspection recorded by the colleague');
   await date.getByRole('combobox',{name:'Status for this date',exact:true}).selectOption('ready_for_review');

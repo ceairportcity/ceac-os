@@ -1,19 +1,14 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import useRoutineCalendar from "../lib/useRoutineCalendar";
 import { routineCalendarStatus } from "../lib/readRoutineCalendar.js";
 import { Sheet, ProductNotice, LoadingState } from "../components/bits";
 import { humanError } from "../lib/productLanguage";
-import { Button, Surface } from "../experience-v2/components";
+import { Button } from "../experience-v2/components";
 import StaffCalendar from "./StaffCalendar";
-import {
-  CalendarAgenda,
-  CalendarFilters,
-  CalendarMonthGrid,
-  CalendarPageHeader,
-  CalendarPeriodControls,
-  CalendarViewTabs,
-} from "../experience-v2/calendar/CalendarFamilyV2";
+import CalendarExplorer, { useCalendarPosition } from "../experience-v2/calendar/CalendarExplorer";
+import { calendarWorkStatus, calendarWindow, calendarSpan, expandCalendarEvent } from "../lib/calendarPlanning";
+import { CalendarPageHeader } from "../experience-v2/calendar/CalendarFamilyV2";
 
 const FILTERS = [
   { value:"all", label:"All", icon:"calendar" },
@@ -23,7 +18,6 @@ const FILTERS = [
   { value:"leave", label:"Leave", icon:"time" },
   { value:"activities", label:"Ministry/unit activities", icon:"ministry" },
 ];
-const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 const pad = (n) => String(n).padStart(2, "0");
 const dateKey = (d) => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
 const parseDateOnly = (s) => { const [y,m,d] = String(s).slice(0,10).split("-").map(Number); return new Date(y,m-1,d); };
@@ -36,51 +30,40 @@ const accraDateKey = (value) => {
   const byType = Object.fromEntries(parts.map((part) => [part.type, part.value]));
   return `${byType.year}-${byType.month}-${byType.day}`;
 };
-const googleStamp = (value) => new Date(value).toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
-function googleCalendarUrl(event) {
-  const start = new Date(event.startsAt);
-  const end = event.endsAt ? new Date(event.endsAt) : new Date(start.getTime() + 60 * 60000);
-  const params = new URLSearchParams({
-    action: "TEMPLATE",
-    text: event.title,
-    dates: `${googleStamp(start)}/${googleStamp(end)}`,
-    details: "CEAC OS meeting. Open CEAC OS for the authoritative meeting record.",
-  });
-  return `https://calendar.google.com/calendar/render?${params.toString()}`;
-}
-
-export default function ManagerCalendar({ me, openItem, openProject, openMeeting, scheduleMeeting, openPerson }) {
-  const now=new Date();
+export default function ManagerCalendar({ me, openItem, openProject, openMeeting, scheduleMeeting, openPerson, initialDate, onFocusHandled }) {
   const [calendarScope,setCalendarScope]=useState("unit");
-  const [view,setView]=useState("month");
-  const [filter,setFilter]=useState("all");
-  const [cursor,setCursor]=useState(now);
-  const [selectedDate,setSelectedDate]=useState(dateKey(now));
+  const {cursor,setCursor,selectedDate,setSelectedDate}=useCalendarPosition(me,"unit",initialDate);
+  useEffect(()=>{if(initialDate)onFocusHandled?.();},[]);
   const [events,setEvents]=useState([]);
   const [selectedActivity,setSelectedActivity]=useState(null);
   const [selectedLeave,setSelectedLeave]=useState(null);
-  const [filterSheet,setFilterSheet]=useState(false);
+  const requestVersion=useRef(0);
+  useEffect(()=>()=>{requestVersion.current++;},[]);
   const [error,setError]=useState(null);
   const [loading,setLoading]=useState(true);
 
   const routineCalendar=useRoutineCalendar(me,{scope:"unit",enabled:calendarScope==="unit",
     fromDate:dateKey(new Date(cursor.getFullYear(),cursor.getMonth()-1,1)),
     throughDate:dateKey(new Date(cursor.getFullYear(),cursor.getMonth()+2,0))});
-  const calendarEvents=[...events,...routineCalendar.events];
+  const calendarEvents=useMemo(()=>[...events,...routineCalendar.events],[events,routineCalendar.events]);
 
-  useEffect(()=>{ load(); },[me.id,me.unit_id]);
+  useEffect(()=>{if(calendarScope==="unit")load();else requestVersion.current++;},[me.id,me.unit_id,calendarScope,cursor.getFullYear(),cursor.getMonth()]);
 
   async function load(){
+    const request=++requestVersion.current;
+    const range=calendarWindow(cursor);
     setLoading(true); setError(null);
+    try{
     const [projects, work, members, leave, ministry, ministryNeeds, meetings] = await Promise.all([
-      supabase.from("projects").select("id,name,starts_on,ends_on,status,lead_unit_id,project_units(unit_id)"),
-      supabase.from("work_items").select("id,ref,title,due_at,status,project_id").eq("unit_id",me.unit_id).not("due_at","is",null).neq("visibility","private").neq("kind","routine"),
+      supabase.from("projects").select("id,name,starts_on,ends_on,status,lead_unit_id,project_units(unit_id)").or(`and(starts_on.gte.${range.from},starts_on.lt.${range.to}),and(ends_on.gte.${range.from},ends_on.lt.${range.to})`),
+      supabase.from("work_items").select("id,ref,title,due_at,status,project_id").eq("unit_id",me.unit_id).gte("due_at",range.fromAt).lt("due_at",range.toAt).neq("visibility","private").neq("kind","routine"),
       supabase.from("unit_memberships").select("profile_id").eq("unit_id",me.unit_id),
-      supabase.from("leave_requests").select("id,profile_id,kind,start_date,end_date,status,profiles!leave_requests_profile_id_fkey(full_name)").eq("status","approved"),
-      supabase.from("ministry_events").select("id,title,kind,scope,unit_id,starts_at,ends_at,all_day,location,notes,cancelled"),
+      supabase.from("leave_requests").select("id,profile_id,kind,start_date,end_date,status,profiles!leave_requests_profile_id_fkey(full_name)").eq("status","approved").gte("end_date",range.from).lt("start_date",range.to),
+      supabase.from("ministry_events").select("id,title,kind,scope,unit_id,starts_at,ends_at,all_day,location,notes,cancelled").or(`ends_at.gte.${range.fromAt},and(ends_at.is.null,starts_at.gte.${range.fromAt})`).lt("starts_at",range.toAt),
       supabase.from("ministry_event_units").select("event_id,unit_id,note").eq("unit_id",me.unit_id),
-      supabase.from("meeting_sessions").select("id,title,scope,unit_id,project_id,starts_at,ends_at,status,provider,join_url,meeting_participants(profile_id,role)").order("starts_at")
+      supabase.from("meeting_sessions").select("id,title,scope,unit_id,project_id,starts_at,ends_at,status,provider,join_url,meeting_participants(profile_id,role)").or(`ends_at.gt.${range.fromAt},and(ends_at.is.null,starts_at.gte.${range.fromAt})`).lt("starts_at",range.toAt).neq("status","cancelled").order("starts_at")
     ]);
+    if(request!==requestVersion.current)return;
     const firstError=[projects.error,work.error,members.error,leave.error,ministry.error,ministryNeeds.error,meetings.error].find(Boolean);
     if(firstError){ setError(humanError(firstError,"Calendar could not be loaded.")); setLoading(false); return; }
     const memberIds=new Set((members.data||[]).map(x=>x.profile_id));
@@ -89,28 +72,26 @@ export default function ManagerCalendar({ me, openItem, openProject, openMeeting
       if(p.starts_on) out.push({id:`project-start-${p.id}`,type:"projects",date:p.starts_on,title:`${p.name} starts`,projectId:p.id});
       if(p.ends_on) out.push({id:`project-end-${p.id}`,type:"projects",date:p.ends_on,title:`${p.name} ends`,projectId:p.id});
     });
-    (work.data||[]).forEach(w=>out.push({id:`task-${w.id}`,type:"tasks",date:accraDateKey(w.due_at),title:`${w.ref} · ${w.title}`,itemId:w.id}));
+    (work.data||[]).forEach(w=>out.push({id:`task-${w.id}`,type:"tasks",date:accraDateKey(w.due_at),title:`${w.ref} · ${w.title}`,itemId:w.id,workStatus:w.status}));
     (leave.data||[]).filter(l=>memberIds.has(l.profile_id)).forEach(l=>{
-      let d=parseDateOnly(l.start_date), end=parseDateOnly(l.end_date);
-      while(d<=end){ out.push({
-        id:`leave-${l.id}-${dateKey(d)}`,
+      calendarSpan(l.start_date,l.end_date,range.from,range.to).forEach(day=>{out.push({
+        id:`leave-${l.id}-${day}`,
         type:"leave",
-        date:dateKey(d),
+        date:day,
         title:`${l.profiles?.full_name||"Team member"} · ${l.kind} leave`,
         leave:{ id:l.id, profile_id:l.profile_id, full_name:l.profiles?.full_name||"Team member", kind:l.kind, start_date:l.start_date, end_date:l.end_date, status:l.status }
-      }); d=addDays(d,1); }
+      }); });
     });
     const needByEvent = new Map((ministryNeeds.data||[]).map((row)=>[row.event_id,row.note]));
     (ministry.data||[]).filter((event)=>event.scope==="church"||event.unit_id===me.unit_id||needByEvent.has(event.id)).forEach((event)=>{
       const needNote=needByEvent.get(event.id);
-      let d=parseDateOnly(accraDateKey(event.starts_at));
-      const end=parseDateOnly(accraDateKey(event.ends_at||event.starts_at));
-      while(d<=end){
+      calendarSpan(accraDateKey(event.starts_at),accraDateKey(event.ends_at?new Date(new Date(event.ends_at).getTime()-1):event.starts_at),range.from,range.to).forEach(day=>{
         out.push({
-          id:`activity-${event.id}-${dateKey(d)}`,
+          id:`activity-${event.id}-${day}`,
           type:"activities",
-          date:dateKey(d),
+          date:day,
           title:`${event.cancelled?"Cancelled · ":""}${event.title}${needNote?` · Your unit: ${needNote}`:""}${event.location?` · ${event.location}`:""}`,
+          startsAt:event.starts_at,endsAt:event.ends_at,allDay:event.all_day,
           activity: {
             id: event.id,
             title: event.title,
@@ -125,14 +106,13 @@ export default function ManagerCalendar({ me, openItem, openProject, openMeeting
             unit_note: needNote || null,
           },
         });
-        d=addDays(d,1);
-      }
+      });
     });
     (meetings.data||[]).forEach((meeting)=>{
       const participantCount=(meeting.meeting_participants||[]).length;
       const scopeLabel=meeting.scope==="project"?"Project":meeting.scope==="unit"?"Unit":"Organisation";
       const providerLabel=meeting.provider==="zoom"?"Zoom":"External";
-      out.push({
+      out.push(...expandCalendarEvent({
         id:`meeting-${meeting.id}`,
         type:"meetings",
         date:accraDateKey(meeting.starts_at),
@@ -142,40 +122,31 @@ export default function ManagerCalendar({ me, openItem, openProject, openMeeting
         startsAt:meeting.starts_at,
         endsAt:meeting.ends_at,
         meta:`${scopeLabel} meeting · ${participantCount} participant${participantCount===1?"":"s"} · ${providerLabel}`,
-      });
+      },range.from,range.to));
     });
-    setEvents(out); setLoading(false);
+    setEvents(out);
+    }catch(err){if(request===requestVersion.current)setError(humanError(err,"Calendar could not be loaded."));}
+    finally{if(request===requestVersion.current)setLoading(false);}
   }
 
-  const days=useMemo(()=>{
-    if(view==="week"){ const s=startOfWeek(cursor); return Array.from({length:7},(_,i)=>addDays(s,i)); }
-    const first=new Date(cursor.getFullYear(),cursor.getMonth(),1);
-    const start=startOfWeek(first);
-    return Array.from({length:42},(_,i)=>addDays(start,i));
-  },[cursor,view]);
-  const visible=filter==="all"?calendarEvents:calendarEvents.filter(e=>e.type===filter);
-  const heading=view==="month"?`${MONTHS[cursor.getMonth()]} ${cursor.getFullYear()}`:`${labelDate(dateKey(days[0]))} – ${labelDate(dateKey(days[6]))}`;
-  const googleMeetings=events
-    .filter((event)=>event.type==="meetings"&&event.meetingStatus!=="cancelled"&&event.startsAt&&new Date(event.startsAt)>=new Date())
-    .sort((a,b)=>new Date(a.startsAt)-new Date(b.startsAt))
-    .slice(0,3);
-
-  const openCalendarEvent=(event)=>{
+  const openCalendarEvent=useCallback((event)=>{
+    setSelectedDate(event.date);
     if(event.itemId) return openItem(event.itemId,event.routineState?event.scheduledOn:null);
     if(event.meetingId) return openMeeting?.(event.meetingId);
     if(event.projectId) return openProject(event.projectId);
     if(event.leave) return setSelectedLeave(event.leave);
     if(event.activity) return setSelectedActivity(event.activity);
     return null;
-  };
+  },[openItem,openMeeting,openProject,setSelectedDate]);
 
-  const displayEvent=(event)=>({
+  const displayEvent=useCallback((event)=>({
     ...event,
     kind:event.type,
+    metaTime:event.startsAt?new Date(event.startsAt).toLocaleTimeString("en-GB",{timeZone:"Africa/Accra",hour:"2-digit",minute:"2-digit"}):null,
     icon:event.type==="meetings"?"meeting":event.type==="projects"?"projects":event.type==="tasks"?"work":event.type==="leave"?"time":"ministry",
     meta:event.meta
       || (event.leave?`${event.leave.start_date} → ${event.leave.end_date}`:null)
-      || (event.activity?.location||event.activity?.unit_note||"Ministry activity")
+      || (event.type==="activities"?(event.activity?.location||event.activity?.unit_note||"Ministry activity"):null)
       || (event.type==="projects"?"Project date":event.type==="tasks"?"Work deadline":"Recorded calendar item"),
     status:event.meetingStatus==="cancelled"||event.activity?.cancelled
       ?"Cancelled"
@@ -184,11 +155,11 @@ export default function ManagerCalendar({ me, openItem, openProject, openMeeting
         :event.type==="projects"
           ?"Project"
           :event.type==="tasks"
-            ?(event.routineState?routineCalendarStatus(event.routineState):"Due")
+            ?(event.routineState?routineCalendarStatus(event.routineState):calendarWorkStatus(event.workStatus))
             :event.type==="leave"
               ?"Approved"
               :"Ministry",
-    statusTone:event.meetingStatus==="cancelled"||event.activity?.cancelled
+    statusTone:["completed","self_certified"].includes(event.workStatus)?"success":event.workStatus==="returned"?"warning":event.meetingStatus==="cancelled"||event.activity?.cancelled
       ?"danger"
       :event.type==="meetings"
         ?"action"
@@ -196,26 +167,8 @@ export default function ManagerCalendar({ me, openItem, openProject, openMeeting
           ?"success"
           :"neutral",
     onClick:()=>openCalendarEvent(event),
-  });
-
-  const selectedEvents=visible.filter(event=>event.date===selectedDate).map(displayEvent);
-
-  const move=(amount)=>{
-    const next=view==="month"
-      ?new Date(cursor.getFullYear(),cursor.getMonth()+amount,1)
-      :addDays(cursor,amount*7);
-    setCursor(next);
-    setSelectedDate(dateKey(next));
-  };
-  const goToday=()=>{
-    const today=new Date();
-    setCursor(today);
-    setSelectedDate(dateKey(today));
-  };
-  const switchView=(next)=>{
-    setView(next);
-    setSelectedDate(dateKey(cursor));
-  };
+  }),[openCalendarEvent]);
+  const displayEvents=useMemo(()=>calendarEvents.map(displayEvent),[calendarEvents,displayEvent]);
 
   const scopeControl=<div className="phase6-calendar-scope" role="tablist" aria-label="Manager calendar scope">
     <button type="button" role="tab" aria-selected={calendarScope==="my"} className={calendarScope==="my"?"is-selected":""} onClick={()=>setCalendarScope("my")}>My calendar</button>
@@ -228,16 +181,16 @@ export default function ManagerCalendar({ me, openItem, openProject, openMeeting
     openMeeting={openMeeting}
     statusLabel="Manager · My calendar"
     scopeControl={scopeControl}
+    scheduleMeeting={scheduleMeeting}
   />;
 
   return <div className="body ev2cal-role-page ev2cal-manager-page">
     <CalendarPageHeader
       eyebrow={me.unit_name}
       title="Calendar"
-      description="Meetings, project dates, routine dates, work deadlines, approved leave and ministry activity in one place."
-      status="Unit schedule"
+      description="Your unit’s meetings, work and important dates."
       statusTone="action"
-      action={<Button icon="meeting" onClick={()=>scheduleMeeting?.({ scope:"unit", unitId:me.unit_id, unitName:me.unit_name })}>Schedule meeting</Button>}
+      action={<Button icon="meeting" onClick={()=>scheduleMeeting?.({ scope:"unit", unitId:me.unit_id, unitName:me.unit_name,startsAt:`${selectedDate}T09:00` })}>Schedule meeting</Button>}
     />
 
     {scopeControl}
@@ -247,71 +200,9 @@ export default function ManagerCalendar({ me, openItem, openProject, openMeeting
     {routineCalendar.loading&&<p className="screen-note" role="status">Loading routine dates…</p>}
     {routineCalendar.error&&<ProductNotice tone="error" title="Routine dates unavailable">{routineCalendar.error}<Button variant="secondary" onClick={routineCalendar.reload}>Retry routine dates</Button></ProductNotice>}
 
-    <div className="ev2cal-toolbar">
-      <CalendarViewTabs
-        value={view}
-        onChange={switchView}
-        ariaLabel="Calendar view"
-        items={[
-          { value:"month", label:"Month", icon:"calendar" },
-          { value:"week", label:"Week", icon:"calendar" },
-        ]}
-      />
-      <Button variant="secondary" icon="filter" onClick={()=>setFilterSheet(true)}>
-        View {FILTERS.find((item)=>item.value===filter)?.label||"All"}
-      </Button>
-    </div>
+    {loading?<LoadingState label="Loading calendar…"/>:<CalendarExplorer me={me} scope="unit" events={displayEvents} layers={FILTERS.filter(item=>item.value!=="all")} cursor={cursor} setCursor={setCursor} selectedDate={selectedDate} onSelectDate={setSelectedDate}/>}
 
-    <CalendarPeriodControls
-      label={heading}
-      onPrevious={()=>move(-1)}
-      onNext={()=>move(1)}
-      onToday={goToday}
-    />
-
-    {loading?<LoadingState label="Loading calendar…"/>:<div className="ev2cal-role-layout">
-      <CalendarMonthGrid
-        days={days}
-        currentMonth={view==="month"?cursor.getMonth():undefined}
-        selectedDateKey={selectedDate}
-        onSelectDate={(key)=>setSelectedDate(key)}
-        getEvents={(key)=>visible.filter(event=>event.date===key).map(displayEvent)}
-        maxEventsPerDay={view==="week"?6:3}
-        ariaLabel={view==="month"?"Manager month calendar":"Manager week calendar"}
-      />
-      <div className="ev2cal-side-stack">
-        <CalendarAgenda
-          title={labelDay(selectedDate)}
-          description="Recorded unit calendar items for the selected date. Open an item to keep its existing authoritative workflow."
-          events={selectedEvents}
-          emptyTitle="Nothing recorded for this date"
-          emptyDescription={visible.length?"Choose another date to inspect this filtered view.":"No events are recorded for this view."}
-        />
-
-        <Surface variant="soft" padding="standard" className="ev2cal-google" aria-label="Google Calendar">
-          <div className="ev2cal-integration-copy">
-            <strong>Your Google Calendar</strong>
-            <p>Automatic personal sync is not connected yet because CEAC OS does not hold a Google authorisation for your account. You can add CEAC meetings yourself from here without giving Administration access to your calendar.</p>
-          </div>
-          <div className="ev2cal-link-row">
-            <a className="ev2cal-external-link" href="https://calendar.google.com/calendar/u/0/r" target="_blank" rel="noreferrer">Open Google Calendar</a>
-            {googleMeetings.map((meeting)=><a key={meeting.id} className="ev2cal-external-link" href={googleCalendarUrl(meeting)} target="_blank" rel="noreferrer">Add {meeting.title}</a>)}
-          </div>
-        </Surface>
-      </div>
-    </div>}
-
-    {filterSheet&&<Sheet onClose={()=>setFilterSheet(false)}>
-      <div className="eyebrow">Calendar view</div>
-      <div className="h2" style={{marginTop:5}}>Show on calendar</div>
-      <p className="screen-note">Choose one layer. Your Month or Week setting stays unchanged.</p>
-      <CalendarFilters
-        value={filter}
-        ariaLabel="Calendar layer"
-        items={FILTERS}
-        onChange={(value)=>{setFilter(value);setFilterSheet(false);}}
-      />
-    </Sheet>}
+    <details className="ceac-calendar-connection"><summary>Your Google Calendar</summary><p>Automatic personal sync is not connected yet. Add individual meetings from their details, or open Google Calendar.</p><a href="https://calendar.google.com/calendar/u/0/r" target="_blank" rel="noreferrer">Open Google Calendar</a></details>
 
     {selectedLeave&&<Sheet onClose={()=>setSelectedLeave(null)}>
       <div className="eyebrow">Approved leave</div>

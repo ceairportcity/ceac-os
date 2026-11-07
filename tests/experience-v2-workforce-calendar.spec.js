@@ -21,56 +21,14 @@ async function expectNoPageOverflow(page, width, label) {
   expect(overflow, `${label} overflowed ${width}px viewport`).toBeLessThanOrEqual(1);
 }
 
-test("Stage 11C migrates the existing Calendar role contracts without changing authority", async () => {
-  const staff = readFileSync("src/screens/StaffCalendar.jsx", "utf8");
-  const manager = readFileSync("src/screens/ManagerCalendar.jsx", "utf8");
-  const admin = readFileSync("src/screens/AdminCalendar.jsx", "utf8");
-  const app = readFileSync("src/App.jsx", "utf8");
-  const css = readFileSync("src/experience-v2/calendar/calendar.css", "utf8");
-
-  for (const source of [staff, manager, admin]) {
-    expect(source).toContain('experience-v2/calendar/CalendarFamilyV2');
-  }
-
-  expect(staff).toContain('supabase.from("work_items")');
-  expect(staff).toContain('supabase.from("meeting_sessions")');
-  expect(staff).toContain('supabase.from("ministry_events")');
-  expect(staff).toContain('supabase.from("leave_requests")');
-  expect(staff).toContain("<CalendarMonthGrid");
-  expect(staff).toContain("<CalendarAgenda");
-  expect(staff).not.toContain("staff-calendar-toolbar");
-  expect(staff).not.toContain("staff-calendar-event");
-
-  expect(manager).toContain('supabase.from("projects")');
-  expect(manager).toContain('supabase.from("work_items")');
-  expect(manager).toContain('supabase.from("unit_memberships")');
-  expect(manager).toContain('supabase.from("leave_requests")');
-  expect(manager).toContain('supabase.from("ministry_events")');
-  expect(manager).toContain('supabase.from("ministry_event_units")');
-  expect(manager).toContain('supabase.from("meeting_sessions")');
-  expect(manager).toContain("Automatic personal sync is not connected yet");
-  expect(manager).toContain("Open Google Calendar");
-  expect(manager).toContain("<CalendarViewTabs");
-  expect(manager).toContain("<CalendarMonthGrid");
-  expect(manager).toContain("<CalendarAgenda");
-  expect(manager).not.toContain("calendar-filter-trigger");
-  expect(manager).not.toContain("manager-calendar-period");
-
-  expect(admin).toContain('supabase.from("meeting_sessions")');
-  expect(admin).toContain('supabase.from("projects")');
-  expect(admin).toContain('supabase.from("ministry_events")');
-  expect(admin).toContain('supabase.from("leave_requests")');
-  expect(admin).toContain("<CalendarTimeline");
-  expect(admin).toContain('label:"Next 14 days"');
-  expect(admin).toContain('label:"Next 30 days"');
-  expect(admin).toContain('label:"Next 90 days"');
-  expect(admin).not.toContain("<CalendarMonthGrid");
-  expect(admin).not.toContain("calendar-window-switch");
-
-  expect(app).toContain('tab === "exec-calendar" && isExec');
-  expect(css).toContain(".ev2cal-role-page");
-  expect(css).toContain(".ev2cal-role-layout");
-  expect(css).not.toContain("!important");
+test("Calendar roles share views without changing private or authorised scope",()=>{
+ const staff=readFileSync("src/screens/StaffCalendar.jsx","utf8"),manager=readFileSync("src/screens/ManagerCalendar.jsx","utf8"),admin=readFileSync("src/screens/AdminCalendar.jsx","utf8"),explorer=readFileSync("src/experience-v2/calendar/CalendarExplorer.jsx","utf8"),meeting=readFileSync("src/screens/Meeting.jsx","utf8");
+ for(const source of [staff,manager,admin])expect(source).toContain("<CalendarExplorer");
+ for(const table of ["work_items","meeting_sessions","ministry_events","leave_requests"])for(const source of [staff,manager,admin])expect(source).toContain(table);
+ expect(staff).toContain("personal_day_tasks");expect(staff).toContain("PersonalPlanningEditor");
+ expect(manager).toContain("calendarWorkStatus(event.workStatus)");expect(manager).toContain("Unit calendar");expect(admin).toContain("Organisation calendar");
+ expect(explorer).toContain("CalendarMonthGrid");expect(explorer).toContain("CalendarTimeline");expect(explorer).toContain("layoutCalendarDay");expect(explorer).toContain("Show together");
+ expect(meeting).toContain("will not sync automatically");expect(meeting).toContain("downloadMeetingCalendar");
 });
 
 test("Stage 11C Staff Calendar keeps selected-date context and factual non-actionable schedule rows", async ({ browser }) => {
@@ -93,64 +51,18 @@ test("Stage 11C Staff Calendar keeps selected-date context and factual non-actio
   await context.close();
 });
 
-test("Stage 11C Manager Calendar preserves month/week, filters, selected date, scheduling and Google truth", async ({ browser }) => {
-  const { context, page } = await openAs(
-    browser,
-    "manager@ceac.local.test",
-    ".manager-app",
-    "/?tab=calendar",
-    { width: 390, height: 844 },
-  );
-
-  const calendar = page.locator(".ev2cal-manager-page");
-  await expect(calendar).toBeVisible();
-  await expect(calendar.getByRole("tab", { name: "Month", exact: true })).toBeVisible();
-  await expect(calendar.getByRole("tab", { name: "Week", exact: true })).toBeVisible();
-  await calendar.getByRole("tab", { name: "Week", exact: true }).click();
-  await expect(calendar.locator(".ev2cal-day")).toHaveCount(7);
-
-  await expect(calendar.getByRole("button", { name: "View All", exact: true })).toBeVisible();
-  await calendar.getByRole("button", { name: "View All", exact: true }).click();
-  const dialog = page.getByRole("dialog");
-  await expect(dialog.getByRole("tab", { name: "Meetings", exact: true })).toBeVisible();
-  await dialog.getByRole("tab", { name: "Meetings", exact: true }).click();
-  await expect(calendar.getByRole("button", { name: "View Meetings", exact: true })).toBeVisible();
-
-  const day = calendar.locator(".ev2cal-day-button").nth(2);
-  await day.click();
-  await expect(day).toHaveAttribute("aria-pressed", "true");
-
-  await expect(calendar.getByText("Your Google Calendar", { exact: true })).toBeVisible();
-  await expect(calendar.getByText(/Automatic personal sync is not connected yet/i)).toBeVisible();
-  await expect(calendar.getByRole("link", { name: "Open Google Calendar", exact: true })).toBeVisible();
-  await expect(calendar.getByRole("button", { name: "Schedule meeting", exact: true })).toBeVisible();
-
-  await expectNoPageOverflow(page, 390, "Manager Calendar");
-  await context.close();
+test("Manager Calendar preserves time views, combined filters, selected date and scheduling",async({browser})=>{
+ const {context,page}=await openAs(browser,"manager@ceac.local.test",".manager-app","/?tab=calendar",{width:390,height:844});
+ const calendar=page.locator(".ev2cal-manager-page");
+ await calendar.getByRole("tab",{name:"Week",exact:true}).click();await expect(calendar.locator(".ceac-calendar-week-date")).toHaveCount(7);
+ await calendar.getByRole("button",{name:/^Filter/}).click();const dialog=page.getByRole("dialog");await expect(dialog.getByRole("checkbox",{name:"Meetings",exact:true})).toBeChecked();await dialog.getByRole("button",{name:"Done",exact:true}).click();
+ await calendar.locator(".ceac-calendar-week-date").nth(2).click();await expect(calendar.locator(".ceac-calendar-week-date").nth(2)).toHaveAttribute("aria-pressed","true");
+ await expect(calendar.getByRole("button",{name:"Schedule meeting",exact:true})).toBeVisible();await expectNoPageOverflow(page,390,"Manager Calendar");await context.close();
 });
-
-test("Stage 11C Administration Calendar remains a 14/30/90 day operating timeline rather than an invented grid", async ({ browser }) => {
-  const { context, page } = await openAs(
-    browser,
-    "admin@ceac.local.test",
-    ".office-app",
-    "/?tab=admin-calendar",
-    { width: 390, height: 844 },
-  );
-
-  const calendar = page.locator(".ev2cal-admin-page");
-  await expect(calendar).toBeVisible();
-  await expect(calendar.getByText("Calendar could not finish loading", { exact: true })).toHaveCount(0);
-  await expect(calendar.getByRole("tab", { name: "Next 14 days", exact: true })).toBeVisible();
-  await expect(calendar.getByRole("tab", { name: "Next 30 days", exact: true })).toBeVisible();
-  await expect(calendar.getByRole("tab", { name: "Next 90 days", exact: true })).toBeVisible();
-  await calendar.getByRole("tab", { name: "Next 14 days", exact: true }).click();
-  await expect(calendar.getByRole("tab", { name: "Month", exact: true })).toHaveCount(0);
-  await expect(calendar.getByRole("tab", { name: "Week", exact: true })).toHaveCount(0);
-  await expect(calendar.getByRole("button", { name: "Schedule meeting", exact: true })).toBeVisible();
-
-  await expectNoPageOverflow(page, 390, "Administration Calendar");
-  await context.close();
+test("Administration Calendar offers the same Month, Week and Agenda controls",async({browser})=>{
+ const {context,page}=await openAs(browser,"admin@ceac.local.test",".office-app","/?tab=admin-calendar",{width:390,height:844});
+ const calendar=page.locator(".ev2cal-admin-page");for(const name of ["Month","Week","Agenda"])await expect(calendar.getByRole("tab",{name,exact:true})).toBeVisible();
+ await expect(calendar.getByRole("button",{name:"Schedule meeting",exact:true})).toBeVisible();await expectNoPageOverflow(page,390,"Administration Calendar");await context.close();
 });
 
 const calendarViewports = [
@@ -191,7 +103,7 @@ for (const viewport of calendarViewports) {
 
     const admin = await openAs(browser, "admin@ceac.local.test", ".office-app", "/?tab=admin-calendar", viewport);
     await expect(admin.page.locator(".ev2cal-admin-page")).toBeVisible();
-    await expect(admin.page.getByRole("tab", { name: "Next 30 days", exact: true })).toBeVisible();
+    await expect(admin.page.getByRole("tab", { name: "Month", exact: true })).toBeVisible();
     await expectNoPageOverflow(admin.page, viewport.width, "Administration Calendar");
     await admin.page.screenshot({
       path: `test-artifacts/redesign-r7-stage11c-admin-${viewport.name}.png`,
@@ -244,11 +156,11 @@ test("VF6C cross-role Calendar surfaces stay top-anchored and context-led", asyn
         await expect(agenda).toBeVisible({ timeout: 15000 });
         expect(await agenda.evaluate((node) => getComputedStyle(node).boxShadow)).toBe("none");
       } else {
-        await expect(root.getByRole("tab", { name: "Next 30 days", exact: true })).toBeVisible();
-        const range = root.locator(".ev2cal-admin-range");
+        await expect(root.getByRole("tab", { name: "Month", exact: true })).toBeVisible();
+        const range = root.locator(".ceac-calendar-controls");
         await expect(range).toBeVisible();
         if (viewport.width >= 1040) {
-          expect(await range.evaluate((node) => getComputedStyle(node).borderBottomStyle)).toBe("solid");
+          expect(await range.evaluate((node) => getComputedStyle(node).display)).toBe("flex");
         }
       }
 

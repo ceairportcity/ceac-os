@@ -1,138 +1,62 @@
-import { useEffect, useMemo, useState } from "react";
-import { supabase } from "../lib/supabase";
-import { LoadingState, ProductNotice } from "../components/bits";
-import { humanError } from "../lib/productLanguage";
-import { Button, StatePanel } from "../experience-v2/components";
-import StaffCalendar from "./StaffCalendar";
-import {
-  CalendarPageHeader,
-  CalendarTimeline,
-  CalendarViewTabs,
-} from "../experience-v2/calendar/CalendarFamilyV2";
+import { useEffect, useRef, useState } from 'react';
+import { supabase } from '../lib/supabase';
+import { LoadingState, ProductNotice, Sheet } from '../components/bits';
+import { humanError } from '../lib/productLanguage';
+import { Button } from '../experience-v2/components';
+import StaffCalendar from './StaffCalendar';
+import CalendarExplorer, { useCalendarPosition } from '../experience-v2/calendar/CalendarExplorer';
+import { CalendarPageHeader } from '../experience-v2/calendar/CalendarFamilyV2';
+import { calendarDay, calendarDate, calendarSpan, calendarWindow, calendarWorkStatus, expandCalendarEvent } from '../lib/calendarPlanning';
 
-function dateKey(value){
-  const parts=new Intl.DateTimeFormat("en-CA",{timeZone:"Africa/Accra",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date(value));
-  const by=Object.fromEntries(parts.map((part)=>[part.type,part.value]));
-  return `${by.year}-${by.month}-${by.day}`;
-}
-function labelDate(value){return new Date(value).toLocaleString("en-GB",{timeZone:"Africa/Accra",weekday:"short",day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"});}
-
-const RANGE_ITEMS = [
-  { value:"14", label:"Next 14 days", icon:"calendar" },
-  { value:"30", label:"Next 30 days", icon:"calendar" },
-  { value:"90", label:"Next 90 days", icon:"calendar" },
-];
-
-export default function AdminCalendar({ me, openItem, openMeeting, scheduleMeeting, roleMode="admin", openProject }) {
-  const [calendarScope,setCalendarScope]=useState("organisation");
+const LAYERS=[{value:'meeting',label:'Meetings'},{value:'projects',label:'Projects'},{value:'work',label:'Work deadlines'},{value:'ministry',label:'Ministry'},{value:'leave',label:'Approved leave'}];
+const when=value=>new Date(value).toLocaleString('en-GB',{timeZone:'Africa/Accra',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+export default function AdminCalendar({me,openItem,openMeeting,scheduleMeeting,roleMode='admin',openProject,initialDate,onFocusHandled}) {
+  const [calendarScope,setCalendarScope]=useState('organisation');
+  const {cursor,setCursor,selectedDate,setSelectedDate}=useCalendarPosition(me,"organisation",initialDate);
+  useEffect(()=>{if(initialDate)onFocusHandled?.();},[]);
   const [events,setEvents]=useState([]);
   const [loading,setLoading]=useState(true);
   const [error,setError]=useState(null);
-  const [windowDays,setWindowDays]=useState(30);
-
-  useEffect(()=>{load();},[me.org_id]);
-
+  const [detail,setDetail]=useState(null);
+  const version=useRef(0);
+  useEffect(()=>()=>{version.current++;},[]);
+  useEffect(()=>{if(calendarScope==='organisation')load();else version.current++;},[me.id,me.org_id,calendarScope,cursor.getUTCFullYear(),cursor.getUTCMonth()]);
   async function load(){
-    setLoading(true); setError(null);
+    const request=++version.current;const range=calendarWindow(cursor);
+    setLoading(true);setError(null);
     try{
-      const now=new Date();
-      const end=new Date(now.getTime()+90*864e5);
-      const [meetings,projects,ministry,leave]=await Promise.all([
-        supabase.from("meeting_sessions").select("id,title,starts_at,ends_at,status,scope,provider").gte("starts_at",now.toISOString()).lte("starts_at",end.toISOString()).neq("status","cancelled"),
-        supabase.from("projects").select("id,name,starts_on,ends_on,status").eq("org_id",me.org_id),
-        supabase.from("ministry_events").select("id,title,starts_at,ends_at,location,cancelled").gte("starts_at",now.toISOString()).lte("starts_at",end.toISOString()),
-        supabase.from("leave_requests").select("id,profile_id,start_date,end_date,status,profiles!leave_requests_profile_id_fkey(full_name)").eq("status","approved").gte("end_date",now.toISOString().slice(0,10)).lte("start_date",end.toISOString().slice(0,10)),
+      const [meetings,projects,ministry,leave,work]=await Promise.all([
+        supabase.from('meeting_sessions').select('id,title,starts_at,ends_at,status,scope,provider').or(`ends_at.gt.${range.fromAt},and(ends_at.is.null,starts_at.gte.${range.fromAt})`).lt('starts_at',range.toAt).neq('status','cancelled'),
+        supabase.from('projects').select('id,name,starts_on,ends_on,status').eq('org_id',me.org_id).or(`and(starts_on.gte.${range.from},starts_on.lt.${range.to}),and(ends_on.gte.${range.from},ends_on.lt.${range.to})`),
+        supabase.from('ministry_events').select('id,title,starts_at,ends_at,all_day,location,notes,cancelled').or(`ends_at.gte.${range.fromAt},and(ends_at.is.null,starts_at.gte.${range.fromAt})`).lt('starts_at',range.toAt),
+        supabase.from('leave_requests').select('id,profile_id,start_date,end_date,status,profiles!leave_requests_profile_id_fkey(full_name)').eq('status','approved').gte('end_date',range.from).lt('start_date',range.to),
+        supabase.from('work_items').select('id,ref,title,status,due_at').eq('org_id',me.org_id).neq('visibility','private').neq('kind','routine').gte('due_at',range.fromAt).lt('due_at',range.toAt),
       ]);
-      const failed=[meetings,projects,ministry,leave].find((row)=>row.error);
-      if(failed) throw failed.error;
+      if(request!==version.current)return;
+      const failed=[meetings,projects,ministry,leave,work].find(r=>r.error);if(failed)throw failed.error;
       const rows=[];
-      (meetings.data||[]).forEach((meeting)=>rows.push({id:"m-"+meeting.id,type:"Meeting",at:meeting.starts_at,title:meeting.title,meta:`${meeting.scope} · ${meeting.provider}`,meetingId:meeting.id}));
-      (ministry.data||[]).filter((event)=>!event.cancelled).forEach((event)=>rows.push({id:"e-"+event.id,type:"Ministry activity",at:event.starts_at,title:event.title,meta:event.location||"Location not recorded"}));
-      (projects.data||[]).forEach((project)=>{
-        if(project.starts_on&&project.starts_on>=dateKey(now)) rows.push({id:"ps-"+project.id,type:"Project",at:project.starts_on+"T00:00:00Z",title:project.name+" starts",meta:project.status,projectId:project.id});
-        if(project.ends_on&&project.ends_on>=dateKey(now)) rows.push({id:"pe-"+project.id,type:"Project",at:project.ends_on+"T00:00:00Z",title:project.name+" ends",meta:project.status,projectId:project.id});
-      });
-      (leave.data||[]).forEach((request)=>rows.push({id:"l-"+request.id,type:"Approved leave",at:request.start_date+"T00:00:00Z",title:request.profiles?.full_name||"CEAC member",meta:`${request.start_date} → ${request.end_date}`}));
-      setEvents(rows.sort((a,b)=>new Date(a.at)-new Date(b.at)));
-    }catch(err){setError(humanError(err,"Organisation calendar could not be loaded."));}
-    finally{setLoading(false);}
+      for(const m of meetings.data||[])rows.push(...expandCalendarEvent({id:`meeting-${m.id}`,kind:'meeting',date:calendarDay(m.starts_at),title:m.title,startsAt:m.starts_at,endsAt:m.ends_at,meta:when(m.starts_at),status:'Meeting',statusTone:'action',onClick:()=>openMeeting?.(m.id)},range.from,range.to));
+      for(const p of projects.data||[]){
+        for(const [date,label] of [[p.starts_on,'starts'],[p.ends_on,'ends']])if(date&&date>=range.from&&date<range.to)rows.push({id:`project-${p.id}-${label}`,kind:'projects',date,title:`${p.name} ${label}`,meta:p.status,status:'Project',onClick:()=>openProject?.(p.id)});
+      }
+      for(const e of ministry.data||[])if(!e.cancelled)for(const date of calendarSpan(calendarDay(e.starts_at),calendarDay(e.ends_at?new Date(new Date(e.ends_at).getTime()-1):e.starts_at),range.from,range.to))rows.push({id:`ministry-${e.id}-${date}`,kind:'ministry',date,title:e.title,startsAt:e.starts_at,endsAt:e.ends_at,allDay:e.all_day,meta:e.location||'Ministry activity',status:'Ministry',onClick:()=>setDetail(e)});
+      for(const l of leave.data||[])for(const date of calendarSpan(l.start_date,l.end_date,range.from,range.to))rows.push({id:`leave-${l.id}-${date}`,kind:'leave',date,title:`${l.profiles?.full_name||'CEAC member'} · Leave`,meta:`${l.start_date} → ${l.end_date}`,status:'Approved',statusTone:'success',allDay:true});
+      for(const w of work.data||[])rows.push({id:`work-${w.id}`,kind:'work',date:calendarDay(w.due_at),title:w.title,meta:w.ref,status:calendarWorkStatus(w.status),statusTone:['completed','self_certified'].includes(w.status)?'success':'neutral',onClick:()=>openItem?.(w.id)});
+      setEvents(rows);
+    }catch(err){if(request===version.current){setEvents([]);setError(humanError(err,'Organisation calendar could not be loaded.'));}}
+    finally{if(request===version.current)setLoading(false);}
   }
-
-  const visible=useMemo(()=>{
-    const cutoff=Date.now()+windowDays*864e5;
-    return events.filter((event)=>new Date(event.at).getTime()<=cutoff);
-  },[events,windowDays]);
-
-  const groups=useMemo(()=>{
-    const map={};
-    visible.forEach((event)=>{const key=dateKey(event.at);(map[key]=map[key]||[]).push(event);});
-    return Object.entries(map).map(([day,rows])=>({
-      key:day,
-      label:new Date(day+"T00:00:00Z").toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long"}),
-      events:rows.map((event)=>({
-        ...event,
-        kind:event.type==="Meeting"?"meeting":event.type==="Project"?"projects":event.type==="Approved leave"?"leave":"ministry",
-        icon:event.type==="Meeting"?"meeting":event.type==="Project"?"projects":event.type==="Approved leave"?"time":"ministry",
-        meta:event.type==="Meeting"?labelDate(event.at):event.meta,
-        status:event.type,
-        statusTone:event.type==="Meeting"?"action":event.type==="Approved leave"?"success":"neutral",
-        onClick:event.meetingId?()=>openMeeting?.(event.meetingId):event.projectId&&openProject?()=>openProject(event.projectId):undefined,
-      })),
-    }));
-  },[visible,openMeeting,openProject]);
-
-  const personalLabel=roleMode==="executive"?"Group Pastor · My calendar":"Administration · My calendar";
-  const sharedLabel=roleMode==="executive"?"Church calendar":"Organisation calendar";
-  const scopeControl=<div className="phase6-calendar-scope" role="tablist" aria-label={roleMode==="executive"?"Executive calendar scope":"Administration calendar scope"}>
-    <button type="button" role="tab" aria-selected={calendarScope==="my"} className={calendarScope==="my"?"is-selected":""} onClick={()=>setCalendarScope("my")}>My calendar</button>
-    <button type="button" role="tab" aria-selected={calendarScope==="organisation"} className={calendarScope==="organisation"?"is-selected":""} onClick={()=>setCalendarScope("organisation")}>{sharedLabel}</button>
+  const sharedLabel=roleMode==='executive'?'Church calendar':'Organisation calendar';
+  const scopeControl=<div className="phase6-calendar-scope" role="tablist" aria-label="Calendar scope">
+    <button type="button" role="tab" aria-selected={calendarScope==='my'} className={calendarScope==='my'?'is-selected':''} onClick={()=>setCalendarScope('my')}>My calendar</button>
+    <button type="button" role="tab" aria-selected={calendarScope==='organisation'} className={calendarScope==='organisation'?'is-selected':''} onClick={()=>setCalendarScope('organisation')}>{sharedLabel}</button>
   </div>;
-
-  if(calendarScope==="my") return <StaffCalendar
-    me={me}
-    openItem={openItem}
-    openMeeting={openMeeting}
-    statusLabel={personalLabel}
-    scopeControl={scopeControl}
-  />;
-
+  if(calendarScope==='my')return <StaffCalendar me={me} openItem={openItem} openMeeting={openMeeting} scheduleMeeting={scheduleMeeting} statusLabel={roleMode==='executive'?'Group Pastor · My calendar':'Administration · My calendar'} scopeControl={scopeControl}/>;
   return <div className="body ev2cal-role-page ev2cal-admin-page">
-    <CalendarPageHeader
-      eyebrow={roleMode==="executive"?"Church schedule":"Organisation schedule"}
-      title="Calendar"
-      description={roleMode==="executive"?"Your meetings, ministry events and project dates in one calendar.":"Upcoming meetings, ministry activities, project dates and approved leave in one chronological operating view."}
-      status={roleMode==="executive"?"Church timeline":"Organisation timeline"}
-      statusTone="action"
-      action={<Button icon="meeting" onClick={()=>scheduleMeeting?.({scope:"organisation",organisation:true})}>Schedule meeting</Button>}
-    />
-
+    <CalendarPageHeader eyebrow="Shared schedule" title="Calendar" description="Meetings, delivery dates and approved leave." action={<Button icon="meeting" onClick={()=>scheduleMeeting?.({scope:'organisation',organisation:true,startsAt:`${selectedDate}T09:00`})}>Schedule meeting</Button>}/>
     {scopeControl}
-
-    {error&&<ProductNotice
-      tone="error"
-      title="Calendar could not finish loading"
-      action={<button className="btn btn-ghost btn-sm" onClick={load}>Try again</button>}
-    >{error}</ProductNotice>}
-
-    <div className="ev2cal-admin-range">
-      <CalendarViewTabs
-        value={String(windowDays)}
-        onChange={(value)=>setWindowDays(Number(value))}
-        items={RANGE_ITEMS}
-        ariaLabel="Calendar range"
-      />
-      <span>{visible.length} recorded item{visible.length===1?"":"s"} in this range</span>
-    </div>
-
-    {loading?<LoadingState label="Loading organisation calendar…"/>:
-      visible.length===0
-        ?<StatePanel
-          state="empty"
-          icon="calendar"
-          title="Nothing upcoming in this range"
-          description="Meetings, project dates, ministry activities and approved leave will appear here when they are recorded."
-        />
-        :<CalendarTimeline groups={groups}/>
-    }
+    {error&&<ProductNotice tone="error" title="Calendar could not load" action={<Button variant="secondary" onClick={load}>Try again</Button>}>{error}</ProductNotice>}
+    {loading?<LoadingState label="Loading calendar…"/>:<CalendarExplorer me={me} scope="organisation" events={events} layers={LAYERS} defaultLayers={['meeting','projects','ministry','leave']} cursor={cursor} setCursor={setCursor} selectedDate={selectedDate} onSelectDate={setSelectedDate}/>}
+    {detail&&<Sheet onClose={()=>setDetail(null)}><div className="eyebrow">Ministry activity</div><h2>{detail.title}</h2><p>{when(detail.starts_at)}{detail.ends_at?` – ${when(detail.ends_at)}`:''}</p>{detail.location&&<p>{detail.location}</p>}{detail.notes&&<p>{detail.notes}</p>}<Button variant="secondary" onClick={()=>setDetail(null)}>Close</Button></Sheet>}
   </div>;
 }

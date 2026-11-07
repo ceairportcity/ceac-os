@@ -17,6 +17,7 @@ tests=(
   s6_hot_path_security_performance_gate.sql
   meeting_authority_gate.sql
   meeting_organiser_write_gate.sql
+  calendar_planning_gate.sql
   employment_history_gate.sql
   platform_audit_gate.sql
   capability_authority_gate.sql

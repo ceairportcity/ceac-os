@@ -138,7 +138,7 @@ for(const width of [390,1440]){
    await targetDay.click();
    await page.getByRole('tab',{name:'Tasks',exact:true}).click();
    await expect(page.getByRole('button',{name:/Synthetic future work/}).first()).toBeVisible();
-  }else await page.locator('.ev2cal-day-events').getByRole('button',{name:'Synthetic future work',exact:true}).click();
+  }else {await page.getByLabel("Month detail").selectOption("details");await page.locator('.ev2cal-day-events').getByRole('button',{name:'Synthetic future work',exact:true}).click();}
   await expect(page.getByRole('complementary',{name:'Selected day workspace'}).getByRole('heading',{name:date.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'}),exact:true})).toBeVisible();
   await expect(page.getByRole('tab',{name:'Tasks',exact:true})).toHaveAttribute('aria-selected','true');
  });

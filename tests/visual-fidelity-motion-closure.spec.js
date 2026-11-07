@@ -103,13 +103,15 @@ for (const viewport of [
     await page.goto("/?tab=calendar");
     const calendar = page.locator(".ev2cal-manager-page");
     await expect(calendar).toBeVisible({ timeout: 15000 });
-    const trigger = calendar.getByRole("button", { name: "View All", exact: true });
+    const trigger = calendar.getByRole("button", { name: /^Filter/ });
     await expect(trigger).toBeVisible();
     await trigger.click();
 
-    const sheet = page.locator(".sheet[role='dialog']");
+    const sheet = page.getByRole("dialog");
     await expect(sheet).toBeVisible();
-    const close = sheet.getByRole("button", { name: "Close dialog", exact: true });
+    await expect(sheet).toHaveCSS("opacity", "1");
+    await expect(sheet).toHaveCSS("transform", "none");
+    const close = sheet.getByRole("button", { name: "Close", exact: true });
     const closeBox = await close.boundingBox();
     expect(closeBox?.width || 0).toBeGreaterThanOrEqual(44);
     expect(closeBox?.height || 0).toBeGreaterThanOrEqual(44);
@@ -211,7 +213,7 @@ test("VF7C operational error and success feedback remain explicit and non-blocki
 
   const trigger = page.getByRole("button", { name: "Request funds", exact: true });
   await trigger.click();
-  const sheet = page.locator(".sheet[role='dialog']");
+  const sheet = page.getByRole("dialog");
   await expect(sheet).toBeVisible();
   await sheet.getByPlaceholder("Short request title").fill("VF7C fixture request");
   await sheet.getByPlaceholder("e.g. 850.00").fill("25.00");
@@ -302,9 +304,9 @@ for (const viewport of [
     await expect(day).toHaveAttribute("aria-pressed", "true");
     await expect(day.locator(".ev2cal-selection-indicator")).toBeVisible();
 
-    const trigger = calendar.getByRole("button", { name: /View / }).first();
+    const trigger = calendar.getByRole("button", { name: /^Filter/ }).first();
     await trigger.click();
-    const sheet = page.locator(".sheet[role='dialog']");
+    const sheet = page.getByRole("dialog");
     await expect(sheet).toBeVisible();
     await expect(sheet).toHaveCSS("opacity", "1");
     await page.keyboard.press("Escape");

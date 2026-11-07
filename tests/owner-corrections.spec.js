@@ -95,7 +95,9 @@ for(const width of [390,1440]){
   await page.goto(`/tests/fixtures/owner-corrections.html?screen=meeting&actor=${actor}`);
   await expect(page.getByText('Owner supplied agenda',{exact:true})).toBeVisible();
   await expect(page.getByRole('button',{name:'Save agenda',exact:true})).toHaveCount(0);
-  await expect(page.getByRole('textbox')).toHaveCount(0);
+  await expect(page.locator('.meeting-agenda-editor textarea')).toHaveCount(0);
+  await expect(page.getByRole('button',{name:'Edit meeting',exact:true})).toHaveCount(0);
+  await expect(page.locator('.meeting-private-notes textarea')).toBeVisible();
  });
  test(`recorded organiser retains agenda editing at ${width}px`,async({page})=>{
   await page.setViewportSize({width,height:1000});await api(page);

@@ -187,8 +187,8 @@ test("Phase 6B role calendars keep private and authorised scopes explicit", () =
   expect(manager).toContain('>Unit calendar</button>');
   expect(manager).toContain('import StaffCalendar from "./StaffCalendar"');
   expect(admin).toContain('>My calendar</button>');
-  expect(admin).toContain('"Organisation calendar"');
-  expect(admin).toContain('roleMode==="executive"');
+  expect(admin).toMatch(/Organisation calendar/);
+  expect(admin).toMatch(/roleMode==='executive'/);
   expect(navigation).toContain('{ key: "admin-calendar", label: "Calendar"');
   expect(navigation).toContain('{ key: "exec-calendar", label: "Calendar"');
   expect(app).toContain('tab === "exec-calendar"');
