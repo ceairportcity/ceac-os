@@ -263,21 +263,33 @@ export default function StaffCalendar({me,openItem,openMeeting,statusLabel="Staf
   }
 
   async function togglePersonalTask(task){
+    if(busy)return;
     setBusy(true);setError(null);
+    const patch=completedAt=>{
+      setPersonalTasks(rows=>rows.map(row=>row.id===task.id?{...row,completed_at:completedAt}:row));
+      setEvents(rows=>rows.map(row=>row.taskId===task.id?{...row,completed:Boolean(completedAt),raw:{...row.raw,completed_at:completedAt}}:row));
+    };
     const completedAt=task.completed_at?null:new Date().toISOString();
-    const {data:updated,error:updateError}=await supabase.from("personal_day_tasks").update({completed_at:completedAt}).eq("id",task.id).eq("profile_id",me.id).select("id,completed_at").single();
-    setBusy(false);
-    if(updateError){setError(humanError(updateError,"Your private task could not be updated."));return;}
-    setPersonalTasks(rows=>rows.map(row=>row.id===task.id?{...row,completed_at:updated.completed_at}:row));
-    setEvents(rows=>rows.map(row=>row.taskId===task.id?{...row,completed:Boolean(updated.completed_at),raw:{...row.raw,completed_at:updated.completed_at}}:row));
+    patch(completedAt);
+    try{
+      const {data:updated,error:updateError}=await supabase.from("personal_day_tasks").update({completed_at:completedAt}).eq("id",task.id).eq("profile_id",me.id).select("id,completed_at").single();
+      if(updateError)throw updateError;
+      patch(updated.completed_at);
+    }catch(error){patch(task.completed_at);setError(humanError(error,"Your private task could not be updated."));}
+    finally{setBusy(false);}
   }
 
   async function toggleChecklist(row){
+    if(busy)return;
     setBusy(true);setError(null);
-    const {data:updated,error:updateError}=await supabase.from("personal_day_task_checklist").update({completed_at:row.completed_at?null:new Date().toISOString()}).eq("id",row.id).eq("profile_id",me.id).select("id,completed_at").single();
-    setBusy(false);
-    if(updateError){setError(humanError(updateError,"That checklist item could not be updated."));return;}
-    setChecklistRows(rows=>rows.map(item=>item.id===row.id?{...item,completed_at:updated.completed_at}:item));
+    const patch=completedAt=>setChecklistRows(rows=>rows.map(item=>item.id===row.id?{...item,completed_at:completedAt}:item));
+    patch(row.completed_at?null:new Date().toISOString());
+    try{
+      const {data:updated,error:updateError}=await supabase.from("personal_day_task_checklist").update({completed_at:row.completed_at?null:new Date().toISOString()}).eq("id",row.id).eq("profile_id",me.id).select("id,completed_at").single();
+      if(updateError)throw updateError;
+      patch(updated.completed_at);
+    }catch(error){patch(row.completed_at);setError(humanError(error,"That checklist item could not be updated."));}
+    finally{setBusy(false);}
   }
 
   async function schedulePersonalTask(task){
@@ -321,7 +333,11 @@ export default function StaffCalendar({me,openItem,openMeeting,statusLabel="Staf
   }),[open]);
   const displayEvents=useMemo(()=>calendarEvents.map(event=>displayEvent(event)),[calendarEvents,displayEvent]);
 
-  const upcoming=[...calendarEvents].filter(event=>event.date>=dayKey(new Date())&&event.kind!=="personal" && !(event.kind==="work" && ["completed","self_certified","cancelled"].includes(event.workStatus))).sort((a,b)=>a.date.localeCompare(b.date)).slice(0,8).map(event=>displayEvent(event,true));
+  function renderUpcoming(visible){
+    const upcoming=visible.filter(event=>event.date>=accraDay(new Date())&&event.kind!=="personal"&&!(event.kind==="work"&&["completed","self_certified","cancelled"].includes(event.workStatus))).sort((a,b)=>a.date.localeCompare(b.date)).slice(0,8).map(event=>displayEvent(event,true));
+    return <div className="phase6-calendar-coming-up"><CalendarAgenda eyebrow="Shared commitments" title="Coming up" description="Upcoming commitments matching your Calendar filters." events={upcoming} emptyTitle="Nothing coming up" emptyDescription="No shared commitments match this view."/></div>;
+  }
+
 
   function renderDayWorkspace(filteredEvents,active){
   const selectedShared=filteredEvents.filter(event=>event.date===selectedDate&&event.kind!=="personal");
@@ -407,7 +423,6 @@ export default function StaffCalendar({me,openItem,openMeeting,statusLabel="Staf
       eyebrow="My workspace"
       title="Calendar"
       description="Your meetings, work and personal plans."
-      status={statusLabel}
       statusTone="action"
       action={<Button disabled={!personalPlanningReady || loading} onClick={()=>openComposer("event")}>+ Add</Button>}
     />
@@ -420,11 +435,11 @@ export default function StaffCalendar({me,openItem,openMeeting,statusLabel="Staf
     {notice&&<ProductNotice tone="success" title="Calendar">{notice}</ProductNotice>}
 
     {loading?<LoadingState label="Loading your calendar…"/>:<>
-      <CalendarExplorer me={me} scope="personal" events={displayEvents} layers={personalPlanningReady?FILTER_ITEMS.filter(item=>item.value!=="all"):FILTER_ITEMS.filter(item=>!["all","personal"].includes(item.value))} cursor={cursor} setCursor={setCursor} selectedDate={selectedDate} onSelectDate={key=>{setSelectedDate(key);setDayTab("schedule");}}>
+      <CalendarExplorer me={me} scope="personal" footer={renderUpcoming} events={displayEvents} layers={personalPlanningReady?FILTER_ITEMS.filter(item=>item.value!=="all"):FILTER_ITEMS.filter(item=>!["all","personal"].includes(item.value))} cursor={cursor} setCursor={setCursor} selectedDate={selectedDate} onSelectDate={key=>{setSelectedDate(key);setDayTab("schedule");}}>
         {renderDayWorkspace}
       </CalendarExplorer>
 
-      <div className="phase6-calendar-coming-up"><CalendarAgenda eyebrow="Shared commitments" title="Coming up" description="Upcoming Work, meetings, approved leave and ministry commitments. Private planning stays in your day workspace." events={upcoming} emptyTitle="Nothing coming up" emptyDescription="Nothing shared is recorded in this view."/></div>
+
     </>}
 
     {editingPrivateItem&&personalPlanningReady&&<PersonalPlanningEditor key={editingPrivateItem.id} me={me} item={editingPrivateItem} onClose={()=>setEditingPrivateItem(null)} onChanged={load}/>}

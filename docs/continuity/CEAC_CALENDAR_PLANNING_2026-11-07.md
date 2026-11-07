@@ -45,3 +45,13 @@ Final measured assets (all lazy routes combined): JS 2,646,563 bytes; CSS 767,11
 ## Continuation
 
 Use the existing branch `feature/calendar-planning-20261107` and its Calendar PR. Reuse valid evidence for unchanged areas. Inspect exact-head CI failures, fix their causes and rerun the affected checks; preserve mandatory final replay/security/role/browser gates. Review the actual phone/tablet/desktop screenshots before declaring visual acceptance. Do not merge or apply the migration while required verification is pending. No live subscription, two-way sync, all-invitee availability or production deployment has been completed.
+
+## First connected CI and focused corrections
+
+PR 212 first candidate: `2ccea450b8dda54f12d3d9e42e92c6a3d8054888` (exact local/remote tree match). CI build/source, Account Security, Migration Replay and Level B SQL/authority contracts passed. Quality Gate run `42325156492` is historical evidence for this candidate, not a passing release receipt.
+
+The first browser run verified all six new role/layout cases and meeting response/edit/export flow. It found a controlled private checkbox lag; local correction now updates immediately and rolls back on a rejected write, with a new negative browser case. Older tests also needed to follow the approved combined filters, private preparation and Tasks location of routines. Existing permission assertions remain: viewers cannot edit the organiser agenda or shared meeting details.
+
+Actual 390px screenshot review found that the seven-column desktop Week was unsuitable on a phone. The follow-up uses the seven-day selector plus a full-width selected-day timeline on phones, retains the weekly grid on larger devices, shortens the date header, removes repeated scope badges and avoids a blank hourly chart when the selected phone day has no timed appointments. Coming up follows the same filters. The filter uses the existing V2 modal rather than importing legacy primitives into the V2 family. Bundle limits remain unchanged and pass after removing unused styles.
+
+Follow-up source, bundle and browser evidence must be attached to its actual new commit; no historical check is promoted to a new-head success. Preserve the final eight browser shards, SQL/replay and security gates before release.

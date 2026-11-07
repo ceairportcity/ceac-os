@@ -189,7 +189,6 @@ export default function ManagerCalendar({ me, openItem, openProject, openMeeting
       eyebrow={me.unit_name}
       title="Calendar"
       description="Your unit’s meetings, work and important dates."
-      status="Unit schedule"
       statusTone="action"
       action={<Button icon="meeting" onClick={()=>scheduleMeeting?.({ scope:"unit", unitId:me.unit_id, unitName:me.unit_name,startsAt:`${selectedDate}T09:00` })}>Schedule meeting</Button>}
     />

@@ -214,7 +214,7 @@ for (const viewport of [
   });
 }
 
-test("Stage 12C legacy Sheet keeps focus and Escape behaviour under reduced motion", async ({ browser }) => {
+test("Calendar filter keeps focus and Escape behaviour under reduced motion", async ({ browser }) => {
   const { context, page } = await login(
     browser,
     "manager@ceac.local.test",
@@ -233,11 +233,11 @@ test("Stage 12C legacy Sheet keeps focus and Escape behaviour under reduced moti
 
   const dialog = page.getByRole("dialog");
   await expect(dialog).toBeVisible();
-  await expect(dialog).toBeFocused();
+  await expect(dialog.getByRole("button",{name:"Close",exact:true})).toBeFocused();
 
   const motion = await page.evaluate(() => {
-    const dialog = document.querySelector(".sheet");
-    const backdrop = document.querySelector(".sheet-bg");
+    const dialog = document.querySelector(".ceac-calendar-filter");
+    const backdrop = document.querySelector(".ev2c-overlay");
     const dialogStyle = dialog ? getComputedStyle(dialog) : null;
     const backdropStyle = backdrop ? getComputedStyle(backdrop) : null;
     return {

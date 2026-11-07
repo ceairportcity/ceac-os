@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Sheet } from '../../components/bits';
+import { ModalDialog } from '../components';
 import { CalendarAgenda, CalendarMonthGrid, CalendarPeriodControls, CalendarTimeline, CalendarViewTabs } from './CalendarFamilyV2';
 import { calendarDay, calendarDate, calendarDays, indexCalendarEvents, layoutCalendarDay, shiftCalendarDay } from '../../lib/calendarPlanning';
 
@@ -33,7 +33,7 @@ export function useCalendarPosition(me,scope,initialDate){
 }
 const labelDay=day=>calendarDate(day).toLocaleDateString('en-GB',{timeZone:'Africa/Accra',weekday:'long',day:'numeric',month:'long'});
 const time=value=>new Date(value).toLocaleTimeString('en-GB',{timeZone:'Africa/Accra',hour:'2-digit',minute:'2-digit'});
-export default function CalendarExplorer({me,scope,events,layers,cursor,setCursor,selectedDate,onSelectDate,children,defaultLayers}) {
+export default function CalendarExplorer({me,scope,events,layers,cursor,setCursor,selectedDate,onSelectDate,children,defaultLayers,footer}) {
   const [view,setView]=useCalendarPreference(me,scope,'view','month');
   const [density,setDensity]=useCalendarPreference(me,scope,'density','compact');
   const [chosen,setChosen]=useCalendarPreference(me,scope,'layers',defaultLayers||layers.map(l=>l.value));
@@ -50,7 +50,9 @@ export default function CalendarExplorer({me,scope,events,layers,cursor,setCurso
   const move=amount=>{let key;if(currentView==='week')key=shiftCalendarDay(selectedDate,amount*7);else{const d=calendarDate(calendarDay(cursor));d.setUTCMonth(d.getUTCMonth()+amount,1);key=calendarDay(d);}setCursor(calendarDate(key));onSelectDate(key);};
   const today=()=>{const key=calendarDay();setCursor(calendarDate(key));onSelectDate(key);};
   const month=cursor.toLocaleDateString('en-GB',{timeZone:'Africa/Accra',month:'long',year:'numeric'});
-  const period=currentView==='week'?`${labelDay(calendarDay(days[0]))} – ${labelDay(calendarDay(days[6]))}`:month;
+  const firstDay=days[0],lastDay=days[6];
+  const short=value=>value.toLocaleDateString('en-GB',{timeZone:'Africa/Accra',day:'numeric',month:'short'});
+  const period=currentView==='week'?`${firstDay.getUTCMonth()===lastDay.getUTCMonth()?firstDay.getUTCDate():short(firstDay)}–${short(lastDay)} ${lastDay.getUTCFullYear()}`:month;
   const groups=useMemo(()=>[...index.entries()].filter(([day])=>day.slice(0,7)===calendarDay(cursor).slice(0,7)).sort(([a],[b])=>a.localeCompare(b)).map(([key,rows])=>({key,label:labelDay(key),events:rows})),[index,cursor]);
   useEffect(()=>setAgendaLimit(100),[query,cursor.getUTCFullYear(),cursor.getUTCMonth(),chosen]);
   const agendaGroups=useMemo(()=>{let remaining=agendaLimit;return groups.flatMap(group=>{if(remaining<=0)return [];const rows=group.events.slice(0,remaining);remaining-=rows.length;return [{...group,events:rows}];});},[groups,agendaLimit]);
@@ -62,7 +64,7 @@ export default function CalendarExplorer({me,scope,events,layers,cursor,setCurso
       <div className="ceac-calendar-tools"><button type="button" className="btn btn-ghost btn-sm" aria-expanded={showFilters} onClick={()=>setShowFilters(!showFilters)}>Filter{active.length!==layers.length?` · ${active.length}`:''}</button>
       {currentView==='month'&&<label>Month detail<select aria-label="Month detail" value={density} onChange={e=>setDensity(e.target.value)}><option value="compact">Compact</option><option value="details">Details</option></select></label>}</div>
     </div>
-    {showFilters&&<Sheet onClose={()=>setShowFilters(false)}><h2>Show on calendar</h2><fieldset className="ceac-calendar-layers"><legend>Show together</legend>{layers.map(layer=><label key={layer.value}><input type="checkbox" checked={active.includes(layer.value)} onChange={()=>toggle(layer.value)}/>{layer.label}</label>)}<button type="button" className="btn btn-ghost btn-sm" onClick={()=>setChosen(layers.map(l=>l.value))}>Show all</button><input type="search" aria-label="Search this calendar" placeholder="Search this calendar" value={query} onChange={e=>setQuery(e.target.value)}/></fieldset><button type="button" className="btn" onClick={()=>setShowFilters(false)}>Done</button></Sheet>}
+    <ModalDialog open={showFilters} onClose={()=>setShowFilters(false)} title="Show on calendar" panelClassName="ceac-calendar-filter"><fieldset className="ceac-calendar-layers"><legend>Show together</legend>{layers.map(layer=><label key={layer.value}><input type="checkbox" checked={active.includes(layer.value)} onChange={()=>toggle(layer.value)}/>{layer.label}</label>)}<button type="button" className="btn btn-ghost btn-sm" onClick={()=>setChosen(layers.map(l=>l.value))}>Show all</button><input type="search" aria-label="Search this calendar" placeholder="Search this calendar" value={query} onChange={e=>setQuery(e.target.value)}/></fieldset><button type="button" className="btn" onClick={()=>setShowFilters(false)}>Done</button></ModalDialog>
     {query&&<button type="button" className="btn btn-ghost btn-sm" onClick={()=>setQuery('')}>Clear search: {query}</button>}
     <CalendarPeriodControls label={period} onPrevious={()=>move(-1)} onNext={()=>move(1)} onToday={today}/>
     <div className={`ceac-calendar-planner is-${currentView}`}>
@@ -72,6 +74,7 @@ export default function CalendarExplorer({me,scope,events,layers,cursor,setCurso
       </div>
       {(typeof children==='function'?children(visible,active):children)||<CalendarAgenda title={labelDay(selectedDate)} description="Meetings, plans and due work for this day." events={index.get(selectedDate)||[]} emptyTitle="Your day is clear" emptyDescription="No matching items for this date."/>}
     </div>
+    {footer?.(visible)}
   </section>;
 }
 function CalendarWeek({days,index,selectedDate,onSelectDate}) {
@@ -80,10 +83,10 @@ function CalendarWeek({days,index,selectedDate,onSelectDate}) {
   const first=Math.min(8,...timed.map(e=>Math.floor(e.start/60)));
   const last=Math.max(18,...timed.map(e=>Math.ceil(e.end/60)));
   const hours=Array.from({length:last-first},(_,i)=>first+i);
-  return <div className="ceac-calendar-week-scroll" tabIndex={0} aria-label="Weekly time schedule, Africa/Accra"><div className="ceac-calendar-week">
-    <div className="ceac-calendar-week-label">Accra</div>{columns.map(c=><button type="button" key={c.key} className="ceac-calendar-week-date" aria-pressed={c.key===selectedDate} onClick={()=>onSelectDate(c.key)}>{c.date.toLocaleDateString('en-GB',{timeZone:'Africa/Accra',weekday:'short',day:'numeric'})}</button>)}
-    <div className="ceac-calendar-week-label">All day<br/>Due work</div>{columns.map(c=><div key={c.key} className="ceac-calendar-week-other">{c.other.slice(0,6).map(e=><button type="button" key={e.id} disabled={!e.onClick} title={`${e.title} · ${e.status||''}`} onClick={e.onClick}><strong>{e.title}</strong><small>{e.status||'All day'}</small></button>)}{c.other.length>6&&<button type="button" onClick={()=>onSelectDate(c.key)}>+{c.other.length-6} more</button>}</div>)}
+  return <div className={`ceac-calendar-week-scroll${columns.find(c=>c.key===selectedDate)?.timed.length?' has-selected-times':''}`} tabIndex={0} aria-label="Weekly time schedule, Africa/Accra"><div className="ceac-calendar-week-days">
+    <div className="ceac-calendar-week-label">Accra</div>{columns.map(c=><button type="button" key={c.key} className="ceac-calendar-week-date" aria-pressed={c.key===selectedDate} onClick={()=>onSelectDate(c.key)}>{c.date.toLocaleDateString('en-GB',{timeZone:'Africa/Accra',weekday:'short',day:'numeric'})}{c.timed.length>0&&<span aria-hidden="true"> ·</span>}</button>)}
+    </div><div className="ceac-calendar-week"><div className="ceac-calendar-week-label">All day<br/>Due work</div>{columns.map(c=><div key={c.key} className={`ceac-calendar-week-other${c.key===selectedDate?' is-selected-day':''}`}>{c.other.slice(0,6).map(e=><button type="button" key={e.id} disabled={!e.onClick} title={`${e.title} · ${e.status||''}`} onClick={e.onClick}><strong>{e.title}</strong><small>{e.status||'All day'}</small></button>)}{c.other.length>6&&<button type="button" onClick={()=>onSelectDate(c.key)}>+{c.other.length-6} more</button>}</div>)}
     <div className="ceac-calendar-hours">{hours.map(h=><time key={h}>{String(h).padStart(2,'0')}:00</time>)}</div>
-    {columns.map(c=><div key={c.key} className="ceac-calendar-time-column" style={{height:hours.length*64}}>{hours.map(h=><div className="ceac-calendar-hour-line" key={h}/>)}{c.timed.map(e=><button type="button" key={e.id} disabled={!e.onClick} onClick={e.onClick} className={`ceac-calendar-time-event is-${e.kind}`} style={{top:(e.start-first*60)*64/60,height:(e.end-e.start)*64/60,left:`${e.lane/e.lanes*100}%`,width:`${100/e.lanes}%`}} title={`${e.title} · ${time(e.startsAt)}${e.endsAt?`–${time(e.endsAt)}`:''}`}><time>{time(e.startsAt)}{e.endsAt?`–${time(e.endsAt)}`:''}</time><strong>{e.title}</strong></button>)}</div>)}
-  </div></div>;
+    {columns.map(c=><div key={c.key} className={`ceac-calendar-time-column${c.key===selectedDate?' is-selected-day':''}`} style={{height:hours.length*64}}>{hours.map(h=><div className="ceac-calendar-hour-line" key={h}/>)}{c.timed.map(e=><button type="button" key={e.id} disabled={!e.onClick} onClick={e.onClick} className={`ceac-calendar-time-event is-${e.kind}`} style={{top:(e.start-first*60)*64/60,height:(e.end-e.start)*64/60,left:`${e.lane/e.lanes*100}%`,width:`${100/e.lanes}%`}} title={`${e.title} · ${time(e.startsAt)}${e.endsAt?`–${time(e.endsAt)}`:''}`}><time>{time(e.startsAt)}{e.endsAt?`–${time(e.endsAt)}`:''}</time><strong>{e.title}</strong></button>)}</div>)}
+  </div><p className="ceac-calendar-no-times">No timed appointments on this day.</p></div>;
 }

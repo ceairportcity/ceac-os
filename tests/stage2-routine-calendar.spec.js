@@ -42,22 +42,24 @@ test("real organisational routine dates appear in Staff and Unit Calendar withou
   expect(before.error).toBeNull();
   const own=await signIn(browser,"staff@ceac.local.test",390);contexts.push(own.context);
   await own.page.goto("/?tab=staff-calendar");
-  const schedule=own.page.locator(".phase6-day-schedule-view");
-  const row=schedule.locator(".phase6-schedule-row").filter({hasText:title});
+  await own.page.getByRole("tab",{name:"Tasks",exact:true}).click();
+  const schedule=own.page.locator(".phase6-day-task-view");
+  const row=schedule.locator(".phase6-day-shared-row").filter({hasText:title});
   await expect(row).toBeVisible();
   await expect(own.page.getByText("Routine dates unavailable",{exact:true})).toHaveCount(0);
   await expect(row).toContainText("Routine");
   await expect(own.page.locator(".ev2cal-staff-page")).not.toContainText(colleagueTitle);
   expect((await staff.rpc("record_routine_occurrence",{p_work_item_id:id,p_occurred_on:today,p_note:"Actual calendar inspection"})).error).toBeNull();
   await own.page.reload();
-  await expect(own.page.locator(".phase6-schedule-row").filter({hasText:title})).toContainText("Outcome recorded");
+  await own.page.getByRole("tab",{name:"Tasks",exact:true}).click();
+  await expect(own.page.locator(".phase6-day-shared-row").filter({hasText:title})).toContainText("Outcome recorded");
   const privateCopies=await staff.from("personal_day_tasks").select("id",{count:"exact",head:true}).eq("linked_work_item_id",id);
   expect(privateCopies.error).toBeNull();expect(privateCopies.count).toBe(0);
   expect(await own.page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
   await own.page.screenshot({path:"test-artifacts/routine-calendar-staff-phone.png",fullPage:true});
   // The chosen Calendar date must open that exact routine occurrence in Work,
   // and an independently linked future date must survive refresh.
-  await own.page.locator(".phase6-schedule-row").filter({hasText:title}).first().getByRole("button").click();
+  await own.page.locator(".phase6-day-shared-row").filter({hasText:title}).first().click();
   await expect(own.page).toHaveURL(new RegExp("item="+id+".*routineDate="+today));
   const editor=own.page.getByRole("region",{name:"Progress for a routine date"});
   await expect(editor.getByLabel("Scheduled date")).toHaveValue(today);

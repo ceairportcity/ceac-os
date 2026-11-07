@@ -866,24 +866,11 @@ button.ev2cal-event:hover {
   min-height: var(--ev2-control-min);
 }
 
-.phase6-note-boundary {
-  display: grid;
-  gap: var(--ev2-space-1);
-  padding: var(--ev2-space-3);
-  border-radius: var(--ev2-radius-card);
-  background: var(--ev2-action-soft);
-}
 
-.phase6-note-boundary strong {
-  color: var(--ev2-text);
-  font-size: var(--ev2-type-supporting);
-}
 
-.phase6-note-boundary span {
-  color: var(--ev2-text-secondary);
-  font-size: var(--ev2-type-supporting);
-  line-height: 1.45;
-}
+
+
+
 
 .phase6-day-note-editor {
   min-height: 17rem;
@@ -1392,9 +1379,10 @@ button.phase6-note-card {
 .ceac-calendar-main.density-compact .ev2cal-day-events { display:flex; flex-wrap:wrap; gap:4px; padding:4px 8px; }
 
 
-.ceac-calendar-main.density-compact .ev2cal-more { font-size:10px; padding:0; }
+
 .ceac-calendar-week-scroll { max-width:100%; max-height:690px; overflow:auto; border:1px solid var(--ev2-line); border-radius:12px; overscroll-behavior:contain; }
-.ceac-calendar-week { display:grid; grid-template-columns:52px repeat(7,minmax(90px,1fr)); min-width:720px; background:var(--ev2-surface); }
+.ceac-calendar-week,.ceac-calendar-week-days { display:grid; grid-template-columns:52px repeat(7,minmax(90px,1fr)); min-width:720px; }
+.ceac-calendar-week { background:var(--ev2-surface); }
 .ceac-calendar-week-label { font-size:10px; color:var(--ev2-text-secondary); padding:12px 4px; }
 .ceac-calendar-week-date { padding:12px 4px; min-height:44px; font:inherit; font-size:12px; color:var(--ev2-text); border:0; border-bottom:1px solid var(--ev2-line); background:var(--ev2-surface); cursor:pointer; }
 .ceac-calendar-week-date[aria-pressed="true"] { color:var(--appearance-ev2-action,var(--ev2-action)); font-weight:700; box-shadow:inset 0 -2px currentColor; }
@@ -1422,7 +1410,7 @@ button.phase6-note-card {
  .ceac-calendar-tools button,.ceac-calendar-tools select { min-height:44px; }
  .ceac-calendar-main.density-compact .ev2cal-day { min-height:54px; }
  .ceac-calendar-main.density-compact .ev2cal-day-events { padding:2px 4px; gap:3px; }
- .ceac-calendar-main .ev2cal-day-button { min-height:36px; }
+
  .ceac-calendar-main.density-details .ev2cal-day { min-height:84px; }
  .ceac-calendar-main.density-details .ev2cal-event { font-size:10px; }
  .ceac-calendar-planner { gap:12px; }
@@ -1442,3 +1430,22 @@ button.phase6-note-card {
 }
 .ceac-calendar-connection { border-top:1px solid var(--ev2-line); padding-top:12px; font-size:13px; color:var(--ev2-text-secondary); }
 .ceac-calendar-connection summary { min-height:44px; display:list-item; align-content:center; cursor:pointer; }
+ .ceac-calendar-explorer .ev2cal-period { display:grid; grid-template-columns:44px minmax(0,1fr) 44px auto; gap:8px; padding:8px; }
+.ceac-calendar-explorer .ev2cal-period-label { font-size:14px; }
+.ceac-calendar-explorer .ev2cal-period > .ev2c-button { grid-column:auto; min-width:48px; min-height:44px; padding-inline:8px; }
+.ceac-calendar-explorer .ev2cal-period > .ev2c-button svg { display:none; }
+@media (max-width:599px) {
+ .ceac-calendar-week-days { min-width:0; grid-template-columns:repeat(7,minmax(0,1fr)); }
+ .ceac-calendar-week-days > .ceac-calendar-week-label { display:none; }
+ .ceac-calendar-week-date { padding:10px 2px; font-size:11px; }
+ .ceac-calendar-week { min-width:0; grid-template-columns:44px minmax(0,1fr); }
+ .ceac-calendar-week-other:not(.is-selected-day),.ceac-calendar-time-column:not(.is-selected-day) { display:none; }
+ .ceac-calendar-time-event { font-size:13px; }
+ .ceac-calendar-time-event time { font-size:11px; }
+}
+
+.ceac-calendar-no-times { display:none; }
+@media (max-width:599px) {
+ .ceac-calendar-week-scroll:not(.has-selected-times) .ceac-calendar-hours,.ceac-calendar-week-scroll:not(.has-selected-times) .ceac-calendar-time-column { display:none; }
+ .ceac-calendar-week-scroll:not(.has-selected-times) .ceac-calendar-no-times { display:block; margin:12px; font-size:12px; }
+}

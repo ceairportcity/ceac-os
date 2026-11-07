@@ -53,7 +53,7 @@ export default function AdminCalendar({me,openItem,openMeeting,scheduleMeeting,r
   </div>;
   if(calendarScope==='my')return <StaffCalendar me={me} openItem={openItem} openMeeting={openMeeting} scheduleMeeting={scheduleMeeting} statusLabel={roleMode==='executive'?'Group Pastor · My calendar':'Administration · My calendar'} scopeControl={scopeControl}/>;
   return <div className="body ev2cal-role-page ev2cal-admin-page">
-    <CalendarPageHeader eyebrow="Shared schedule" title="Calendar" description="Meetings, delivery dates and approved leave." status={sharedLabel} action={<Button icon="meeting" onClick={()=>scheduleMeeting?.({scope:'organisation',organisation:true,startsAt:`${selectedDate}T09:00`})}>Schedule meeting</Button>}/>
+    <CalendarPageHeader eyebrow="Shared schedule" title="Calendar" description="Meetings, delivery dates and approved leave." action={<Button icon="meeting" onClick={()=>scheduleMeeting?.({scope:'organisation',organisation:true,startsAt:`${selectedDate}T09:00`})}>Schedule meeting</Button>}/>
     {scopeControl}
     {error&&<ProductNotice tone="error" title="Calendar could not load" action={<Button variant="secondary" onClick={load}>Try again</Button>}>{error}</ProductNotice>}
     {loading?<LoadingState label="Loading calendar…"/>:<CalendarExplorer me={me} scope="organisation" events={events} layers={LAYERS} defaultLayers={['meeting','projects','ministry','leave']} cursor={cursor} setCursor={setCursor} selectedDate={selectedDate} onSelectDate={setSelectedDate}/>}

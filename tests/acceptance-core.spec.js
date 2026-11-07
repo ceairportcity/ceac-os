@@ -756,7 +756,7 @@ test("A Manager can schedule a Unit meeting with an explicit audience and Staff 
     await expect(page.getByRole("heading", { name: "Meeting workspace" })).toBeVisible();
     await expect(page.getByText("Prepare your own notes now. Shared decisions open when the meeting starts.",{exact:true})).toBeVisible();
     await expect(page.getByRole("button",{name:"Save my notes",exact:true})).toBeVisible();
-    await expect(page.getByText("My notes", { exact: true })).toHaveCount(0);
+    await expect(page.getByText("My notes", { exact: true })).toBeVisible();
     await context.close();
   }
 });
