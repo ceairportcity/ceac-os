@@ -39,17 +39,20 @@ for(const [role,width] of [['staff',390],['staff',1024],['manager',390],['manage
  await page.goto(`/tests/fixtures/calendar-planning.html?role=${role}`);
  await expect(page.getByRole('heading',{name:'Calendar',exact:true})).toBeVisible();
  await expect(page.getByRole('grid')).toBeVisible();
- const heading=await page.locator('.ev2cal-page-head').boundingBox();
- const controls=await page.locator('.ceac-calendar-controls').boundingBox();
+ // Compare neighbouring *visible* pieces: role scope tabs and genuine
+ // notices must not be misclassified as unused whitespace.
  const spacing=await page.evaluate(()=>{
   const explorer=document.querySelector('.ceac-calendar-explorer');
-  const header=document.querySelector('.ev2cal-page-head');
-  const nodes=[...explorer.parentElement.children].map(el=>({tag:el.tagName,cls:String(el.className).slice(0,120),y:Math.round(el.getBoundingClientRect().y),bottom:Math.round(el.getBoundingClientRect().bottom),height:Math.round(el.getBoundingClientRect().height),marginTop:getComputedStyle(el).marginTop,marginBottom:getComputedStyle(el).marginBottom,display:getComputedStyle(el).display}));
-  const ec=getComputedStyle(explorer);const parent=getComputedStyle(explorer.parentElement);
-  return {nodes,explorerY:explorer.getBoundingClientRect().top,headerBottom:header.getBoundingClientRect().bottom,explorerMargin:ec.marginTop,parentLayout:parent.display,parentGap:parent.gap};
+  const elements=[...explorer.parentElement.children];
+  const before=elements.slice(0,elements.indexOf(explorer)+1).filter(el=>{
+   const rect=el.getBoundingClientRect();
+   return rect.height>0&&getComputedStyle(el).display!=='none';
+  });
+  const gaps=before.slice(1).map((el,i)=>el.getBoundingClientRect().top-before[i].getBoundingClientRect().bottom);
+  return {largestUnusedGap:Math.max(0,...gaps),notices:[...document.querySelectorAll('.ev2cal-role-page .product-notice-error')].map(n=>n.innerText)};
  });
- console.log('CALENDAR_LAYOUT '+role+' '+width+' '+JSON.stringify(spacing));
- expect(controls.y-(heading.y+heading.height)).toBeLessThanOrEqual(80);
+ if(spacing.notices.length)console.log('CALENDAR_NOTICES '+role+' '+width+' '+JSON.stringify(spacing.notices));
+ expect(spacing.largestUnusedGap,'Calendar must not insert empty space between visible controls').toBeLessThanOrEqual(24);
  if(width<600){
   await expect(page.getByRole('button',{name:'Show full month'})).toBeVisible();
   await expect(page.locator('.ev2cal-day:visible')).toHaveCount(7);
