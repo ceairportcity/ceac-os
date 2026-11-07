@@ -161,7 +161,7 @@ test('saved journal is discoverable by date and protected when leaving personal 
  await page.getByLabel('Search private notes').fill('8 Nov 2026');
  await expect.poll(()=>fixture.requests.some(req=>req.name==='personal_day_notes'&&
    new URL(req.url).searchParams.get('or')?.includes('note_date.eq.2026-11-08'))).toBe(true);
- await expect(page.getByText('For 8 Nov 2026')).toBeVisible();
+ await expect(page.getByRole('button',{name:/For 8 Nov 2026.*Open journal/})).toBeVisible();
  await page.locator('.phase6-note-card').filter({hasText:'Saved for Sunday'}).click();
  await expect(page.getByRole('tab',{name:'Notes',exact:true}).last()).toHaveAttribute('aria-selected','true');
  const journal=page.getByLabel('Private day notes');
@@ -222,6 +222,14 @@ test('dated and standalone notes save separately, search by title, and can be mo
  await page.getByLabel('Edit note date').fill('2026-11-09');
  await page.getByRole('button',{name:'Save changes'}).click();
  expect(fixture.getNotes().find(note=>note.title==='First dated note').dated_for).toBe('2026-11-09');
+ await page.getByRole('button',{name:'Notes',exact:true}).click();
+ const standalone=library.getByRole('button',{name:/Undated preparation.*Edit or delete/});
+ await standalone.click();
+ page.once('dialog',dialog=>dialog.accept());
+ await page.getByRole('button',{name:'Delete note',exact:true}).click();
+ await page.getByRole('button',{name:'Notes',exact:true}).click();
+ await expect(library.getByText('Second dated note',{exact:true})).toBeVisible();
+ await expect(standalone).toHaveCount(0);
  const noteReads=fixture.requests.filter(req=>req.name==='personal_day_notes'&&req.method==='GET');
  expect(noteReads.every(req=>req.url.includes('profile_id=eq.'))).toBe(true);
 });

@@ -96,7 +96,10 @@ export default function PersonalNotesLibrary({ me, revision = 0, onClose, onNew,
               <span>{note.note_kind === "daily" ? "Journal" : (note.note_date || note.dated_for) ? "Dated" : "Note"}</span>
               <span>
                 <strong>{note.note_kind === "daily" ? "Daily journal" : note.title || "Untitled note"}</strong>
-                <small>{(note.note_date || note.dated_for) ? "For " + noteDate(note.note_date || note.dated_for) : "Standalone"} · Edited {new Date(note.updated_at).toLocaleDateString("en-GB", { timeZone: "Africa/Accra", day: "numeric", month: "short" })}</small>
+                <small>
+                  {(note.note_date || note.dated_for) ? "For " + noteDate(note.note_date || note.dated_for) : "Standalone"} · Edited {new Date(note.updated_at).toLocaleDateString("en-GB", { timeZone: "Africa/Accra", day: "numeric", month: "short" })}
+                  {" · "}{note.note_kind === "daily" ? "Open journal" : "Edit or delete"}
+                </small>
               </span>
             </span>
             <p>{note.body.slice(0, 180)}{note.body.length > 180 ? "…" : ""}</p>
