@@ -235,6 +235,8 @@ test("Calendar filter keeps focus and Escape behaviour under reduced motion", as
   await expect(dialog).toBeVisible();
   await expect(dialog.getByRole("button",{name:"Close",exact:true})).toBeFocused();
 
+  await expect(dialog).toHaveCSS("opacity","1");
+  await expect(page.locator(".ev2c-overlay")).toHaveCSS("opacity","1");
   const motion = await page.evaluate(() => {
     const dialog = document.querySelector(".ceac-calendar-filter");
     const backdrop = document.querySelector(".ev2c-overlay");
