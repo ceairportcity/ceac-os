@@ -3,6 +3,7 @@ import { supabase } from "../lib/supabase";
 import useRoutineCalendar from "../lib/useRoutineCalendar";
 import CalendarExplorer, { useCalendarPosition } from "../experience-v2/calendar/CalendarExplorer";
 import { calendarWorkStatus, calendarWindow, calendarSpan, calendarDate } from "../lib/calendarPlanning";
+import { calendarJournalLeaveEvent } from "../lib/calendarJournalNavigation";
 import { routineCalendarStatus } from "../lib/readRoutineCalendar.js";
 import { FieldGroup, LoadingState, ProductNotice, Sheet } from "../components/bits";
 import { Button } from "../experience-v2/components";
@@ -112,24 +113,34 @@ export default function StaffCalendar({me,openItem,openMeeting,statusLabel="Staf
       }).finally(()=>{if(active)setWorkOptionsLoading(false);});
     return()=>{active=false;};
   },[composer,composerType,me.id,me.org_id]);
-  useEffect(()=>{
-    const row=dayNotes.find(note=>note.note_date===selectedDate&&note.note_kind==="daily");
-    setNoteDraft(row?.body||"");
-  },[selectedDate,dayNotes]);
-
   const journalRow=dayNotes.find(note=>note.note_date===selectedDate&&note.note_kind==="daily");
-  const journalDirty=dayTab==="notes"&&noteDraft!==(journalRow?.body||"");
+  const savedJournal=journalRow?.body||"";
+  useEffect(()=>{setNoteDraft(savedJournal);},[selectedDate,savedJournal]);
+  const journalDirty=dayTab==="notes"&&noteDraft!==savedJournal;
+  const journalDirtyRef=useRef(false);
+  journalDirtyRef.current=journalDirty;
+  const protectJournal=useCallback(()=>{
+    if(!journalDirtyRef.current)return true;
+    if(!window.confirm("Discard unsaved changes to your daily journal?"))return false;
+    journalDirtyRef.current=false;
+    setNoteDraft(savedJournal);
+    return true;
+  },[savedJournal]);
   useEffect(()=>{
     if(!journalDirty)return;
     const warn=event=>{event.preventDefault();event.returnValue="";};
+    const guard=event=>{if(!protectJournal())event.preventDefault();};
     window.addEventListener("beforeunload",warn);
-    return ()=>window.removeEventListener("beforeunload",warn);
-  },[journalDirty]);
-  const protectJournal=useCallback(()=>!journalDirty||window.confirm("Discard unsaved changes to your daily journal?"),[journalDirty]);
+    window.addEventListener(calendarJournalLeaveEvent,guard);
+    return ()=>{
+      window.removeEventListener("beforeunload",warn);
+      window.removeEventListener(calendarJournalLeaveEvent,guard);
+    };
+  },[journalDirty,protectJournal]);
   const selectCalendarDate=useCallback(key=>{
-    if(key!==selectedDate&&!protectJournal())return false;
+    if(!protectJournal())return false;
     setSelectedDate(key);setDayTab("schedule");return true;
-  },[selectedDate,protectJournal,setSelectedDate]);
+  },[protectJournal,setSelectedDate]);
   const switchDayTab=key=>{if(key!==dayTab&&!protectJournal())return;setDayTab(key);};
 
   async function load(){

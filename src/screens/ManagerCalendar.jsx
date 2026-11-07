@@ -6,6 +6,7 @@ import { Sheet, ProductNotice, LoadingState } from "../components/bits";
 import { humanError } from "../lib/productLanguage";
 import { Button } from "../experience-v2/components";
 import StaffCalendar from "./StaffCalendar";
+import { canLeaveCalendarJournal } from "../lib/calendarJournalNavigation";
 import CalendarExplorer, { useCalendarPosition } from "../experience-v2/calendar/CalendarExplorer";
 import { calendarWorkStatus, calendarWindow, calendarSpan, expandCalendarEvent } from "../lib/calendarPlanning";
 import { CalendarPageHeader } from "../experience-v2/calendar/CalendarFamilyV2";
@@ -172,7 +173,7 @@ export default function ManagerCalendar({ me, openItem, openProject, openMeeting
 
   const scopeControl=<div className="phase6-calendar-scope" role="tablist" aria-label="Manager calendar scope">
     <button type="button" role="tab" aria-selected={calendarScope==="my"} className={calendarScope==="my"?"is-selected":""} onClick={()=>setCalendarScope("my")}>My calendar</button>
-    <button type="button" role="tab" aria-selected={calendarScope==="unit"} className={calendarScope==="unit"?"is-selected":""} onClick={()=>setCalendarScope("unit")}>Unit calendar</button>
+    <button type="button" role="tab" aria-selected={calendarScope==="unit"} className={calendarScope==="unit"?"is-selected":""} onClick={()=>{if(canLeaveCalendarJournal())setCalendarScope("unit");}}>Unit calendar</button>
   </div>;
 
   if(calendarScope==="my") return <StaffCalendar

@@ -7,6 +7,7 @@ import OverviewNotifications from "./components/OverviewNotifications";
 import { openSession } from "./lib/session";
 import { useForegroundPresence } from "./lib/useForegroundPresence";
 import { validRoutineDate } from "./lib/routineDateRoute";
+import { canLeaveCalendarJournal } from "./lib/calendarJournalNavigation";
 import SignIn from "./screens/SignIn";
 const AccountPassword = lazy(() => import("./screens/AccountPassword"));
 import { AppTopBar, MobileTopBar, Tabs, SideNav } from "./experience-v2/shell";
@@ -133,6 +134,7 @@ export default function App() {
   const [bootError, setBootError] = useState(null);
   const initialRoute = routeFromLocation();
   const [tab, setTab] = useState(initialRoute.tab);
+  const activeRoute = useRef({ tab: initialRoute.tab, url: window.location.href, state: window.history.state });
   const [directory, setDirectory] = useState(initialRoute.directory);
   const [setting, setSetting] = useState(initialRoute.setting);
   const [settingsReturn, setSettingsReturn] = useState(initialRoute.settingsReturn);
@@ -208,7 +210,15 @@ export default function App() {
         setTimeout(() => boot(), 0);
       }
     });
-    const onPopState = () => applyRoute(routeFromLocation());
+    const onPopState = () => {
+      const next = routeFromLocation();
+      const previous = activeRoute.current;
+      if ((next.tab !== previous.tab || next.tab === "personal-calendar") && !canLeaveCalendarJournal()) {
+        window.history.pushState(previous.state, "", previous.url);
+        return;
+      }
+      applyRoute(next);
+    };
     window.addEventListener("popstate", onPopState);
     return () => {
       ++bootEpoch.current;
@@ -273,6 +283,7 @@ export default function App() {
   }
 
   function applyRoute(route) {
+    activeRoute.current = { tab: route.tab, url: window.location.href, state: window.history.state };
     setTab(route.tab || "home");
     setDirectory(route.tab === "exec-organisation" ? route.directory || null : null);
     setSetting(route.setting || null);
@@ -333,6 +344,7 @@ export default function App() {
     }
     const query = params.toString();
     const url = window.location.pathname + (query ? `?${query}` : "");
+    if ((next.tab !== tab || next.tab === "personal-calendar") && !canLeaveCalendarJournal()) return;
     window.history[replace ? "replaceState" : "pushState"]({ ceacRoute: true }, "", url);
     applyRoute(next);
   }

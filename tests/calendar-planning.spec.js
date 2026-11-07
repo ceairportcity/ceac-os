@@ -44,6 +44,8 @@ async function mock(page,{failTaskUpdate=false,notesSeed=[]}={}){
     return (!lower||date>=lower)&&(!upper||date<upper);
    });
    const pattern=url.searchParams.get('or');
+   const exactDate=pattern?.match(/note_date\.eq\.(\d{4}-\d{2}-\d{2}),dated_for\.eq\.\1/)?.[1];
+   if(exactDate)found=found.filter(note=>note.note_date===exactDate||note.dated_for===exactDate);
    if(pattern?.includes('note_date.not.is.null'))found=found.filter(note=>note.note_date||note.dated_for);
    if(pattern){const match=pattern.match(/title\.ilike\.%(.*?)%/);const term=match?.[1]?.toLowerCase();if(term)found=found.filter(note=>(note.title||'').toLowerCase().includes(term)||(note.body||'').toLowerCase().includes(term));}
    return reply(found);
@@ -147,15 +149,19 @@ test('meeting response persists, calendar export is a real file, preparation not
  const download=page.waitForEvent('download');await page.getByRole('button',{name:'Download calendar event'}).click();expect((await download).suggestedFilename()).toBe('ceac-meeting.ics');
 });
 
-test('saved journal is discoverable by its calendar date and protected from accidental discard',async({page})=>{
+test('saved journal is discoverable by date and protected when leaving personal Calendar',async({page})=>{
  await page.clock.setFixedTime(new Date('2026-11-07T12:00:00Z'));
  const source={id:'saved-journal',note_date:'2026-11-08',note_kind:'daily',title:null,
    body:'Saved for Sunday rather than Saturday',updated_at:'2026-11-07T00:42:00Z',created_at:'2026-11-07T00:42:00Z'};
  const fixture=await mock(page,{notesSeed:[source]});
- await page.goto('/tests/fixtures/calendar-planning.html?role=staff');
+ await page.goto('/tests/fixtures/calendar-planning.html?role=manager');
+ await page.getByRole('tab',{name:'My calendar',exact:true}).click();
  await page.getByRole('button',{name:'Notes',exact:true}).click();
  await expect(page.getByRole('heading',{name:'Notes',exact:true})).toBeVisible();
- await expect(page.getByText('For 8 Nov 2026')).toBeVisible();
+ await page.getByLabel('Search private notes').fill('8 Nov 2026');
+ await expect.poll(()=>fixture.requests.some(req=>req.name==='personal_day_notes'&&
+   new URL(req.url).searchParams.get('or')?.includes('note_date.eq.2026-11-08'))).toBe(true);
+ await expect(page.getByRole('button',{name:/For 8 Nov 2026.*Open journal/})).toBeVisible();
  await page.locator('.phase6-note-card').filter({hasText:'Saved for Sunday'}).click();
  await expect(page.getByRole('tab',{name:'Notes',exact:true}).last()).toHaveAttribute('aria-selected','true');
  const journal=page.getByLabel('Private day notes');
@@ -163,6 +169,9 @@ test('saved journal is discoverable by its calendar date and protected from acci
  await journal.fill('An unsaved journal edit');
  page.once('dialog',dialog=>dialog.dismiss());
  await page.locator('.ev2cal-day-button').nth(15).click();
+ await expect(journal).toHaveValue('An unsaved journal edit');
+ page.once('dialog',dialog=>dialog.dismiss());
+ await page.getByRole('tab',{name:'Unit calendar',exact:true}).click();
  await expect(journal).toHaveValue('An unsaved journal edit');
  await page.getByRole('button',{name:'Save journal'}).click();
  await expect(journal).toHaveValue('An unsaved journal edit');
@@ -192,6 +201,18 @@ test('dated and standalone notes save separately, search by title, and can be mo
  expect(fixture.getNotes().find(note=>note.title==='Undated preparation').dated_for).toBeNull();
  await page.getByLabel('Search private notes').fill('Undated preparation');
  await expect(page.locator('.phase6-note-card').filter({hasText:'Undated preparation'})).toBeVisible();
+ await page.getByLabel('Search private notes').fill('2026-11-08');
+ const library=page.getByLabel('Saved private notes');
+ await expect(library.getByText('First dated note',{exact:true})).toBeVisible();
+ await expect(library.getByText('Second dated note',{exact:true})).toBeVisible();
+ await expect(library.getByText('Undated preparation',{exact:true})).toHaveCount(0);
+ for(const width of [390,1024,1440]){
+  await page.setViewportSize({width,height:950});
+  await expect(page.getByLabel('Search private notes')).toBeVisible();
+  const panel=await page.getByRole('dialog').boundingBox();
+  expect(panel.x).toBeGreaterThanOrEqual(0);
+  expect(panel.x+panel.width).toBeLessThanOrEqual(width+1);
+ }
  await page.getByLabel('Search private notes').fill('');
  await page.getByRole('tab',{name:'Dated',exact:true}).click();
  await page.getByLabel('Search private notes').fill('Undated preparation');
@@ -201,6 +222,14 @@ test('dated and standalone notes save separately, search by title, and can be mo
  await page.getByLabel('Edit note date').fill('2026-11-09');
  await page.getByRole('button',{name:'Save changes'}).click();
  expect(fixture.getNotes().find(note=>note.title==='First dated note').dated_for).toBe('2026-11-09');
+ await page.getByRole('button',{name:'Notes',exact:true}).click();
+ const standalone=library.getByRole('button',{name:/Undated preparation.*Edit or delete/});
+ await standalone.click();
+ page.once('dialog',dialog=>dialog.accept());
+ await page.getByRole('button',{name:'Delete note',exact:true}).click();
+ await page.getByRole('button',{name:'Notes',exact:true}).click();
+ await expect(library.getByText('Second dated note',{exact:true})).toBeVisible();
+ await expect(standalone).toHaveCount(0);
  const noteReads=fixture.requests.filter(req=>req.name==='personal_day_notes'&&req.method==='GET');
  expect(noteReads.every(req=>req.url.includes('profile_id=eq.'))).toBe(true);
 });

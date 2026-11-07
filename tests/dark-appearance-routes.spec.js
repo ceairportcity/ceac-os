@@ -84,8 +84,15 @@ for(const width of [390,1440])for(const role of roles)test(`Dark appearance stay
   for(const route of role.routes){
    await page.goto(route==='home'?'/':`/?tab=${route}`);
    await expect(page.locator('.route-fallback')).toHaveCount(0);
-   await page.waitForLoadState('networkidle');
    await expect(page.locator('.app')).toBeVisible();
+   if(role.key==='compliance'&&route==='home'){
+    // Overview can have background requests after its visible content is ready.
+    await expect(page.locator('.app-content .staff-home')).toBeVisible();
+    await expect(page.getByLabel('Loading Today',{exact:true})).toHaveCount(0);
+    await page.evaluate(()=>document.fonts.ready);
+   }else{
+    await page.waitForLoadState('networkidle');
+   }
    await inspect(route);
    if(route==='home'){
     if(width>900&&role.key==='executive'){
