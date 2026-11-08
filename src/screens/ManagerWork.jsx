@@ -1,3 +1,4 @@
+import { useEditorPosition } from "../lib/useEditorPosition";
 import WorkOversightWorkspace from "../components/WorkOversight";
 import { useEffect, useMemo, useRef, useState } from "react";
 import ManagerRoutineOccurrences from "../components/ManagerRoutineOccurrences";
@@ -20,7 +21,7 @@ const COMPLETE = new Set(["completed", "self_certified", "cancelled"]);
 
 export default function ManagerWork({ me, openItem, goAssign }) {
   const [view, setView] = useState("mine");
-  const [addingMyWork, setAddingMyWork] = useState(false);
+  const [addingMyWork, setAddingMyWork] = useEditorPosition(me, "manager-own-work", false);
   const [selectedWorkId, setSelectedWorkId] = useState(null);
   const [mine, setMine] = useState([]);
   const [given, setGiven] = useState([]);
@@ -37,7 +38,6 @@ export default function ManagerWork({ me, openItem, goAssign }) {
 
   useEffect(() => {
     const request = ++readGeneration.current;
-    setAddingMyWork(false);
     setSelectedWorkId(null);
     void load(request, actorScope);
     return () => { readGeneration.current += 1; };

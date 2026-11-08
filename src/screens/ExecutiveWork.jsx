@@ -1,3 +1,4 @@
+import { useEditorPosition } from "../lib/useEditorPosition";
 import WorkOversightWorkspace from "../components/WorkOversight";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
@@ -19,7 +20,7 @@ const CLOSED = new Set(["completed", "self_certified", "cancelled"]);
 
 export default function ExecutiveWork({ me, openItem, goAssign }) {
   const [view, setView] = useState("mine");
-  const [addingMyWork, setAddingMyWork] = useState(false);
+  const [addingMyWork, setAddingMyWork] = useEditorPosition(me, "executive-own-work", false);
   const [selectedWorkId, setSelectedWorkId] = useState(null);
   const [mine, setMine] = useState([]);
   const [given, setGiven] = useState([]);
@@ -33,7 +34,6 @@ export default function ExecutiveWork({ me, openItem, goAssign }) {
 
   useEffect(() => {
     const request = ++readGeneration.current;
-    setAddingMyWork(false);
     setSelectedWorkId(null);
     void load(request, actorScope);
     return () => { readGeneration.current += 1; };

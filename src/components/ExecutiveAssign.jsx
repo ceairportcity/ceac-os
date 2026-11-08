@@ -1,3 +1,4 @@
+import { useEditorPosition } from "../lib/useEditorPosition";
 import { lazy, Suspense, useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { FieldGroup, LoadingState, ProductNotice } from "./bits";
@@ -6,12 +7,15 @@ const Assign = lazy(() => import("../screens/Assign"));
 
 // The selected department is assignment context, never an invented membership
 // or a change to the authenticated actor's profile/authority.
-export default function ExecutiveAssign({ me, context = {}, back }) {
+export default function ExecutiveAssign({ me, context = {}, resuming = false, back }) {
   const [units, setUnits] = useState([]);
-  const [unitId, setUnitId] = useState(context.unitId || me.unit_id || "");
+  const [unitId, setUnitId] = useEditorPosition(me, "assignment-department", context.unitId || me.unit_id || "");
   const [pendingUnitId, setPendingUnitId] = useState(null);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState(null);
+  useEffect(() => {
+    if (!resuming) setUnitId(context.unitId || me.unit_id || "");
+  }, [context.unitId, me.unit_id, resuming]);
   useEffect(() => {
     let current = true;
     setReady(false); setUnits([]); setError(null);

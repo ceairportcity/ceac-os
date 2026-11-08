@@ -1,3 +1,5 @@
+import { useEditorPosition } from "../lib/useEditorPosition";
+import { useWorkFormDraft } from "../lib/useWorkFormDraft";
 import { outstandingActivityActions } from "../lib/workCompletion";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
@@ -37,7 +39,13 @@ function ActivityDiary({ me, item, prefillDate = "", prefillRequest = 0, compact
   const [success, setSuccess] = useState("");
   const [unavailable, setUnavailable] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [editor, setEditor] = useState(false);
+  const [resumeUpdate, setResumeUpdate] = useEditorPosition(me,`work-progress:${item.id}`,false);
+  const [editing, setEditing] = useState(false);
+  const editor = editing || resumeUpdate;
+  function setEditor(open) {
+    setEditing(open);
+    if (!open) setResumeUpdate(false);
+  }
   const [correctingId, setCorrectingId] = useState(null);
   const [entryKind,setEntryKind] = useState("update");
   const [removingId,setRemovingId] = useState(null);
@@ -67,7 +75,7 @@ function ActivityDiary({ me, item, prefillDate = "", prefillRequest = 0, compact
   const visibleSuccess = verified ? success : "";
   // Reset the previous identity and its draft before a new scope can submit.
   useEffect(() => {
-    setEditor(false); setCorrectingId(null); setEntryKind("update"); setRemovingId(null); setDate(ghanaDay()); setState("done");
+    setCorrectingId(null); setEntryKind("update"); setRemovingId(null); setDate(ghanaDay()); setState("done");
     setSummary(""); setOutcome(""); setNextAction(""); setNextActionOn(""); setMinutes(""); setEvidenceUrl("");
     setSuccess(""); setError("");
     setFiles([]);setWriteError("");savedActivity.current=null;uploadAttempts.current.clear();
@@ -81,6 +89,7 @@ function ActivityDiary({ me, item, prefillDate = "", prefillRequest = 0, compact
     setState("done");
     setSummary(""); setOutcome(""); setNextAction(""); setNextActionOn(""); setMinutes(""); setEvidenceUrl("");
     setError(""); setSuccess("");
+    setResumeUpdate(true);
     setEditor(true);
     sectionRef.current?.scrollIntoView?.({ behavior: "smooth", block: "start" });
   }, [prefillRequest, prefillDate]);
@@ -142,8 +151,18 @@ function ActivityDiary({ me, item, prefillDate = "", prefillRequest = 0, compact
     item.visibility !== "private" && item.confidential !== true
   ));
 
+  const recovery = useWorkFormDraft(me, editor && canRecord
+    ? `work-progress:${item.id}:${correctingId || "new"}` : "", {
+    entryKind, date, state, summary, outcome, nextAction, nextActionOn, minutes, evidenceUrl, planNext,
+  }, saved => {
+    setEntryKind(saved.entryKind);setDate(saved.date);setState(saved.state);setSummary(saved.summary);
+    setOutcome(saved.outcome);setNextAction(saved.nextAction);setNextActionOn(saved.nextActionOn);
+    setMinutes(saved.minutes);setEvidenceUrl(saved.evidenceUrl);setPlanNext(saved.planNext);
+  });
+
   function correct(entry) {
     if (entry.contributor_id !== me.id || busy || savedActivity.current || !verified) return;
+    setResumeUpdate(false);
     setCorrectingId(entry.id);
     setPlanNext(false);setFiles([]);setWriteError("");
     setDate(entry.activity_date);
@@ -159,7 +178,7 @@ function ActivityDiary({ me, item, prefillDate = "", prefillRequest = 0, compact
 
   async function save(event) {
     event.preventDefault();
-    if (busy || submitting.current || !verified || !canRecord || summary.trim().length < 3 || !date) return;
+    if (busy || submitting.current || !verified || !canRecord || !recovery.ready || summary.trim().length < 3 || !date) return;
     submitting.current = true;
     setBusy(true);
     setError("");
@@ -178,10 +197,13 @@ function ActivityDiary({ me, item, prefillDate = "", prefillRequest = 0, compact
         supersedes_id: correctingId || null,
       };
       const write = savedActivity.current ? {data:{id:savedActivity.current},error:null} : await supabase.from("work_activity_records").insert(fields).select("id").single();
-      if(!active.current)return;
       if (write.error) throw write.error;
       if (!write.data?.id)
         throw new Error("The save outcome is uncertain. Inspect the activity history before trying again.");
+      // The activity itself exists once the server returns its ID. A reload
+      // must not resurrect the creation draft while optional follow-ups retry.
+      void recovery.clear();
+      if (!active.current) return;
       savedActivity.current=write.data.id;
       const check = await supabase.from("work_activity_records")
         .select("id,org_id,work_item_id,contributor_id,action_summary,activity_date,supersedes_id")
@@ -222,7 +244,7 @@ function ActivityDiary({ me, item, prefillDate = "", prefillRequest = 0, compact
   const beginUpdate = (activityDate) => {
     setCorrectingId(null); setEntryKind("update"); setDate(activityDate); setState("done"); setSummary(""); setOutcome("");
     setNextAction(""); setNextActionOn(""); setMinutes(""); setEvidenceUrl(""); setFiles([]);
-    setPlanNext(true); setWriteError(""); setEditor(true);
+    setPlanNext(true); setWriteError(""); setResumeUpdate(true); setEditor(true);
   };
 
   async function removeActivity(entry) {
@@ -254,8 +276,9 @@ function ActivityDiary({ me, item, prefillDate = "", prefillRequest = 0, compact
       </div>
     </header>}
     {inlineComposer}
-    {editor && verified && <div className="s2-progress-editor-heading"><strong>{correctingId?"Edit progress":"Your progress"}</strong><button type="button" disabled={busy} onClick={()=>setEditor(false)}>Cancel</button></div>}
-    {editor && verified && <form className="s2-work-diary-form" onSubmit={save}>
+    {editor && verified && <div className="s2-progress-editor-heading"><strong>{correctingId?"Edit progress":"Your progress"}</strong><button type="button" disabled={busy} onClick={()=>{void recovery.clear();setEditor(false);}}>Cancel</button></div>}
+    {editor && canRecord && !recovery.ready && <p role="status">Checking for a saved draft…</p>}
+    {editor && canRecord && recovery.ready && <form className="s2-work-diary-form" onSubmit={save}>
       <fieldset disabled={busy || Boolean(savedActivity.current)} className="s2-work-diary-fields">
       {correctingId && <p className="wide" role="status">Correcting your own activity. The existing dated entry is preserved for the audit trail. Existing private follow-up tasks stay in Calendar; edit them there if needed.</p>}
       <label>When did you do this? <input type="date" value={date} max={ghanaDay()} onChange={(e) => setDate(e.target.value)} required /></label>
@@ -283,6 +306,7 @@ function ActivityDiary({ me, item, prefillDate = "", prefillRequest = 0, compact
       </fieldset>
       <div className="wide"><PendingFilePicker compact files={files} onChange={setFiles} disabled={busy} label="Attach activity files"/></div>
       <p className="wide" style={{fontSize:12,color:"light-dark(#657c92,#aeb8c5)",lineHeight:1.5,margin:"4px 0"}}>Saving progress does not submit the whole task for approval. When ready, open the full work record to finish or send it for review.</p>
+      {recovery.notice&&<p className="wide" role="status">{recovery.notice}</p>}
       {writeError&&<p className="wide" role="alert">{writeError}</p>}
       {savedActivity.current&&<button className="btn btn-ghost btn-sm" type="button" disabled={busy} onClick={()=>{savedActivity.current=null;uploadAttempts.current.clear();setFiles([]);setEditor(false);setWriteError("");setSuccess("The activity is saved. You can plan its next action or attach files from its activity record later.");setReload(n=>n+1);}}>Keep saved activity; finish later</button>}
       <button type="submit" className="btn btn-sm" style={{width:"fit-content"}} disabled={busy || summary.trim().length < 3 || !date}>{busy ? "Saving..." : correctingId ? "Save correction" : "Save work update"}</button>

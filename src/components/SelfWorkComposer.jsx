@@ -1,3 +1,4 @@
+import { useWorkFormDraft } from "../lib/useWorkFormDraft";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { FieldGroup, Sheet } from "./bits";
@@ -53,12 +54,13 @@ export default function SelfWorkComposer({ me, onClose, onCreated }) {
   const [relationsReload, setRelationsReload] = useState(0);
   const [saving, setSaving] = useState(false);
   const submitting = useRef(false);
+  const draft = useWorkFormDraft(me, "own-work", { unitId, title, purpose, outcome, due, repeat, projectId, objectiveId, phaseId, steps, noSteps }, (saved) => {
+    setUnitId(saved.unitId); setTitle(saved.title); setPurpose(saved.purpose); setOutcome(saved.outcome); setDue(saved.due); setRepeat(saved.repeat); setProjectId(saved.projectId); setObjectiveId(saved.objectiveId); setPhaseId(saved.phaseId); setSteps(saved.steps); setNoSteps(saved.noSteps);
+  });
+
 
   useEffect(() => {
     let current = true;
-    setProjectId("");
-    setObjectiveId("");
-    setPhaseId("");
     setProjects([]);
     setObjectives([]);
     setPhases([]);
@@ -84,8 +86,6 @@ export default function SelfWorkComposer({ me, onClose, onCreated }) {
 
   useEffect(() => {
     let current = true;
-    setObjectiveId("");
-    setPhaseId("");
     setObjectives([]);
     setPhases([]);
     setError("");
@@ -171,6 +171,7 @@ export default function SelfWorkComposer({ me, onClose, onCreated }) {
         || (saved.phase_id || null) !== (phaseId || null)) {
         throw new Error("The save outcome could not be verified. Check My work before retrying.");
       }
+      void draft.clear();
       onCreated?.(saved);
       onClose?.();
     } catch (e) {
@@ -192,10 +193,11 @@ export default function SelfWorkComposer({ me, onClose, onCreated }) {
     {projectError && <p role="status">{projectError}</p>}
     {me.is_exec && projectId && projects.some(project => project.id === projectId && project.lead_unit_id !== unitId && !(project.project_units || []).some(row => row.unit_id === unitId)) && <p role="status" className="flag flag-amber">Saving this work will also add the selected department to the project. Its staff will see shared project records allowed by their roles.</p>}
     {(relationsError || error) && <div role="alert" className="flag flag-amber">{relationsError || error}{relationsError && <button type="button" className="btn btn-ghost" onClick={() => setRelationsReload(n=>n+1)}>Retry project details</button>}</div>}
-    <form onSubmit={submit}>
+    {draft.notice && <p role="status">{draft.notice}</p>}
+    {!draft.ready ? <p role="status">Checking for a saved draft…</p> : <form onSubmit={submit}>
       {(me.is_exec || memberships.length > 1) && <FieldGroup label="Department">
         <select className="field" aria-label="Department for my work" value={unitId}
-          onChange={(e) => setUnitId(e.target.value)}>
+          onChange={(e) => { setUnitId(e.target.value); setProjectId(""); setObjectiveId(""); setPhaseId(""); }}>
           <option value="">Choose a department</option>
           {memberships.map((m) => <option key={m.unit_id} value={m.unit_id}>{m.unit_name || "Authorised department"}</option>)}
         </select>
@@ -220,7 +222,7 @@ export default function SelfWorkComposer({ me, onClose, onCreated }) {
       </FieldGroup>
       <FieldGroup label="Project (optional)">
         <select className="field" aria-label="Link my work to project" value={projectId}
-          disabled={loadingProjects} onChange={(e) => setProjectId(e.target.value)}>
+          disabled={loadingProjects} onChange={(e) => { setProjectId(e.target.value); setObjectiveId(""); setPhaseId(""); }}>
           <option value="">Not linked to a project</option>
           {projects.filter((p) => !projectQuery || p.name.toLowerCase().includes(projectQuery.toLowerCase()) || p.id === projectId).map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
         </select>
@@ -263,6 +265,6 @@ export default function SelfWorkComposer({ me, onClose, onCreated }) {
         </>}
       </div>
       <button type="submit" className="btn" disabled={!canSubmit}>{saving ? "Saving..." : "Add my work"}</button>
-    </form>
+    </form>}
   </WorkSheet>;
 }

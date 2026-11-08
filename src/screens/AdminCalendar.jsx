@@ -1,3 +1,4 @@
+import { useEditorPosition } from "../lib/useEditorPosition";
 import { useEffect, useRef, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { LoadingState, ProductNotice, Sheet } from '../components/bits';
@@ -12,7 +13,7 @@ import { calendarDay, calendarDate, calendarSpan, calendarWindow, calendarWorkSt
 const LAYERS=[{value:'meeting',label:'Meetings'},{value:'projects',label:'Projects'},{value:'work',label:'Work deadlines'},{value:'ministry',label:'Ministry'},{value:'leave',label:'Approved leave'}];
 const when=value=>new Date(value).toLocaleString('en-GB',{timeZone:'Africa/Accra',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
 export default function AdminCalendar({me,openItem,openMeeting,scheduleMeeting,roleMode='admin',openProject,initialDate,onFocusHandled}) {
-  const [calendarScope,setCalendarScope]=useState('organisation');
+  const [calendarScope,setCalendarScope]=useEditorPosition(me,'organisation-calendar-scope','organisation');
   const {cursor,setCursor,selectedDate,setSelectedDate}=useCalendarPosition(me,"organisation",initialDate);
   useEffect(()=>{if(initialDate)onFocusHandled?.();},[]);
   const [events,setEvents]=useState([]);

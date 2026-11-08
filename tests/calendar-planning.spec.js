@@ -233,3 +233,35 @@ test('dated and standalone notes save separately, search by title, and can be mo
  const noteReads=fixture.requests.filter(req=>req.name==='personal_day_notes'&&req.method==='GET');
  expect(noteReads.every(req=>req.url.includes('profile_id=eq.'))).toBe(true);
 });
+
+test('an unfinished journal returns to the same editor after repeated reloads',async({page})=>{
+ await page.clock.setFixedTime(new Date('2026-11-07T12:00:00Z'));
+ const fixture=await mock(page);
+ await page.goto('/tests/fixtures/calendar-planning.html?role=manager');
+ await page.getByRole('tab',{name:'My calendar',exact:true}).click();
+ await page.getByRole('tab',{name:'Notes',exact:true}).click();
+ const journal=page.getByLabel('Private day notes');
+ const message='Draft kept while finding a link';
+ await journal.fill(message);
+ // Wait for the actual device write, then verify both the UI and the server boundary.
+ await expect.poll(()=>page.evaluate(()=>new Promise(resolve=>{
+   const request=indexedDB.open('ceac-private-draft-recovery');
+   request.onerror=()=>resolve(false);
+   request.onsuccess=()=>{
+     const db=request.result;
+     if(!db.objectStoreNames.contains('drafts')){db.close();resolve(false);return;}
+     const read=db.transaction('drafts').objectStore('drafts').getAll();
+     read.onsuccess=()=>{db.close();resolve(read.result.some(row=>row.value?.length&&row.iv?.length===12));};
+     read.onerror=()=>{db.close();resolve(false);};
+   };
+ }))).toBe(true);
+ for(let reload=0;reload<2;reload++){
+   await page.reload();
+   await expect(page.getByRole('tab',{name:'My calendar',exact:true})).toHaveAttribute('aria-selected','true');
+   await expect(journal).toHaveValue(message);
+ }
+ expect(fixture.getNotes()).toEqual([]);
+ await page.getByRole('button',{name:'Save journal'}).click();
+ await expect.poll(()=>fixture.getNotes().map(note=>note.body)).toEqual([message]);
+ await expect(journal).toHaveValue(message);
+});

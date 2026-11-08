@@ -1,3 +1,4 @@
+import { useEditorPosition } from "../lib/useEditorPosition";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import useRoutineCalendar from "../lib/useRoutineCalendar";
@@ -32,7 +33,7 @@ const accraDateKey = (value) => {
   return `${byType.year}-${byType.month}-${byType.day}`;
 };
 export default function ManagerCalendar({ me, openItem, openProject, openMeeting, scheduleMeeting, openPerson, initialDate, onFocusHandled }) {
-  const [calendarScope,setCalendarScope]=useState("unit");
+  const [calendarScope,setCalendarScope]=useEditorPosition(me,"manager-calendar-scope","unit");
   const {cursor,setCursor,selectedDate,setSelectedDate}=useCalendarPosition(me,"unit",initialDate);
   useEffect(()=>{if(initialDate)onFocusHandled?.();},[]);
   const [events,setEvents]=useState([]);
