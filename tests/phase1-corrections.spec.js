@@ -132,14 +132,18 @@ for(const width of [390,1440]){
   await page.route('**/rest/v1/work_items*',route=>route.fulfill({contentType:'application/json',body:JSON.stringify([{id:'work',kind:'task',title:'Synthetic future work',status:'in_progress',due_at:date.toISOString()}])}));
   await page.goto('/tests/fixtures/phase1-corrections.html?screen=calendar');
   if(width===390){
+   await page.getByRole('button',{name:'Show full month',exact:true}).click();
    const dateLabel=date.toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
    const targetDay=page.getByRole('grid',{name:'Personal month calendar'}).locator('.ev2cal-day-button[aria-label*=" '+dateLabel+'"]');
    await expect(targetDay).toHaveCount(1);
    await targetDay.click();
+   await expect(targetDay).toHaveAttribute('aria-pressed','true');
    await page.getByRole('tab',{name:'Tasks',exact:true}).click();
-   await expect(page.getByRole('button',{name:/Synthetic future work/}).first()).toBeVisible();
+   await page.getByRole('complementary',{name:'Selected day workspace'}).getByRole('button',{name:/Synthetic future work/}).click();
   }else {await page.getByLabel("Month detail").selectOption("details");await page.locator('.ev2cal-day-events').getByRole('button',{name:'Synthetic future work',exact:true}).click();}
-  await expect(page.getByRole('complementary',{name:'Selected day workspace'}).getByRole('heading',{name:date.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'}),exact:true})).toBeVisible();
+  const selectedDay=page.getByRole('complementary',{name:'Selected day workspace'}).getByRole('heading',{name:date.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'}),exact:true});
+  if(width===390)await expect(selectedDay).toBeAttached();
+  else await expect(selectedDay).toBeVisible();
   await expect(page.getByRole('tab',{name:'Tasks',exact:true})).toHaveAttribute('aria-selected','true');
  });
  test(`empty Learning publication directs the author to missing content ${width}`,async({page})=>{
