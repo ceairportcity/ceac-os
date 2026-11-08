@@ -1,3 +1,5 @@
+import { useWorkFormDraft } from "../lib/useWorkFormDraft";
+import { useEditorPosition } from "../lib/useEditorPosition";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { humanError } from "../lib/productLanguage";
@@ -27,8 +29,11 @@ function SupportRows({ cases, onSelect, empty = "Nothing requires action here." 
 }
 
 function CaseDetails({ item, onClose, onRefresh, onUpdate, onClaim, onRelease, me, myId, orgId, busy, error }) {
-  const [nextState, setNextState] = useState(item.state);
-  const [resolution, setResolution] = useState(item.resolution_summary || "");
+  const [changes, setChanges] = useState({});
+  const nextState = changes.state ?? item.state;
+  const resolution = changes.resolution ?? item.resolution_summary ?? "";
+  const recovery = useWorkFormDraft(me, item.assigned_to === myId ? `support-update:${item.id}:${item.updated_at}` : "",
+    changes, setChanges);
   const [history, setHistory] = useState([]);
   const [historyError, setHistoryError] = useState(null);
   const [historyLoading, setHistoryLoading] = useState(true);
@@ -37,8 +42,7 @@ function CaseDetails({ item, onClose, onRefresh, onUpdate, onClaim, onRelease, m
   const requiresBusinessApproval = item.category === "access_needed";
   const accessReadyToClose = canRecordSupportOutcome(item, "resolved", accessLedger);
   useEffect(() => {
-    setNextState(item.state);
-    setResolution(item.resolution_summary || "");
+    setChanges({});
   }, [item.id, item.state, item.resolution_summary, item.updated_at]);
 
   useEffect(() => {
@@ -93,12 +97,12 @@ function CaseDetails({ item, onClose, onRefresh, onUpdate, onClaim, onRelease, m
     {item.assigned_to !== myId && <p role="status" className="ceac-support-unverified">
       Take the unassigned case before editing it. Cases assigned to another technician are read-only here.
     </p>}
-    <form className="ceac-support-form" onSubmit={(event) => {
+    <form className="ceac-support-form" onSubmit={async (event) => {
       event.preventDefault();
-      onUpdate(item.id, nextState, resolution, item.updated_at, accessLedger);
+      if (recovery.ready && await onUpdate(item.id, nextState, resolution, item.updated_at, accessLedger)) void recovery.clear({});
     }}>
       <label>Case status
-        <select disabled={busy || item.assigned_to!==myId} value={nextState} onChange={(event) => setNextState(event.target.value)}>
+        <select disabled={busy || !recovery.ready || item.assigned_to!==myId} value={nextState} onChange={(event) => setChanges(current => ({...current,state:event.target.value}))}>
           <option value="open">Open</option>
           <option value="in_progress">In progress</option>
           <option value="waiting_approval">Waiting for business approval</option>
@@ -108,11 +112,12 @@ function CaseDetails({ item, onClose, onRefresh, onUpdate, onClaim, onRelease, m
       </label>
       {requiresBusinessApproval && !accessReadyToClose && <p className="ceac-support-unverified" role="status">Access requests remain open until independent business approval and attributable technical execution are recorded. The database verifies both before closure.</p>}
       <label>Action or resolution note
-        <textarea disabled={busy || item.assigned_to!==myId} rows={3} value={resolution} onChange={(event) => setResolution(event.target.value)}
+        <textarea disabled={busy || !recovery.ready || item.assigned_to!==myId} rows={3} value={resolution} onChange={(event) => setChanges(current => ({...current,resolution:event.target.value}))}
           maxLength={2000} placeholder="Record factual work completed. Do not include credentials or protected records." />
       </label>
+      {recovery.notice && <p role="status">{recovery.notice}</p>}
       {error && <p role="alert" className="ceac-support-error">{error}</p>}
-      <button className="btn" type="submit" disabled={busy || item.assigned_to !== myId}>{busy ? "Saving..." : "Save case change"}</button>
+      <button className="btn" type="submit" disabled={busy || !recovery.ready || item.assigned_to !== myId}>{busy ? "Saving..." : "Save case change"}</button>
       <p className="screen-note">Access changes still require separate business approval. This form cannot grant permissions.</p>
     </form>
     {requiresBusinessApproval && <SupportAccessCaseActions item={item} me={me} onLedgerChange={setAccessLedger} />}
@@ -141,7 +146,7 @@ function CaseDetails({ item, onClose, onRefresh, onUpdate, onClaim, onRelease, m
 }
 
 export default function TechnicalSupport({ me, go }) {
-  const [workspace, setWorkspace] = useState("home");
+  const [workspace, setWorkspace] = useEditorPosition(me,"support-workspace","home");
   const [deskQuery, setDeskQuery] = useState("");
   const [deskStatus, setDeskStatus] = useState("all");
   const [membership, setMembership] = useState(null);
@@ -152,7 +157,7 @@ export default function TechnicalSupport({ me, go }) {
   const [error, setError] = useState(null);
   const [actionError, setActionError] = useState(null);
   const [busy, setBusy] = useState(false);
-  const [selectedId, setSelectedId] = useState(null);
+  const [selectedId, setSelectedId] = useEditorPosition(me,"support-selected-case",null);
   const linkedCaseId = new URLSearchParams(window.location.search).get("case");
   const canManage = canManageSupport(me);
   const currentScope = `${me.org_id}:${me.id}:${canManage ? "support" : "no-support"}`;
@@ -166,7 +171,6 @@ export default function TechnicalSupport({ me, go }) {
     setVerifiedScope(null);
     setMembership(null);
     setCases([]);
-    setSelectedId(null);
     setBusy(false);
     setActionError(null);
     setError(null);
@@ -275,6 +279,7 @@ export default function TechnicalSupport({ me, go }) {
       if (!data) throw new Error("This case is no longer unassigned. Refresh the Help Desk before taking it.");
       if (generation !== readGeneration.current) return;
       setCases((items) => items.map((item) => item.id === id ? {...item,...data} : item));
+      return true;
     } catch (failure) {
       if (generation === readGeneration.current) setActionError(humanError(failure, "The case was not assigned to you."));
     } finally {
@@ -298,6 +303,7 @@ export default function TechnicalSupport({ me, go }) {
       if (!data) throw new Error("This case is no longer yours to release. Refresh before trying again.");
       if (generation !== readGeneration.current) return;
       setCases((items) => items.map((item) => item.id === id ? {...item,...data} : item));
+      return true;
     } catch (failure) {
       if (generation === readGeneration.current) setActionError(humanError(failure, "The case was not released."));
     } finally {
@@ -343,6 +349,7 @@ export default function TechnicalSupport({ me, go }) {
       if (!data) throw new Error("The case changed since you opened it. Refresh the Help Desk before saving.");
       if (generation !== readGeneration.current) return;
       setCases((items) => items.map((item) => item.id === id ? {...item,...data} : item));
+      return true;
     } catch (failure) {
       if (generation === readGeneration.current) setActionError(humanError(failure, "The case change was not recorded. No further action was taken."));
     } finally {

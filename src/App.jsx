@@ -1,7 +1,8 @@
+import { clearEditorPositions, useEditorPosition } from "./lib/useEditorPosition";
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { supabase, loadMe } from "./lib/supabase";
 import GlobalFormFeedback from "./components/GlobalFormFeedback";
-import { clearAccountCommunicationDrafts } from "./lib/memoLocalDrafts";
+import { clearAccountCommunicationDrafts } from "./lib/useWorkFormDraft";
 import { useCeacUnreadNotifications } from "./lib/useCeacUnreadNotifications";
 import OverviewNotifications from "./components/OverviewNotifications";
 import { openSession } from "./lib/session";
@@ -143,7 +144,10 @@ export default function App() {
   const [itemId, setItemId] = useState(initialRoute.itemId);
   const [itemRoutineDate,setItemRoutineDate] = useState(initialRoute.routineDate);
   const [goalId, setGoalId] = useState(null);
-  const [assigning, setAssigning] = useState(null);
+  const [assignmentPosition, setAssignmentPosition] = useEditorPosition(me, "assignment-editor", null);
+  const [assignmentContext, setAssignmentContext] = useState(null);
+  const assignmentActor = me ? `${me.org_id}:${me.id}:${me.unit_id || ""}` : "";
+  const assigning = assignmentPosition && (assignmentContext?.actor === assignmentActor ? assignmentContext.context : assignmentPosition);
   const [person, setPerson] = useState(null);
   const [projectId, setProjectId] = useState(initialRoute.projectId);
   const [roomContext, setRoomContext] = useState(initialRoute.roomContext);
@@ -185,9 +189,12 @@ export default function App() {
         lastPushAuthToken = null;
         void import("./lib/ceacPush").then(({disconnectDevicePushOnSignOut})=>disconnectDevicePushOnSignOut(previousToken)).catch(()=>{});
         setMemoWorkContext(null);
+        setAssignmentContext(null);
+        setAssignmentPosition(null);
         if("clearAppBadge" in navigator)void navigator.clearAppBadge().catch(()=>{});
         if(draftActorRef.current){
           const actor=draftActorRef.current;
+          clearEditorPositions(actor);
           void clearAccountCommunicationDrafts(actor.org_id,actor.id).catch(()=>{});
         }
       }
@@ -296,7 +303,8 @@ export default function App() {
     setMeetingId(route.meetingId || null);
     setRoomContext(route.roomContext || null);
     setGoalId(null);
-    setAssigning(null);
+    setAssignmentContext(null);
+    setAssignmentPosition(null, true);
     setPerson(null);
     setMeetingDraft(null);
     setCreateIntent(null);
@@ -506,7 +514,13 @@ export default function App() {
 
   function startAssignment(context = {}) {
     if (context.projectId) setProjectId(context.projectId);
-    setAssigning(context);
+    setAssignmentContext({actor:assignmentActor,context});
+    const position = {};
+    for (const field of ["unitId", "projectId", "objectiveId", "phaseId", "subTeamId", "assigneeId", "meetingId", "sourceRoomId", "sourceMessageId"]) {
+      if (/^[0-9a-f-]{36}$/i.test(context[field] || "")) position[field] = context[field];
+    }
+    if (["task", "routine", "case", "request", "decision", "meeting_outcome", "deliverable"].includes(context.kind)) position.kind = context.kind;
+    setAssignmentPosition(position);
   }
 
   function startMeeting(context = {}) {
@@ -738,12 +752,13 @@ export default function App() {
           <Suspense fallback={<RouteFallback />}>
           <SettingsBack tab={tab} enabled={isAdmin && !overlay} go={go} returnTo={settingsReturn}>
           {itemId ? <Item id={itemId} me={me} reviewOnly={isExec && tab === "exec-organisation"} session={session} isManager={isUnitManager} initialRoutineDate={itemRoutineDate} openRoom={openRoom} onOpenCalendar={dueAt=>{setCalendarFocusDate(dueAt||null);navigate({tab:isExec?"exec-calendar":isAdmin?"admin-calendar":isUnitManager?"calendar":"staff-calendar"});}} onOpenMemo={work=>{setMemoWorkContext({id:work.id,ref:work.ref,title:work.title});navigate({tab:"messages"});}} back={closeUrlOverlay} />
-            : assigning && (isExec || isAdmin) ? <ExecutiveAssign key={`${me.org_id}:${me.id}`} me={me} context={assigning} back={() => setAssigning(null)} />
+            : assigning && (isExec || isAdmin) ? <ExecutiveAssign key={`${me.org_id}:${me.id}`} me={me} context={assigning} resuming={assignmentContext?.actor !== assignmentActor} back={() => { setAssignmentContext(null); setAssignmentPosition(null); }} />
             : assigning ? <Assign me={me}
                 initialProjectId={assigning.projectId}
                 initialObjectiveId={assigning.objectiveId}
                 initialPhaseId={assigning.phaseId}
                 initialSubTeamId={assigning.subTeamId}
+                initialAssigneeId={assigning.assigneeId}
                 initialMeetingId={assigning.meetingId}
                 initialKind={assigning.kind}
                 initialMeetingTitle={assigning.meetingTitle}
@@ -752,7 +767,7 @@ export default function App() {
                 initialTitle={assigning.title}
                 initialSourceRoomId={assigning.sourceRoomId}
                 initialSourceMessageId={assigning.sourceMessageId}
-                back={() => setAssigning(null)} />
+                back={() => { setAssignmentContext(null); setAssignmentPosition(null); }} />
             : projectId && isUnitManager ? <ManagerProjects key={`${me.org_id}:${me.id}:${me.unit_id || "none"}:${projectId}`} me={me} initialProjectId={projectId} openItem={openItem} goAssign={startAssignment} openMeeting={openMeeting} scheduleMeeting={startMeeting} openRoom={(id, reference) => openRoom({ kind: "project", projectId: id, reference })} back={closeUrlOverlay} />
             : goalId ? <Goals id={goalId} me={me} back={() => setGoalId(null)} />
             : person && isManager ? <PersonDetail me={me} profileId={person.id} focus={person.focus} openItem={openItem} openProject={openProject} back={() => setPerson(null)} />

@@ -515,7 +515,7 @@ test("Work inspector and dated diary cannot display or submit stale actor/work c
   assert.match(diary,/setCompletedDiaryScope\(diaryScope\)/);
   assert.match(diary,/const canRecord = verified &&/);
   assert.match(diary,/if \(busy \|\| submitting\.current \|\| !verified \|\| !canRecord/);
-  assert.match(diary,/\{editor && verified && <form/);
+  assert.match(diary,/\{editor && canRecord && recovery\.ready && <form/);
 });
 
 

@@ -1,3 +1,4 @@
+import { useEditorPosition } from "../lib/useEditorPosition";
 import { useEffect, useState } from "react";
 import ManagerProjects from "./ManagerProjects";
 import Stage2ProjectReader from "../components/Stage2ProjectReader";
@@ -20,7 +21,7 @@ import {
 export default function AdminProjects({ me, scheduleMeeting, openItem, initialProjectId = null, openProject, goAssign, openRoom }) {
   const [projects,setProjects]=useState([]);
   const [units,setUnits]=useState([]);
-  const [creating,setCreating]=useState(false);
+  const [creating,setCreating]=useEditorPosition(me,"admin-project-create",false);
   const selectedProjectId = initialProjectId;
   const [loading,setLoading]=useState(true);
   const [error,setError]=useState(null);

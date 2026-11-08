@@ -1,4 +1,4 @@
-// Account-scoped, encrypted on-device recovery for an unsent Memo.
+// Account-scoped, encrypted on-device recovery for unfinished writing.
 // No attachment bytes or private storage URLs are stored in this database.
 const DATABASE = "ceac-private-draft-recovery";
 const VERSION = 1;
@@ -19,7 +19,7 @@ function storeRequest(db, store, mode, method, ...args) {
   return new Promise((resolve, reject) => {
     const tx = db.transaction(store, mode);
     const request = tx.objectStore(store)[method](...args);
-    request.onsuccess = () => resolve(request.result);
+    tx.oncomplete = () => resolve(request.result);
     request.onerror = () => reject(request.error);
     tx.onabort = () => reject(tx.error);
   });
@@ -32,8 +32,13 @@ async function keyFor(db, id) {
   const existing = await storeRequest(db, "keys", "readonly", "get", id);
   if (existing) return existing;
   const key = await crypto.subtle.generateKey({name:"AES-GCM",length:256}, false, ["encrypt","decrypt"]);
-  await storeRequest(db, "keys", "readwrite", "put", key, id);
-  return key;
+  try {
+    await storeRequest(db, "keys", "readwrite", "add", key, id);
+    return key;
+  } catch (error) {
+    if (error?.name !== "ConstraintError") throw error;
+    return storeRequest(db, "keys", "readonly", "get", id);
+  }
 }
 export async function saveLocalMemoDraft(orgId, userId, payload) {
   const db = await openDatabase();
@@ -86,7 +91,7 @@ export async function clearAccountCommunicationDrafts(orgId, userId) {
     const prefix=scope(orgId,userId);
     const ids=await storeRequest(db,"drafts","readonly","getAllKeys");
     for(const id of ids) {
-      if(id===prefix || id.startsWith(prefix+":room:")) {
+      if(id===prefix || id.startsWith(prefix+":room:") || id.startsWith(prefix+":work-form:")) {
         await storeRequest(db,"drafts","readwrite","delete",id);
         await storeRequest(db,"keys","readwrite","delete",id);
       }

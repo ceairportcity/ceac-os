@@ -1,3 +1,5 @@
+import { useWorkFormDraft } from "../lib/useWorkFormDraft";
+import { useEditorPosition } from "../lib/useEditorPosition";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import useRoutineCalendar from "../lib/useRoutineCalendar";
@@ -51,13 +53,13 @@ export default function StaffCalendar({me,openItem,openMeeting,statusLabel="Staf
   const [workOptions,setWorkOptions]=useState([]);
   const [workOptionsLoading,setWorkOptionsLoading]=useState(false);
   const [projectOptions,setProjectOptions]=useState([]);
-  const [dayTab,setDayTab]=useState("schedule");
+  const [dayTab,setDayTab]=useEditorPosition(me,"calendar-day-tab","schedule");
   const [taskTitle,setTaskTitle]=useState("");
   const [taskTime,setTaskTime]=useState("");
   const [noteDraft,setNoteDraft]=useState("");
   const [notesLibraryOpen,setNotesLibraryOpen]=useState(false);
   const [notesRevision,setNotesRevision]=useState(0);
-  const [composer,setComposer]=useState(null);
+  const [composer,setComposer]=useEditorPosition(me,"calendar-composer",null);
   const [composerType,setComposerType]=useState("event");
   const [composeTitle,setComposeTitle]=useState("");
   const [composeDetails,setComposeDetails]=useState("");
@@ -80,7 +82,27 @@ export default function StaffCalendar({me,openItem,openMeeting,statusLabel="Staf
   useEffect(()=>()=>{requestVersion.current++;},[]);
   const [personalPlanningReady,setPersonalPlanningReady]=useState(true);
   const [recurrenceReady,setRecurrenceReady]=useState(true);
-  const [editingPrivateItem,setEditingPrivateItem]=useState(null);
+  const [editingPrivateItem,setPrivateItem]=useState(null);
+  const [privateItemPosition,setPrivateItemPosition]=useEditorPosition(me,"calendar-edit-item",null);
+  function setEditingPrivateItem(item) {
+    setPrivateItem(item);
+    setPrivateItemPosition(item ? {kind:item.kind,id:item.id} : null);
+  }
+  const positionKind=privateItemPosition?.kind;
+  const positionId=privateItemPosition?.id;
+  useEffect(()=>{
+    if (!positionId || !personalPlanningReady || editingPrivateItem?.id === positionId) return;
+    const tables = {note:"personal_day_notes",task:"personal_day_tasks",event:"personal_calendar_events"};
+    const table = tables[positionKind];
+    if (!table) return;
+    let active=true;
+    supabase.from(table).select("*").eq("id",positionId).eq("profile_id",me.id).maybeSingle().then(({data,error})=>{
+      if (!active) return;
+      if (data) setPrivateItem({...data,kind:positionKind});
+      else if (error) setError(humanError(error,"The private editor could not be reopened."));
+    });
+    return ()=>{active=false;};
+  },[positionKind,positionId,personalPlanningReady,editingPrivateItem?.id,me.id]);
 
   const routineCalendar=useRoutineCalendar(me,{scope:"own",
     fromDate:dayKey(new Date(cursor.getFullYear(),cursor.getMonth()-1,1)),
@@ -116,27 +138,41 @@ export default function StaffCalendar({me,openItem,openMeeting,statusLabel="Staf
   const journalRow=dayNotes.find(note=>note.note_date===selectedDate&&note.note_kind==="daily");
   const savedJournal=journalRow?.body||"";
   useEffect(()=>{setNoteDraft(savedJournal);},[selectedDate,savedJournal]);
-  const journalDirty=dayTab==="notes"&&noteDraft!==savedJournal;
+  const journalRecovery = useWorkFormDraft(me,
+    dayTab === "notes" && !loading && personalPlanningReady ? `daily-journal:${selectedDate}` : "",
+    {noteDraft}, saved => setNoteDraft(saved.noteDraft));
+  const composerRecovery = useWorkFormDraft(me, composer && personalPlanningReady ? "calendar-planning-new" : "", {
+    composerType, composeTitle, composeDetails, composeDate, composeStart, composeEnd, composeLocation,
+    composeUnscheduled, composeReminder, composeWorkId, composeProjectId, composeChecklist, composeNoteKind,
+  }, saved => {
+    setComposerType(saved.composerType); setComposeTitle(saved.composeTitle); setComposeDetails(saved.composeDetails);
+    setComposeDate(saved.composeDate); setComposeStart(saved.composeStart); setComposeEnd(saved.composeEnd);
+    setComposeLocation(saved.composeLocation); setComposeUnscheduled(saved.composeUnscheduled);
+    setComposeReminder(saved.composeReminder); setComposeWorkId(saved.composeWorkId); setComposeProjectId(saved.composeProjectId);
+    setComposeChecklist(saved.composeChecklist); setComposeNoteKind(saved.composeNoteKind);
+  });
+  const journalDirty=dayTab==="notes"&&journalRecovery.ready&&noteDraft!==savedJournal;
   const journalDirtyRef=useRef(false);
   journalDirtyRef.current=journalDirty;
   const protectJournal=useCallback(()=>{
     if(!journalDirtyRef.current)return true;
     if(!window.confirm("Discard unsaved changes to your daily journal?"))return false;
     journalDirtyRef.current=false;
+    void journalRecovery.clear({noteDraft:savedJournal});
     setNoteDraft(savedJournal);
     return true;
-  },[savedJournal]);
+  },[savedJournal,journalRecovery.clear]);
   useEffect(()=>{
     if(!journalDirty)return;
     const warn=event=>{event.preventDefault();event.returnValue="";};
     const guard=event=>{if(!protectJournal())event.preventDefault();};
-    window.addEventListener("beforeunload",warn);
+    if(journalRecovery.failed)window.addEventListener("beforeunload",warn);
     window.addEventListener(calendarJournalLeaveEvent,guard);
     return ()=>{
       window.removeEventListener("beforeunload",warn);
       window.removeEventListener(calendarJournalLeaveEvent,guard);
     };
-  },[journalDirty,protectJournal]);
+  },[journalDirty,journalRecovery.failed,protectJournal]);
   const selectCalendarDate=useCallback(key=>{
     if(!protectJournal())return false;
     setSelectedDate(key);setDayTab("schedule");return true;
@@ -268,7 +304,7 @@ export default function StaffCalendar({me,openItem,openMeeting,statusLabel="Staf
         const checklist=composeChecklist.split("\n").map(value=>value.trim()).filter(Boolean);
         if(checklist.length){
           const {error:checkError}=await supabase.from("personal_day_task_checklist").insert(checklist.map((title,index)=>({org_id:me.org_id,profile_id:me.id,task_id:task.id,title,position:index})));
-          if(checkError)throw checkError;
+          if(checkError){void composerRecovery.clear();setComposer(null);throw checkError;}
         }
         setNotice(composeUnscheduled?"Private task kept unscheduled.":"Private task added.");
       }else{
@@ -285,6 +321,7 @@ export default function StaffCalendar({me,openItem,openMeeting,statusLabel="Staf
         if(dated){setCursor(calendarDate(composeDate));setSelectedDate(composeDate);setDayTab("notes");}
         else setNotesLibraryOpen(true);
       }
+      void composerRecovery.clear();
       setComposer(null);await load();
     }catch(err){setError(humanError(err,"Your private planning item could not be saved."));}
     finally{setBusy(false);}
@@ -340,7 +377,7 @@ export default function StaffCalendar({me,openItem,openMeeting,statusLabel="Staf
   }
 
   async function saveDayNote(){
-    if(busy||!noteDraft.trim()||noteDraft.length>12000)return;
+    if(!journalRecovery.ready||busy||!noteDraft.trim()||noteDraft.length>12000)return;
     setBusy(true);setError(null);setNotice(null);
     const existing=dayNotes.find(note=>note.note_date===selectedDate&&note.note_kind==="daily");
     const action=existing
@@ -352,6 +389,7 @@ export default function StaffCalendar({me,openItem,openMeeting,statusLabel="Staf
     setBusy(false);
     if(saveError){setError(humanError(saveError,"Your daily journal could not be saved."));return;}
     setNotesRevision(value=>value+1);
+    void journalRecovery.clear();
     setNotice("Daily journal saved for "+shortDate(selectedDate)+".");
     await load();
   }
@@ -359,12 +397,13 @@ export default function StaffCalendar({me,openItem,openMeeting,statusLabel="Staf
   async function deleteDayNote(){
     if(busy || !window.confirm("Delete your private journal for this day?"))return;
     const row=dayNotes.find(note=>note.note_date===selectedDate&&note.note_kind==="daily");
-    if(!row){setNoteDraft("");return;}
+    if(!row){void journalRecovery.clear({noteDraft:""});setNoteDraft("");return;}
     setBusy(true);setError(null);
     const {error:failure}=await supabase.from("personal_day_notes")
       .delete().eq("id",row.id).eq("profile_id",me.id);
     setBusy(false);
     if(failure){setError(humanError(failure,"Your private journal could not be deleted."));return;}
+    void journalRecovery.clear({noteDraft:""});
     setNoteDraft("");setNotesRevision(value=>value+1);setNotice("Private journal deleted.");await load();
   }
 
@@ -457,13 +496,13 @@ export default function StaffCalendar({me,openItem,openMeeting,statusLabel="Staf
               </div>):<p className="phase6-day-empty">No private tasks are waiting for a date.</p>}
             </section>
           </div>:<div className="phase6-day-note-view">
-            {personalPlanningReady?<article className="phase6-note-card is-journal"><div className="phase6-note-card-head"><span>Journal</span><div><strong>Daily journal</strong><small>Private · {shortDate(selectedDate)}</small></div></div><textarea className="field phase6-day-note-editor" aria-label="Private day notes" rows={8} value={noteDraft} onChange={event=>setNoteDraft(event.target.value)} placeholder="Write private planning notes for this day…" /><div className="phase6-day-note-actions"><span>{noteDraft.length.toLocaleString()} / 12,000</span><Button disabled={busy||!noteDraft.trim()||noteDraft.length>12000} onClick={saveDayNote}>{busy?"Saving…":"Save journal"}</Button><Button variant="quiet" size="sm" disabled={busy} onClick={deleteDayNote}>Delete journal</Button></div></article>:<p className="phase6-day-empty">Your private journal is unavailable. Please contact support.</p>}
-            <div className="phase6-day-note-actions">
+            {personalPlanningReady?<article className="phase6-note-card is-journal"><div className="phase6-note-card-head"><span>Journal</span><div><strong>Daily journal</strong><small>Private · {shortDate(selectedDate)}</small></div></div><textarea className="field phase6-day-note-editor" aria-label="Private day notes" disabled={!journalRecovery.ready || busy} rows={8} value={noteDraft} onChange={event=>setNoteDraft(event.target.value)} placeholder="Write private planning notes for this day…" />{journalRecovery.notice&&<p role="status">{journalRecovery.notice}</p>}<div className="phase6-day-note-actions"><span>{noteDraft.length.toLocaleString()} / 12,000</span><Button disabled={busy||!journalRecovery.ready||!noteDraft.trim()||noteDraft.length>12000} onClick={saveDayNote}>{busy?"Saving…":"Save journal"}</Button><Button variant="quiet" size="sm" disabled={busy||!journalRecovery.ready} onClick={deleteDayNote}>Delete journal</Button></div></article>:<p className="phase6-day-empty">Your private journal is unavailable. Please contact support.</p>}
+            {journalRecovery.notice&&<p role="status">{journalRecovery.notice}</p>}<div className="phase6-day-note-actions">
               <Button variant="secondary" size="sm" onClick={()=>openComposer("note")}>New note</Button>
               <Button variant="secondary" size="sm" onClick={()=>setNotesLibraryOpen(true)}>Browse all notes</Button>
             </div>
             {selectedMeetingNotes.map(note=><button key={note.id} type="button" className="phase6-note-card is-meeting" onClick={()=>openMeeting?.(note.meeting_id)}><div className="phase6-note-card-head"><span>Meeting</span><div><strong>{note.meeting?.title||"Meeting note"}</strong><small>Linked meeting note · authoritative in Meeting</small></div></div><p>{note.body}</p></button>)}
-            {datedNotes.map(note=><article key={note.id} className={`phase6-note-card is-${note.note_kind}`}><div className="phase6-note-card-head"><span>Dated</span><div><strong>{note.title||(note.note_kind==="personal"?"Personal note":"General note")}</strong><small>Private note{note.reminder_at?" · reminder set":""}</small></div></div><p>{note.body||"No note text recorded."}</p><Button variant="quiet" size="sm" disabled={busy} onClick={()=>setEditingPrivateItem({kind:"note",...note})}>Edit / delete</Button></article>)}
+            {datedNotes.map(note=><article key={note.id} className={`phase6-note-card is-${note.note_kind}`}><div className="phase6-note-card-head"><span>Dated</span><div><strong>{note.title||(note.note_kind==="personal"?"Personal note":"General note")}</strong><small>Private note{note.reminder_at?" · reminder set":""}</small></div></div><p>{note.body||"No note text recorded."}</p><Button variant="quiet" size="sm" disabled={busy} onClick={()=>setEditingPrivateItem({...note,kind:"note"})}>Edit / delete</Button></article>)}
           </div>}
         </aside>);
   }
@@ -499,12 +538,13 @@ export default function StaffCalendar({me,openItem,openMeeting,statusLabel="Staf
         if(note.note_kind==="daily"){
           if(selectCalendarDate(note.note_date)===false)return;
           setCursor(calendarDate(note.note_date));setDayTab("notes");
-        }else setEditingPrivateItem({kind:"note",...note});
+        }else setEditingPrivateItem({...note,kind:"note"});
         setNotesLibraryOpen(false);
       }}/>}
     {editingPrivateItem&&personalPlanningReady&&<PersonalPlanningEditor key={editingPrivateItem.id} me={me} item={editingPrivateItem} onClose={()=>setEditingPrivateItem(null)} onChanged={async()=>{await load();setNotesRevision(value=>value+1);}}/>}
     {composer&&personalPlanningReady&&<Sheet onClose={()=>!busy&&setComposer(null)}>
-      <div className="phase6-planning-composer">
+      {!composerRecovery.ready ? <LoadingState label="Checking for a saved draft…"/> : <div className="phase6-planning-composer">
+        {composerRecovery.notice&&<p role="status">{composerRecovery.notice}</p>}
         {scheduleMeeting&&<Button variant="secondary" onClick={()=>{setComposer(null);scheduleMeeting({startsAt:`${selectedDate}T09:00`});}}>Schedule a CEAC meeting</Button>}
         <div><span className="eyebrow">Private planning</span><div className="h2">Add to my workspace</div><p className="screen-note">Personal Events, Tasks and Notes stay private. Use CEAC Work or Meetings when an organisational record is required.</p></div>
         <div className="phase6-composer-tabs" role="tablist" aria-label="Personal planning item type">
@@ -524,8 +564,8 @@ export default function StaffCalendar({me,openItem,openMeeting,statusLabel="Staf
         {composerType==="task"&&<><FieldGroup label="Checklist" hint="One private checklist item per line."><textarea className="field" aria-label="Task checklist" rows={3} value={composeChecklist} onChange={event=>setComposeChecklist(event.target.value)} /></FieldGroup><div className="phase6-composer-grid"><FieldGroup label="Link CEAC Work">{workOptionsLoading&&<span role="status" className="screen-note">Loading available work…</span>}<select className="field" aria-label="Link CEAC Work" value={composeWorkId} onChange={event=>setComposeWorkId(event.target.value)}><option value="">No Work link</option>{workOptions.map(item=><option key={item.id} value={item.id}>{item.ref} · {item.title}</option>)}</select></FieldGroup><FieldGroup label="Link Project"><select className="field" aria-label="Link Project" value={composeProjectId} onChange={event=>setComposeProjectId(event.target.value)}><option value="">No Project link</option>{projectOptions.map(project=><option key={project.id} value={project.id}>{project.name}</option>)}</select></FieldGroup></div></>}
         <FieldGroup label="Reminder (optional)"><input className="field" aria-label="Planning reminder" type="datetime-local" value={composeReminder} onChange={event=>setComposeReminder(event.target.value)} /></FieldGroup>
         {error&&<ProductNotice tone="error" title="Could not save private planning">{error}</ProductNotice>}
-        <div className="phase6-composer-actions"><Button variant="secondary" disabled={busy} onClick={()=>setComposer(null)}>Cancel</Button><Button disabled={busy||(composerType!=="note"&&!composeTitle.trim())||(composerType==="note"&&!composeDetails.trim())||(composerType==="event"&&(!composeDate||!composeStart||!composeEnd||composeEnd<composeStart))} onClick={saveComposer}>{busy?"Saving…":`Save ${composerType}`}</Button></div>
+        <div className="phase6-composer-actions"><Button variant="secondary" disabled={busy} onClick={()=>{void composerRecovery.clear();setComposer(null);}}>Cancel</Button><Button disabled={busy||(composerType!=="note"&&!composeTitle.trim())||(composerType==="note"&&!composeDetails.trim())||(composerType==="event"&&(!composeDate||!composeStart||!composeEnd||composeEnd<composeStart))} onClick={saveComposer}>{busy?"Saving…":`Save ${composerType}`}</Button></div>
       </div>
-    </Sheet>}
+    }</Sheet>}
   </div>;
 }

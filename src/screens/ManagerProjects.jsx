@@ -1,3 +1,5 @@
+import { useEditorPosition } from "../lib/useEditorPosition";
+import { useWorkFormDraft } from "../lib/useWorkFormDraft";
 import { useEffect, useRef, useState } from "react";
 import AssistiveTextarea from "../components/AssistiveTextarea";
 import { supabase } from "../lib/supabase";
@@ -92,11 +94,22 @@ export default function ManagerProjects({ me, initialProjectId = null, openItem,
   const [projects, setProjects] = useState([]);
   const [showArchived,setShowArchived] = useState(false);
   const [proposals, setProposals] = useState([]);
-  const [selectedId, setSelectedId] = useState(initialProjectId);
+  const [selectedId, setSelectedId] = useEditorPosition(me, "manager-project", initialProjectId);
   const [detail, setDetail] = useState(null);
   const [canCreate, setCanCreate] = useState(false);
   const [units, setUnits] = useState([]);
   const [sheet, setSheet] = useState(null);
+  const [restoredSheet, setRestoredSheet] = useEditorPosition(me, "manager-project-editor", null);
+  const currentSheet = sheet || (restoredSheet?.type === "project" ? restoredSheet : null);
+  const restoredObjective = restoredSheet?.type === "objective" && restoredSheet.projectId === selectedId
+    ? restoredSheet.objectiveId ? detail?.objectives?.find(row => row.id === restoredSheet.objectiveId) : null
+    : undefined;
+  const objectiveSheet = sheet?.type === "objective" ? sheet
+    : restoredObjective !== undefined ? {type:"objective",value:restoredObjective} : null;
+  function openObjective(value) {
+    setRestoredSheet({type:"objective",projectId:selectedId,objectiveId:value?.id || null});
+    setSheet({type:"objective",value});
+  };
   const [busy, setBusy] = useState(false);
   const [loadingList, setLoadingList] = useState(true);
   const [error, setError] = useState(null);
@@ -116,7 +129,7 @@ export default function ManagerProjects({ me, initialProjectId = null, openItem,
 
 
   useEffect(() => { loadList(); loadProposals(); }, [me.id, projectUnitId, me.org_id]);
-  useEffect(() => { setSelectedId(initialProjectId); }, [initialProjectId]);
+  useEffect(() => { if (initialProjectId) setSelectedId(initialProjectId); }, [initialProjectId]);
   useEffect(() => {
     if (!selectedId) { setArea("overview"); return; }
     const saved = sessionStorage.getItem(`ceac-project-area:${me.id}:${selectedId}`);
@@ -268,7 +281,7 @@ export default function ManagerProjects({ me, initialProjectId = null, openItem,
     } catch (err) { if (request === detailRequestRef.current) setError(humanError(err, "Project detail could not be loaded.")); }
   }
 
-  async function createProject(form) {
+  async function createProject(form, clearDraft) {
     setBusy(true); setError(null);
     try {
       const { data: projectId, error: createError } = await supabase.rpc("create_project_with_participants", {
@@ -280,14 +293,16 @@ export default function ManagerProjects({ me, initialProjectId = null, openItem,
         p_participant_unit_ids: [...new Set(form.participants || [])],
       });
       if (createError) throw createError;
+      void clearDraft();
       setSelectedId(projectId);
+      setRestoredSheet(null);
       setSheet({ type: "created", projectId });
       await loadList();
     } catch (err) { setError(humanError(err, "The project could not be created.")); }
     finally { setBusy(false); }
   }
 
-  async function saveObjective(form) {
+  async function saveObjective(form, clearDraft) {
     setBusy(true); setError(null);
     try {
       let objectiveRef = form.ref?.trim() || null;
@@ -312,7 +327,9 @@ export default function ManagerProjects({ me, initialProjectId = null, openItem,
         ? await supabase.from("objectives").update(payload).eq("id", form.id).eq("unit_id", projectUnitId).select("id").single()
         : await supabase.from("objectives").insert(payload).select("id").single();
       if (result.error) throw result.error;
+      void clearDraft();
       await loadDetail(detail.id); await loadList();
+      setRestoredSheet(null);
       setSheet({ type: "objective-saved", objectiveId: result.data.id, projectId: detail.id });
     } catch (err) { setError(humanError(err, "The objective could not be saved.")); }
     finally { setBusy(false); }
@@ -464,7 +481,7 @@ export default function ManagerProjects({ me, initialProjectId = null, openItem,
       {area === "objectives" && <section className="project-workspace-area">
         <div className="project-area-head">
           <div><span className="eyebrow">Outcome</span><h2>Objectives</h2></div>
-          {detail.canManageObjectives && <button className="btn btn-sm" onClick={() => setSheet({ type: "objective", value: null })}>Add objective</button>}
+          {detail.canManageObjectives && <button className="btn btn-sm" onClick={() => openObjective(null)}>Add objective</button>}
         </div>
         {detail.objectives.map((objective) => {
           const work = detail.work.filter((item) => item.objective_id === objective.id);
@@ -480,7 +497,7 @@ export default function ManagerProjects({ me, initialProjectId = null, openItem,
             {objective.target_value !== null && <div className="row-note">Target: {objective.target_value} {objective.target_unit || ""}{objective.achieved_value !== null ? ` · Result: ${objective.achieved_value} ${objective.target_unit || ""}` : " · No result recorded"}</div>}
             {objective.closed_note && <div className="row-note">Close note: {objective.closed_note}</div>}
             {objective.unit_id === projectUnitId && <div style={{ display: "flex", gap: 7, marginTop: 10, flexWrap: "wrap" }}>
-              <button className="btn btn-ghost btn-sm" onClick={() => setSheet({ type: "objective", value: objective })}>Edit objective</button>
+              <button className="btn btn-ghost btn-sm" onClick={() => openObjective(objective)}>Edit objective</button>
               <button className="btn btn-sm" onClick={() => goAssign({ projectId: detail.id, objectiveId: objective.id, phaseId: objective.phase_id })}>Add work</button>
             </div>}
             {work.length > 0 && <details className="project-objective-work"><summary>{work.length} linked work item{work.length === 1 ? "" : "s"}</summary><div>{work.map((item) => <WorkRow key={item.id} item={item} openItem={openItem} />)}</div></details>}
@@ -534,9 +551,9 @@ export default function ManagerProjects({ me, initialProjectId = null, openItem,
         />
       </section>}
 
-      {sheet?.type === "objective" && <ObjectiveSheet value={sheet.value} busy={busy} onClose={() => setSheet(null)} onSave={saveObjective} />}
+      {objectiveSheet && detail.canManageObjectives && <ObjectiveSheet me={me} draftSlot={`project-objective:${projectUnitId}:${detail.id}:${objectiveSheet.value?.id || "new"}`} value={objectiveSheet.value} busy={busy} onClose={() => {setRestoredSheet(null);setSheet(null);}} onSave={saveObjective} />}
       {sheet?.type === "objective-saved" && <Sheet onClose={() => setSheet(null)}><div className="h2">Objective saved</div><p className="screen-note">The next step is to assign work through the existing work flow.</p><button className="btn" style={{ marginTop: 14 }} onClick={() => goAssign({ projectId: sheet.projectId, objectiveId: sheet.objectiveId })}>Add work under this objective</button><button className="btn btn-ghost" style={{ marginTop: 8 }} onClick={() => setSheet(null)}>Not now</button></Sheet>}
-      {sheet?.type === "created" && <Sheet onClose={() => setSheet(null)}><div className="eyebrow">Step 2 of 3</div><div className="h2">Add objectives</div><p className="screen-note">The project basics are saved. Add objectives next, then assign work under them.</p><button className="btn" style={{ marginTop: 14 }} onClick={() => setSheet({ type: "objective", value: null })}>Add first objective</button><button className="btn btn-ghost" style={{ marginTop: 8 }} onClick={() => setSheet(null)}>Not now</button></Sheet>}
+      {sheet?.type === "created" && <Sheet onClose={() => setSheet(null)}><div className="eyebrow">Step 2 of 3</div><div className="h2">Add objectives</div><p className="screen-note">The project basics are saved. Add objectives next, then assign work under them.</p><button className="btn" style={{ marginTop: 14 }} onClick={() => openObjective(null)}>Add first objective</button><button className="btn btn-ghost" style={{ marginTop: 8 }} onClick={() => setSheet(null)}>Not now</button></Sheet>}
       </main>
     </div>;
   }
@@ -547,7 +564,7 @@ export default function ManagerProjects({ me, initialProjectId = null, openItem,
       title="Projects"
       description="Purpose, objectives, work, people, evidence and unit cost context in one operating workspace."
       actionLabel={canCreate ? "Create project" : undefined}
-      onAction={canCreate ? () => setSheet({ type: "project" }) : undefined}
+      onAction={canCreate ? () => { setRestoredSheet({type:"project"}); setSheet({ type: "project" }); } : undefined}
     />
     {error && <ProductNotice tone="error" title="Could not complete that">{error}</ProductNotice>}
     {visibleProposals.filter((proposal) => proposal.state === "submitted").length > 0 && <section className="ev2p-proposals">
@@ -590,17 +607,22 @@ export default function ManagerProjects({ me, initialProjectId = null, openItem,
       </div>
       {listedProjects.length === 0 && <ProjectEmpty title={showArchived?"No archived projects":"No unit projects yet"} description={showArchived?"Archived projects will appear here.":"Projects where your unit leads or participates will appear here."} />}
     </>}
-    {sheet?.type === "project" && <ProjectSheet units={units.filter((unit) => unit.id !== projectUnitId)} busy={busy} onClose={() => setSheet(null)} onCreate={createProject} />}
+    {currentSheet?.type === "project" && canCreate && <ProjectSheet me={me} draftSlot={`create-project:${projectUnitId}`} units={units.filter((unit) => unit.id !== projectUnitId)} busy={busy} onClose={() => { setRestoredSheet(null); setSheet(null); }} onCreate={createProject} />}
   </div>;
 }
 
-function ProjectSheet({ units, busy, onClose, onCreate }) {
+function ProjectSheet({ me, draftSlot, units, busy, onClose, onCreate }) {
   const [name, setName] = useState("");
   const [purpose, setPurpose] = useState("");
   const [startsOn, setStartsOn] = useState("");
   const [endsOn, setEndsOn] = useState("");
   const [participants, setParticipants] = useState([]);
+  const draft = useWorkFormDraft(me, draftSlot, { name, purpose, startsOn, endsOn, participants }, (saved) => {
+    setName(saved.name); setPurpose(saved.purpose); setStartsOn(saved.startsOn); setEndsOn(saved.endsOn); setParticipants(saved.participants);
+  });
+  if (!draft.ready) return <Sheet onClose={onClose}><p role="status">Checking for a saved draft…</p></Sheet>;
   return <Sheet onClose={onClose}>
+    {draft.notice && <p role="status">{draft.notice}</p>}
     <div className="eyebrow">Step 1 of 3</div><div className="h2">Project basics</div>
     <input className="field" placeholder="Project name" value={name} onChange={(event) => setName(event.target.value)} />
     <AssistiveTextarea className="field" rows={3} placeholder="Purpose" value={purpose} onChange={(event) => setPurpose(event.target.value)} />
@@ -608,11 +630,11 @@ function ProjectSheet({ units, busy, onClose, onCreate }) {
     <input className="field" type="date" value={endsOn} min={startsOn || undefined} onChange={(event) => setEndsOn(event.target.value)} />
     <div className="sec" style={{ marginTop: 18 }}><span>Participating units</span></div>
     {units.map((unit) => <label className="ck" key={unit.id}><input type="checkbox" checked={participants.includes(unit.id)} onChange={() => setParticipants((current) => current.includes(unit.id) ? current.filter((id) => id !== unit.id) : [...current, unit.id])} /><span className="ck-l">{unit.name}</span></label>)}
-    <button className="btn" style={{ marginTop: 14 }} disabled={busy || !name.trim() || (startsOn && endsOn && endsOn < startsOn)} onClick={() => onCreate({ name, purpose, startsOn, endsOn, participants })}>{busy ? "Creating..." : "Create and add objectives"}</button>
+    <button className="btn" style={{ marginTop: 14 }} disabled={busy || !name.trim() || (startsOn && endsOn && endsOn < startsOn)} onClick={() => onCreate({ name, purpose, startsOn, endsOn, participants }, draft.clear)}>{busy ? "Creating..." : "Create and add objectives"}</button>
   </Sheet>;
 }
 
-function ObjectiveSheet({ value, busy, onClose, onSave }) {
+function ObjectiveSheet({ me, draftSlot, value, busy, onClose, onSave }) {
   const [ref, setRef] = useState(value?.ref || "");
   const [name, setName] = useState(value?.name || "");
   const [statement, setStatement] = useState(value?.statement || "");
@@ -622,7 +644,12 @@ function ObjectiveSheet({ value, busy, onClose, onSave }) {
   const [targetUnit, setTargetUnit] = useState(value?.target_unit || "");
   const [achievedValue, setAchievedValue] = useState(value?.achieved_value ?? "");
   const [closedNote, setClosedNote] = useState(value?.closed_note || "");
+  const draft = useWorkFormDraft(me, draftSlot, { name, statement, measure, status, targetValue, targetUnit, achievedValue, closedNote }, (saved) => {
+    setName(saved.name); setStatement(saved.statement); setMeasure(saved.measure); setStatus(saved.status); setTargetValue(saved.targetValue); setTargetUnit(saved.targetUnit); setAchievedValue(saved.achievedValue); setClosedNote(saved.closedNote);
+  });
+  if (!draft.ready) return <Sheet onClose={onClose}><p role="status">Checking for a saved draft…</p></Sheet>;
   return <Sheet onClose={onClose}>
+    {draft.notice && <p role="status">{draft.notice}</p>}
     <div className="eyebrow">Step 2 of 3</div><div className="h2">{value ? "Edit objective" : "Add objective"}</div>
     {value ? <div className="card small">Reference: {ref}</div> : <div className="card small">A reference will be assigned automatically when you save.</div>}
     <input className="field" placeholder="Objective name" value={name} onChange={(event) => setName(event.target.value)} />
@@ -634,6 +661,6 @@ function ObjectiveSheet({ value, busy, onClose, onSave }) {
     <input className="field" placeholder="Target unit (optional)" value={targetUnit} onChange={(event) => setTargetUnit(event.target.value)} />
     <input className="field" type="number" step="any" placeholder="Result value (optional)" value={achievedValue} onChange={(event) => setAchievedValue(event.target.value)} />
     {["met", "partly_met", "not_met"].includes(status) && <AssistiveTextarea className="field" rows={3} placeholder="Outcome note" value={closedNote} onChange={(event) => setClosedNote(event.target.value)} />}
-    <button className="btn" style={{ marginTop: 14 }} disabled={busy || !name.trim() || (targetValue !== "" && !targetUnit.trim()) || (achievedValue !== "" && targetValue === "")} onClick={() => onSave({ id: value?.id, ref, name, statement, measure, status, targetValue, targetUnit, achievedValue, closedNote })}>{busy ? "Saving..." : value ? "Save objective" : "Save and add work"}</button>
+    <button className="btn" style={{ marginTop: 14 }} disabled={busy || !name.trim() || (targetValue !== "" && !targetUnit.trim()) || (achievedValue !== "" && targetValue === "")} onClick={() => onSave({ id: value?.id, ref, name, statement, measure, status, targetValue, targetUnit, achievedValue, closedNote }, draft.clear)}>{busy ? "Saving..." : value ? "Save objective" : "Save and add work"}</button>
   </Sheet>;
 }

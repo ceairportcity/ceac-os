@@ -1,3 +1,5 @@
+import { useEditorPosition } from "../lib/useEditorPosition";
+import { useWorkFormDraft } from "../lib/useWorkFormDraft";
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { statusPill, Avatar } from "../components/bits";
@@ -31,11 +33,18 @@ function MeetingDetail({ me, meetingId, back, goAssign, openItem, openProject, o
   const [responses,setResponses]=useState([]);
   const [responsesReady,setResponsesReady]=useState(false);
   const [notice,setNotice]=useState("");
-  const [editingDetails,setEditingDetails]=useState(false);
-  const [detailsDraft,setDetailsDraft]=useState({});
-  const [privateNote, setPrivateNote] = useState("");
+  const [editingDetails,setEditingDetails]=useEditorPosition(me,`meeting-details:${meetingId}`,false);
+  const [detailsEdit,setDetailsDraft]=useState(null);
+  const detailsDraft = detailsEdit ?? (meeting && {
+    title:meeting.title,starts:meeting.starts_at.slice(0,16),
+    ends:(meeting.ends_at||"").slice(0,16),location:meeting.location||"",
+  });
+  const [savedPrivateNote, setSavedPrivateNote] = useState("");
+  const [noteEdit, setPrivateNote] = useState(null);
+  const privateNote = noteEdit ?? savedPrivateNote;
   const [decision, setDecision] = useState("");
-  const [agendaDraft, setAgendaDraft] = useState("");
+  const [agendaEdit, setAgendaDraft] = useState(null);
+  const agendaDraft = agendaEdit ?? meeting?.agenda ?? "";
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -71,11 +80,10 @@ function MeetingDetail({ me, meetingId, back, goAssign, openItem, openProject, o
       if(responseResult.error&&!["42P01","PGRST205"].includes(responseResult.error.code))throw responseResult.error;
       setResponsesReady(!responseResult.error);setResponses(responseResult.data||[]);
       setMeeting(meetingResult.data);
-      setAgendaDraft(meetingResult.data?.agenda || "");
       setRecords(recordResult.data || []);
       setLinks(linkResult.data || []);
       setParticipants(participantResult.data || []);
-      setPrivateNote(privateNoteResult.data?.body || "");
+      setSavedPrivateNote(privateNoteResult.data?.body || "");
     } catch (err) {
       setError(humanError(err, "Meeting could not be opened."));
     } finally {
@@ -92,17 +100,27 @@ function MeetingDetail({ me, meetingId, back, goAssign, openItem, openProject, o
   const meetingStarted = Boolean(meeting && Date.now() >= new Date(meeting.starts_at).getTime());
   const meetingEnded = Boolean(meeting?.ends_at && Date.now() > new Date(meeting.ends_at).getTime());
 
+  const noteRecovery = useWorkFormDraft(me, canContribute && meeting.status !== "cancelled" ? `meeting-note:${meetingId}` : "",
+    {noteEdit}, saved => setPrivateNote(saved.noteEdit));
+  const agendaRecovery = useWorkFormDraft(me, canManage && !meetingStarted ? `meeting-agenda:${meetingId}:${meeting.updated_at || ""}` : "",
+    {agendaEdit}, saved => setAgendaDraft(saved.agendaEdit));
+  const decisionRecovery = useWorkFormDraft(me, canManage && meetingStarted && meeting.status !== "cancelled" ? `meeting-decision:${meetingId}` : "",
+    {decision}, saved => setDecision(saved.decision));
+
+  const detailsRecovery = useWorkFormDraft(me, editingDetails && canManage && !meetingStarted && meeting.status === "scheduled"
+    ? `meeting-edit:${meetingId}:${meeting.updated_at || ""}` : "", {detailsEdit},
+    saved => setDetailsDraft(saved.detailsEdit));
   const responseCurrent=row=>row&&new Date(row.meeting_starts_at).getTime()===new Date(meeting.starts_at).getTime()&&(row.meeting_ends_at?new Date(row.meeting_ends_at).getTime():null)===(meeting.ends_at?new Date(meeting.ends_at).getTime():null);
-  function editDetails(){setDetailsDraft({title:meeting.title,starts:meeting.starts_at.slice(0,16),ends:(meeting.ends_at||"").slice(0,16),location:meeting.location||""});setEditingDetails(true);}
+  function editDetails(){setDetailsDraft(null);setEditingDetails(true);}
   async function saveDetails(){
-    if(!canManage||busy||!detailsDraft.title?.trim()||!detailsDraft.starts||detailsDraft.ends&&detailsDraft.ends<=detailsDraft.starts)return;
+    if(!canManage||meetingStarted||meeting.status!=="scheduled"||!detailsRecovery.ready||busy||!detailsDraft.title?.trim()||!detailsDraft.starts||detailsDraft.ends&&detailsDraft.ends<=detailsDraft.starts)return;
     setBusy(true);setError(null);setNotice("");
     try{
       let write=supabase.from("meeting_sessions").update({title:detailsDraft.title.trim(),starts_at:new Date(`${detailsDraft.starts}:00Z`).toISOString(),ends_at:detailsDraft.ends?new Date(`${detailsDraft.ends}:00Z`).toISOString():null,location:detailsDraft.location.trim()||null,updated_by:me.id,updated_at:new Date().toISOString()}).eq("id",meeting.id).eq("starts_at",meeting.starts_at).eq("status","scheduled");
       write=meeting.updated_at?write.eq("updated_at",meeting.updated_at):write.is("updated_at",null);
       const result=await write.select("id,title,starts_at,ends_at,location,status,updated_at").single();
       if(result.error)throw result.error;
-      setMeeting(current=>({...current,...result.data}));setEditingDetails(false);setNotice("Meeting updated. Participants will receive the change in CEAC OS.");
+      setMeeting(current=>({...current,...result.data}));void detailsRecovery.clear({detailsEdit:null});setDetailsDraft(null);setEditingDetails(false);setNotice("Meeting updated. Participants will receive the change in CEAC OS.");
     }catch(err){setError(humanError(err,"The meeting could not be updated. It may have changed since you opened it."));}finally{setBusy(false);}
   }
 
@@ -128,6 +146,8 @@ function MeetingDetail({ me, meetingId, back, goAssign, openItem, openProject, o
         updated_at: new Date().toISOString(),
       }, { onConflict:"meeting_id,author_id" });
       if (result.error) throw result.error;
+      void noteRecovery.clear({noteEdit:null});
+      setSavedPrivateNote(privateNote);setPrivateNote(null);
       setNotice("Your private notes have been saved.");
     } catch (err) {
       setError(humanError(err, "Your private meeting notes could not be saved."));
@@ -149,6 +169,7 @@ function MeetingDetail({ me, meetingId, back, goAssign, openItem, openProject, o
         author_id: me.id,
       });
       if (result.error) throw result.error;
+      void decisionRecovery.clear({decision:""});
       setDecision("");
       await load();
     } catch (err) {
@@ -159,12 +180,13 @@ function MeetingDetail({ me, meetingId, back, goAssign, openItem, openProject, o
   }
 
   async function saveAgenda() {
-    if (!meeting || !canManage || meetingStarted) return;
+    if (!meeting || !canManage || meetingStarted || !agendaRecovery.ready) return;
     setBusy(true); setError(null);
     try {
       const result = await supabase.from("meeting_sessions").update({ agenda: agendaDraft.trim() || null }).eq("id",meeting.id);
       if (result.error) throw result.error;
-      await load();
+      void agendaRecovery.clear({agendaEdit:null});
+      await load();setAgendaDraft(null);
     } catch (err) {
       setError(humanError(err, "The agenda could not be saved."));
     } finally {
@@ -212,7 +234,7 @@ function MeetingDetail({ me, meetingId, back, goAssign, openItem, openProject, o
       {canContribute&&responsesReady&&meeting.status!=="cancelled"&&<div className="meeting-response" role="group" aria-label="Your invitation response">{[["accepted","Accept"],["tentative","Maybe"],["declined","Decline"]].map(([value,label])=><button type="button" key={value} className="btn btn-ghost btn-sm" aria-pressed={responses.some(r=>r.profile_id===me.id&&r.response===value&&responseCurrent(r))} disabled={busy} onClick={()=>respond(value)}>{label}</button>)}</div>}
       {responses.some(r=>r.profile_id===me.id&&!responseCurrent(r))&&<p className="screen-note">The meeting time changed. Please respond to the new time.</p>}
       {canManage&&!meetingStarted&&meeting.status==="scheduled"&&<button type="button" className="btn btn-ghost btn-sm" onClick={editDetails}>Edit meeting</button>}
-      {editingDetails&&<div className="meeting-details-editor"><label>Title<input className="field" value={detailsDraft.title} maxLength={220} onChange={e=>setDetailsDraft(d=>({...d,title:e.target.value}))}/></label><label>Starts · Accra time<input className="field" type="datetime-local" value={detailsDraft.starts} onChange={e=>setDetailsDraft(d=>({...d,starts:e.target.value}))}/></label><label>Ends · Accra time<input className="field" type="datetime-local" value={detailsDraft.ends} onChange={e=>setDetailsDraft(d=>({...d,ends:e.target.value}))}/></label><label>Location<input className="field" value={detailsDraft.location} onChange={e=>setDetailsDraft(d=>({...d,location:e.target.value}))}/></label><button className="btn" disabled={busy||!detailsDraft.title?.trim()||!detailsDraft.starts||Boolean(detailsDraft.ends&&detailsDraft.ends<=detailsDraft.starts)} onClick={saveDetails}>Save changes</button><button className="btn btn-ghost" disabled={busy} onClick={()=>setEditingDetails(false)}>Cancel editing</button></div>}
+      {editingDetails&&canManage&&!meetingStarted&&meeting.status==="scheduled"&&detailsRecovery.ready&&<div className="meeting-details-editor"><label>Title<input className="field" value={detailsDraft.title} maxLength={220} onChange={e=>setDetailsDraft(d=>({...(d??detailsDraft),title:e.target.value}))}/></label><label>Starts · Accra time<input className="field" type="datetime-local" value={detailsDraft.starts} onChange={e=>setDetailsDraft(d=>({...(d??detailsDraft),starts:e.target.value}))}/></label><label>Ends · Accra time<input className="field" type="datetime-local" value={detailsDraft.ends} onChange={e=>setDetailsDraft(d=>({...(d??detailsDraft),ends:e.target.value}))}/></label><label>Location<input className="field" value={detailsDraft.location} onChange={e=>setDetailsDraft(d=>({...(d??detailsDraft),location:e.target.value}))}/></label><button className="btn" disabled={busy||!detailsDraft.title?.trim()||!detailsDraft.starts||Boolean(detailsDraft.ends&&detailsDraft.ends<=detailsDraft.starts)} onClick={saveDetails}>Save changes</button><button className="btn btn-ghost" disabled={busy} onClick={()=>{void detailsRecovery.clear({detailsEdit:null});setDetailsDraft(null);setEditingDetails(false);}}>Cancel editing</button></div>}
       {notice&&<p role="status">{notice}</p>}
       {meeting.join_url && meeting.status !== "cancelled" && <a className="meeting-join" href={meeting.join_url} target="_blank" rel="noreferrer">
         Join {providerLabel(meeting)} <span aria-hidden="true">↗</span>
@@ -231,8 +253,9 @@ function MeetingDetail({ me, meetingId, back, goAssign, openItem, openProject, o
       <div className="meeting-section-head"><div><span>Before</span><h2>Agenda</h2></div><small>{meetingStarted ? "Meeting started" : "Preparation"}</small></div>
       {!meetingStarted && canManage
         ? <div className="meeting-agenda-editor">
-            <textarea rows={4} value={agendaDraft} onChange={(event) => setAgendaDraft(event.target.value)} placeholder="What should this meeting cover?" />
-            <button className="btn btn-sm" disabled={busy} onClick={saveAgenda}>{busy ? "Saving…" : "Save agenda"}</button>
+            <textarea rows={4} value={agendaDraft} disabled={busy || !agendaRecovery.ready} onChange={(event) => setAgendaDraft(event.target.value)} placeholder="What should this meeting cover?" />
+            {agendaRecovery.notice&&<p role="status">{agendaRecovery.notice}</p>}
+            <button className="btn btn-sm" disabled={busy || !agendaRecovery.ready} onClick={saveAgenda}>{busy ? "Saving…" : "Save agenda"}</button>
           </div>
         : meeting.agenda ? <p className="meeting-agenda">{meeting.agenda}</p> : <div className="quiet-empty compact"><strong>No agenda recorded</strong><span>No shared agenda is on the record.</span></div>}
       {participants.length > 0 && <div className="meeting-participant-summary">
@@ -261,10 +284,11 @@ function MeetingDetail({ me, meetingId, back, goAssign, openItem, openProject, o
           <span className="pill p-grey">Private</span>
         </div>
         <div className="assistive-field textarea">
-          <textarea rows={7} value={privateNote} onChange={(event) => setPrivateNote(event.target.value)} placeholder="Write your own notes from this meeting…" />
-          <VoiceInput compact label="Speak private note" onResult={(text) => setPrivateNote((current) => current ? current + " " + text : text)} />
+          <textarea rows={7} value={privateNote} disabled={busy || !noteRecovery.ready} onChange={(event) => setPrivateNote(event.target.value)} placeholder="Write your own notes from this meeting…" />
+          {noteRecovery.ready && !busy && <VoiceInput compact label="Speak private note" onResult={(text) => setPrivateNote(privateNote ? privateNote + " " + text : text)} />}
         </div>
-        <button className="btn btn-sm" disabled={busy} onClick={savePrivateNote}>{busy ? "Saving…" : "Save my notes"}</button>
+        {noteRecovery.notice&&<p role="status">{noteRecovery.notice}</p>}
+        <button className="btn btn-sm" disabled={busy || !noteRecovery.ready} onClick={savePrivateNote}>{busy ? "Saving…" : "Save my notes"}</button>
       </div>}
 
       {meetingStarted && <div className="meeting-shared-decisions">
@@ -279,10 +303,10 @@ function MeetingDetail({ me, meetingId, back, goAssign, openItem, openProject, o
         </article>)}
         {canManage && <div className="meeting-record-form">
           <div className="assistive-field textarea">
-            <textarea rows={3} value={decision} onChange={(event) => setDecision(event.target.value)} placeholder="Record the decision exactly as agreed" />
-            <VoiceInput compact label="Speak decision" onResult={(text) => setDecision((current) => current ? current + " " + text : text)} />
+            <textarea rows={3} value={decision} disabled={busy || !decisionRecovery.ready} onChange={(event) => setDecision(event.target.value)} placeholder="Record the decision exactly as agreed" />
+            {decisionRecovery.ready && !busy && <VoiceInput compact label="Speak decision" onResult={(text) => setDecision((current) => current ? current + " " + text : text)} />}
           </div>
-          <button className="btn" disabled={busy || !decision.trim()} onClick={addDecision}>{busy ? "Saving…" : "Record shared decision"}</button>
+          <button className="btn" disabled={busy || !decisionRecovery.ready || !decision.trim()} onClick={addDecision}>{busy ? "Saving…" : "Record shared decision"}</button>
         </div>}
       </div>}
     </section>

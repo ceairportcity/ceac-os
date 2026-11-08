@@ -1,3 +1,4 @@
+import { useWorkFormDraft } from "../lib/useWorkFormDraft";
 import { useState } from "react";
 import { supabase } from "../lib/supabase";
 import { Sheet } from "./bits";
@@ -24,6 +25,12 @@ export default function PersonalPlanningEditor({ me, item, onClose, onChanged })
   const [busy,setBusy] = useState(false);
   const [error,setError] = useState("");
 
+  const recovery = useWorkFormDraft(me, `calendar-edit:${kind}:${item.id}`, {
+    title, details, date, noteType, time, endTime, location,
+  }, saved => {
+    setTitle(saved.title); setDetails(saved.details); setDate(saved.date); setNoteType(saved.noteType);
+    setTime(saved.time); setEndTime(saved.endTime); setLocation(saved.location);
+  });
   const table = kind === "task" ? "personal_day_tasks"
     : kind === "event" ? "personal_calendar_events"
     : "personal_day_notes";
@@ -34,6 +41,7 @@ export default function PersonalPlanningEditor({ me, item, onClose, onChanged })
     && (kind !== "note" || noteType !== "dated" || Boolean(date));
   async function finish(result) {
     if (result.error) throw result.error;
+    void recovery.clear();
     await onChanged?.();
     onClose?.();
   }
@@ -76,6 +84,7 @@ export default function PersonalPlanningEditor({ me, item, onClose, onChanged })
     } finally { setBusy(false); }
   }
 
+  if (!recovery.ready) return <Sheet onClose={onClose}><p role="status">Checking for a saved draft…</p></Sheet>;
   return <Sheet onClose={() => { if(!busy)onClose?.(); }}>
     <div className="phase6-planning-composer">
       <div><span className="eyebrow">Private planning</span>
@@ -136,10 +145,11 @@ export default function PersonalPlanningEditor({ me, item, onClose, onChanged })
           maxLength={kind === "note" ? 12000 : 4000} rows={5} value={details}
           onChange={e=>setDetails(e.target.value)} />
       </label>
+      {recovery.notice && <p role="status">{recovery.notice}</p>}
       {error && <p role="alert">{error}</p>}
       <div className="phase6-composer-actions">
         <Button variant="quiet" disabled={busy} onClick={remove}>Delete {kind}</Button>
-        <Button variant="secondary" disabled={busy} onClick={onClose}>Cancel</Button>
+        <Button variant="secondary" disabled={busy} onClick={()=>{void recovery.clear();onClose?.();}}>Cancel</Button>
         <Button disabled={busy || !valid} onClick={save}>{busy ? "Saving…" : "Save changes"}</Button>
       </div>
     </div>

@@ -1,3 +1,4 @@
+import { useWorkFormDraft } from "../lib/useWorkFormDraft";
 import RoutineScheduleOptions from "../components/RoutineScheduleOptions";
 import { initialRoutineScheduleOptions, routineScheduleOptions } from "../lib/routineScheduleOptions";
 import { useEffect, useState } from "react";
@@ -85,6 +86,31 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
   const [sourceFiles, setSourceFiles] = useState([]);
   const [err, setErr] = useState(null);
 
+  const assignmentSource = [
+    initialProjectId, initialObjectiveId, initialPhaseId, initialSubTeamId,
+    initialAssigneeId, initialMeetingId, initialSourceRoomId, initialSourceMessageId,
+  ].join(":");
+  const draft = useWorkFormDraft(me, done ? "" : `assign:${workUnitId}:${assignmentSource}`, {
+    title, purpose, instructions, expectedOutcome, kind, assignee, subTeam, project, objective, phase,
+    due, steps, noStepsNeeded, routineSchedule, routineWeeklyDay, routineWeekdays,
+    routineDayOfMonth, routineStart, routineEnd, routineOptions, routineRecordsValue,
+    routineValueLabel, caseOpenedOn, caseTargetOn, requestResponsibleUnit, decisionQuestion,
+    meetingTitle, meetingOn, meetingNote, deliverableEvidenceRequired,
+  }, (saved) => {
+    setTitle(saved.title); setPurpose(saved.purpose); setInstructions(saved.instructions);
+    setExpectedOutcome(saved.expectedOutcome); setKind(saved.kind); setAssignee(saved.assignee);
+    setSubTeam(saved.subTeam); setProject(saved.project); setObjective(saved.objective); setPhase(saved.phase);
+    setDue(saved.due); setSteps(saved.steps); setNoStepsNeeded(saved.noStepsNeeded);
+    setRoutineSchedule(saved.routineSchedule); setRoutineWeeklyDay(saved.routineWeeklyDay);
+    setRoutineWeekdays(saved.routineWeekdays); setRoutineDayOfMonth(saved.routineDayOfMonth);
+    setRoutineStart(saved.routineStart); setRoutineEnd(saved.routineEnd); setRoutineOptions(saved.routineOptions);
+    setRoutineRecordsValue(saved.routineRecordsValue); setRoutineValueLabel(saved.routineValueLabel);
+    setCaseOpenedOn(saved.caseOpenedOn); setCaseTargetOn(saved.caseTargetOn);
+    setRequestResponsibleUnit(saved.requestResponsibleUnit); setDecisionQuestion(saved.decisionQuestion);
+    setMeetingTitle(saved.meetingTitle); setMeetingOn(saved.meetingOn); setMeetingNote(saved.meetingNote);
+    setDeliverableEvidenceRequired(saved.deliverableEvidenceRequired);
+  });
+
   useEffect(() => { load(); }, [me.id, me.org_id, workUnitId]);
   useEffect(() => {
     setProject(initialProjectId);
@@ -99,10 +125,10 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
   }, [initialProjectId, initialObjectiveId, initialPhaseId, initialSubTeamId, initialKind, initialMeetingTitle, initialMeetingOn, initialMeetingNote, initialTitle]);
   useEffect(() => { loadProjectContext(); }, [project]);
   useEffect(() => {
-    if (kind !== "task" || title.trim().length < 4) { setRecipeSteps([]); setRecipeSource(null); return; }
+    if (!draft.ready || kind !== "task" || title.trim().length < 4) { setRecipeSteps([]); setRecipeSource(null); return; }
     const timer = setTimeout(() => loadRecipeSuggestion(title), 250);
     return () => clearTimeout(timer);
-  }, [kind, title, workUnitId]);
+  }, [draft.ready, kind, title, workUnitId]);
 
   async function load() {
     if (!workUnitId) return;
@@ -326,6 +352,7 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
         if (createdResult.error) throw createdResult.error;
         await linkMeeting(workId);
         await attachSourceFiles(workId);
+        void draft.clear();
         setDone(createdResult.data.ref);
         setTitle(""); setPurpose(""); setExpectedOutcome(""); setAssignee(""); setDue("");
         setDeliverableEvidenceRequired(true); setKind("task"); setVoiceHint(null);
@@ -359,6 +386,7 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
         if (createdResult.error) throw createdResult.error;
         await linkMeeting(workId);
         await attachSourceFiles(workId);
+        void draft.clear();
         setDone(createdResult.data.ref);
         setTitle(""); setPurpose(""); setExpectedOutcome(""); setAssignee(""); setDue("");
         setMeetingTitle(""); setMeetingOn(new Date().toISOString().slice(0, 10)); setMeetingNote("");
@@ -389,6 +417,7 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
         if (createdResult.error) throw createdResult.error;
         await linkMeeting(workId);
         await attachSourceFiles(workId);
+        void draft.clear();
         setDone(createdResult.data.ref);
         setTitle(""); setPurpose(""); setExpectedOutcome(""); setAssignee(""); setDue("");
         setDecisionQuestion(""); setKind("task"); setVoiceHint(null);
@@ -420,6 +449,7 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
         if (createdResult.error) throw createdResult.error;
         await linkMeeting(workId);
         await attachSourceFiles(workId);
+        void draft.clear();
         setDone(createdResult.data.ref);
         setTitle(""); setPurpose(""); setExpectedOutcome(""); setAssignee(""); setDue("");
         setRequestResponsibleUnit(""); setKind("task"); setVoiceHint(null);
@@ -452,6 +482,7 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
         if (createdResult.error) throw createdResult.error;
         await linkMeeting(workId);
         await attachSourceFiles(workId);
+        void draft.clear();
         setDone(createdResult.data.ref);
         setTitle(""); setPurpose(""); setExpectedOutcome(""); setAssignee(""); setDue("");
         setCaseOpenedOn(new Date().toISOString().slice(0, 10)); setCaseTargetOn("");
@@ -488,6 +519,7 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
         if (createdResult.error) throw createdResult.error;
         await linkMeeting(workId);
         await attachSourceFiles(workId);
+        void draft.clear();
         setDone(createdResult.data.ref);
         setTitle(""); setPurpose(""); setInstructions(""); setExpectedOutcome("");
         setKind("task"); setAssignee(""); setDue(""); setSteps([""]); setNoStepsNeeded(false);
@@ -519,12 +551,15 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
       await linkMeeting(created.id);
       await linkSourceMessage(created);
       await attachSourceFiles(created.id);
+      void draft.clear();
       setDone(created.ref);
       setTitle(""); setPurpose(""); setInstructions(""); setExpectedOutcome("");
       setKind("task"); setDue(""); setSteps([""]); setNoStepsNeeded(false); setVoiceHint(null); setVoiceProposal(null);
     } catch (e) { setErr(e.message || "Something went wrong. Nothing was sent."); }
     finally { setBusy(false); }
   }
+
+  if (!draft.ready) return <ComposerDrawer open onClose={back} title="Give out work"><p role="status">Checking for a saved draft…</p></ComposerDrawer>;
 
   if (done) {
     return (
@@ -556,6 +591,7 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
       panelClassName="reference-composer reference-work-composer"
       footer={<button className="btn assign-primary-action" onClick={create} disabled={primaryActionDisabled()}>{busy ? "Saving…" : primaryActionLabel()}</button>}
     >
+    {draft.notice && <p role="status">{draft.notice}</p>}
     <div className={`assign-screen ev2-work-assignment ocr-work-composer is-${kind}`}>
       {kind !== "task" && <section className="assign-intro ev2wa-intro">
         <div className="assign-voice">
