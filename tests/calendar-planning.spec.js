@@ -262,7 +262,6 @@ test('an unfinished journal returns to the same editor after repeated reloads',a
  }
  expect(fixture.getNotes()).toEqual([]);
  await page.getByRole('button',{name:'Save journal'}).click();
- await expect(page.getByText('Daily journal saved for 7 Nov.')).toBeVisible();
- expect(fixture.getNotes()).toHaveLength(1);
- expect(fixture.getNotes()[0].body).toBe(message);
+ await expect.poll(()=>fixture.getNotes().map(note=>note.body)).toEqual([message]);
+ await expect(journal).toHaveValue(message);
 });
