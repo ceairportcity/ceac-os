@@ -3,7 +3,7 @@ import fs from 'node:fs';
 test.use({launchOptions:process.env.CEAC_CHROMIUM_EXECUTABLE_PATH?{executablePath:process.env.CEAC_CHROMIUM_EXECUTABLE_PATH}:undefined});
 const person='11111111-1111-4111-8111-111111111111',org='22222222-2222-4222-8222-222222222222',unit='33333333-3333-4333-8333-333333333333';
 async function mock(page,{failTaskUpdate=false,notesSeed=[]}={}){
- const requests=[],writes=[];let responses=[],notes=[...notesSeed];let privateTask={id:'private-task',title:'Prepare privately',plan_date:'2026-11-07',completed_at:null};
+ const requests=[],writes=[];let responses=[],notes=[...notesSeed],meetingNote=null;let privateTask={id:'private-task',title:'Prepare privately',plan_date:'2026-11-07',completed_at:null};
  const meeting={id:'meeting-a',org_id:org,title:'Media preparation',starts_at:'2026-11-07T09:00:00Z',ends_at:'2026-11-07T10:30:00Z',status:'scheduled',scope:'unit',created_by:person,unit_id:unit,provider:'external',join_url:'https://meet.google.com/example',location:'Church office',meeting_participants:[{profile_id:person,role:'organiser'}]};
  await page.route('**/*',async route=>{
   const req=route.request(),url=new URL(req.url());
@@ -13,6 +13,7 @@ async function mock(page,{failTaskUpdate=false,notesSeed=[]}={}){
   if(req.method()!=='GET'&&req.method()!=='HEAD'){
    const body=req.postDataJSON();writes.push({name,body});
    if(name==='meeting_sessions'){Object.assign(meeting,body);return reply(meeting);}
+   if(name==='meeting_private_notes'){meetingNote=body.body;return reply(null);}
    if(name==='meeting_responses'){responses=[{...body,meeting_starts_at:meeting.starts_at,meeting_ends_at:meeting.ends_at}];return reply(responses[0]);}
    if(name==='personal_day_notes'){
     const id=url.searchParams.get('id')?.replace('eq.','');
@@ -52,7 +53,7 @@ async function mock(page,{failTaskUpdate=false,notesSeed=[]}={}){
   }
   if(name==='meeting_sessions')return reply(url.searchParams.has('id')?meeting:[meeting,{...meeting,id:'meeting-b',title:'Overlapping planning',starts_at:'2026-11-07T10:00:00Z',ends_at:'2026-11-07T11:00:00Z'}]);
   if(name==='meeting_participants')return reply([{profile_id:person,role:'organiser',profiles:{full_name:'Synthetic Planner'}}]);
-  if(name==='meeting_private_notes')return reply(url.searchParams.has('meeting_id')&&req.headers().accept?.includes('object')?null:[]);
+  if(name==='meeting_private_notes')return reply(meetingNote===null?null:{body:meetingNote,updated_at:'2026-11-12T12:00:00Z'});
   if(name==='work_items')return reply(url.searchParams.get('kind')==='eq.routine'?[]:[{id:'work-review',org_id:org,unit_id:unit,assignee_id:person,ref:'IT-001',title:'Publicity awaiting review',kind:'task',status:'in_review',due_at:'2026-11-07T12:00:00Z'}]);
   if(name==='unit_memberships')return reply([{profile_id:person,unit_id:unit,role:'manager'}]);
   if(name==='leave_requests')return reply([{id:'leave',profile_id:person,kind:'annual',start_date:'2026-11-06',end_date:'2026-11-09',status:'approved',profiles:{full_name:'Synthetic Planner'}}]);
@@ -62,7 +63,7 @@ async function mock(page,{failTaskUpdate=false,notesSeed=[]}={}){
   if(name==='units')return reply([{id:unit,name:'Synthetic IT',active:true}]);
   return reply([]);
  });
- return {requests,writes,getNotes:()=>notes};
+ return {requests,writes,getNotes:()=>notes,getMeetingNote:()=>meetingNote,setMeetingNote:(body)=>{meetingNote=body;}};
 }
 for(const [role,width] of [['staff',390],['staff',1024],['manager',390],['manager',1024],['manager',1440],['admin',390],['admin',1024],['executive',390],['executive',1024],['executive',1440]])test(`${role} Calendar views, layers, date context and phone containment at ${width}`,async({page})=>{
  await page.clock.setFixedTime(new Date("2026-11-07T12:00:00Z"));
@@ -147,6 +148,30 @@ test('meeting response persists, calendar export is a real file, preparation not
  await expect(page.getByRole('button',{name:'Accept',exact:true})).toHaveAttribute('aria-pressed','false');
  await page.getByText('Add to another calendar',{exact:true}).click();
  const download=page.waitForEvent('download');await page.getByRole('button',{name:'Download calendar event'}).click();expect((await download).suggestedFilename()).toBe('ceac-meeting.ics');
+});
+
+test('meeting notes autosave, survive reopening, and reject destructive empty drafts',async({page})=>{
+  await page.clock.setFixedTime(new Date('2026-11-07T07:00:00Z'));
+  const data=await mock(page);
+  await page.goto('/tests/fixtures/calendar-planning.html?role=meeting');
+  const editor=page.locator('.meeting-private-notes textarea');
+  await expect(editor).toBeEnabled();
+  await editor.fill('Valuable photography and graphics training notes');
+  await expect.poll(()=>data.getMeetingNote()).toBe('Valuable photography and graphics training notes');
+  await expect(page.getByText('Saved automatically',{exact:true})).toBeVisible();
+  await page.reload();
+  await expect(editor).toHaveValue('Valuable photography and graphics training notes');
+  // An old local recovery draft must not overwrite a newer server copy.
+  data.setMeetingNote('Updated from another device');
+  await page.reload();
+  await page.waitForTimeout(1500);
+  expect(data.getMeetingNote()).toBe('Updated from another device');
+  await editor.fill('');
+  await page.getByRole('button',{name:'Save my notes'}).click();
+  expect(data.getMeetingNote()).toBe('Updated from another device');
+  await expect(editor).toHaveValue('Updated from another device');
+  await page.reload();
+  await expect(editor).toHaveValue('Updated from another device');
 });
 
 test('saved journal is discoverable by date and protected when leaving personal Calendar',async({page})=>{

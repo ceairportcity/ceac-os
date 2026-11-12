@@ -1,6 +1,6 @@
 import { useEditorPosition } from "../lib/useEditorPosition";
 import { useWorkFormDraft } from "../lib/useWorkFormDraft";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { statusPill, Avatar } from "../components/bits";
 import "../components/MeetingPlanning.css";
@@ -42,6 +42,11 @@ function MeetingDetail({ me, meetingId, back, goAssign, openItem, openProject, o
   const [savedPrivateNote, setSavedPrivateNote] = useState("");
   const [noteEdit, setPrivateNote] = useState(null);
   const privateNote = noteEdit ?? savedPrivateNote;
+  const [noteSaveState, setNoteSaveState] = useState("");
+  const noteWriteQueue = useRef(Promise.resolve());
+  const latestNote = useRef(null);
+  const noteUserEdited = useRef(false);
+  latestNote.current = noteEdit;
   const [decision, setDecision] = useState("");
   const [agendaEdit, setAgendaDraft] = useState(null);
   const agendaDraft = agendaEdit ?? meeting?.agenda ?? "";
@@ -101,7 +106,7 @@ function MeetingDetail({ me, meetingId, back, goAssign, openItem, openProject, o
   const meetingEnded = Boolean(meeting?.ends_at && Date.now() > new Date(meeting.ends_at).getTime());
 
   const noteRecovery = useWorkFormDraft(me, canContribute && meeting.status !== "cancelled" ? `meeting-note:${meetingId}` : "",
-    {noteEdit}, saved => setPrivateNote(saved.noteEdit));
+    {noteEdit}, saved => setPrivateNote(typeof saved.noteEdit === "string" && saved.noteEdit.trim() ? saved.noteEdit : null));
   const agendaRecovery = useWorkFormDraft(me, canManage && !meetingStarted ? `meeting-agenda:${meetingId}:${meeting.updated_at || ""}` : "",
     {agendaEdit}, saved => setAgendaDraft(saved.agendaEdit));
   const decisionRecovery = useWorkFormDraft(me, canManage && meetingStarted && meeting.status !== "cancelled" ? `meeting-decision:${meetingId}` : "",
@@ -134,22 +139,58 @@ function MeetingDetail({ me, meetingId, back, goAssign, openItem, openProject, o
     }catch(err){setError(humanError(err,"Your response could not be saved."));}finally{setBusy(false);}
   }
 
-  async function savePrivateNote() {
-    if (!meeting || !canContribute || meeting.status==="cancelled") return;
-    setBusy(true); setError(null);
-    try {
+  // Serialize writes: an older autosave must never arrive after a newer draft.
+  function persistPrivateNote(body) {
+    const operation = noteWriteQueue.current.catch(() => {}).then(async () => {
       const result = await supabase.from("meeting_private_notes").upsert({
-        meeting_id: meeting.id,
-        org_id: me.org_id,
-        author_id: me.id,
-        body: privateNote,
-        updated_at: new Date().toISOString(),
-      }, { onConflict:"meeting_id,author_id" });
+        meeting_id: meetingId, org_id: me.org_id, author_id: me.id,
+        body, updated_at: new Date().toISOString(),
+      }, { onConflict: "meeting_id,author_id" });
       if (result.error) throw result.error;
-      void noteRecovery.clear({noteEdit:null});
-      setSavedPrivateNote(privateNote);setPrivateNote(null);
+      setSavedPrivateNote(body);
+    });
+    noteWriteQueue.current = operation;
+    return operation;
+  }
+
+  useEffect(() => {
+    if (!meeting || !canContribute || meeting.status === "cancelled" ||
+        !noteRecovery.ready || !noteUserEdited.current || noteEdit === null || !noteEdit.trim()) return;
+    setNoteSaveState("Saving draft…");
+    const timer = setTimeout(() => {
+      const snapshot = noteEdit;
+      persistPrivateNote(snapshot).then(() => {
+        if (latestNote.current === snapshot) setNoteSaveState("Saved automatically");
+      }).catch(() => setNoteSaveState("Not saved online — draft retained on this device"));
+    }, 1200);
+    return () => clearTimeout(timer);
+  }, [noteEdit, meeting?.id, noteRecovery.ready, canContribute]);
+
+  async function savePrivateNote() {
+    if (!meeting || !canContribute || meeting.status === "cancelled" || !noteRecovery.ready) return;
+    // Empty saves are never allowed to destroy previously written meeting notes.
+    if (!privateNote.trim()) {
+      // An empty local draft must not mask a non-empty saved server note on reopen.
+      await noteRecovery.clear({ noteEdit: null });
+      setPrivateNote(null);
+      noteUserEdited.current = false;
+      setNoteSaveState("");
+      setNotice("Nothing to save. Your existing notes are unchanged.");
+      return;
+    }
+    setBusy(true); setError(null);
+    const snapshot = privateNote;
+    try {
+      await persistPrivateNote(snapshot);
+      if (latestNote.current === snapshot) {
+        await noteRecovery.clear({ noteEdit: null });
+        setPrivateNote(null);
+        noteUserEdited.current = false;
+      }
+      setNoteSaveState("Saved");
       setNotice("Your private notes have been saved.");
     } catch (err) {
+      setNoteSaveState("Not saved online — draft retained on this device");
       setError(humanError(err, "Your private meeting notes could not be saved."));
     } finally {
       setBusy(false);
@@ -284,10 +325,11 @@ function MeetingDetail({ me, meetingId, back, goAssign, openItem, openProject, o
           <span className="pill p-grey">Private</span>
         </div>
         <div className="assistive-field textarea">
-          <textarea rows={7} value={privateNote} disabled={busy || !noteRecovery.ready} onChange={(event) => setPrivateNote(event.target.value)} placeholder="Write your own notes from this meeting…" />
-          {noteRecovery.ready && !busy && <VoiceInput compact label="Speak private note" onResult={(text) => setPrivateNote(privateNote ? privateNote + " " + text : text)} />}
+          <textarea rows={7} value={privateNote} disabled={busy || !noteRecovery.ready} onChange={(event) => { noteUserEdited.current = true; setPrivateNote(event.target.value); }} placeholder="Write your own notes from this meeting…" />
+          {noteRecovery.ready && !busy && <VoiceInput compact label="Speak private note" onResult={(text) => { noteUserEdited.current = true; setPrivateNote(privateNote ? privateNote + " " + text : text); }} />}
         </div>
         {noteRecovery.notice&&<p role="status">{noteRecovery.notice}</p>}
+        {noteSaveState&&<p role="status">{noteSaveState}</p>}
         <button className="btn btn-sm" disabled={busy || !noteRecovery.ready} onClick={savePrivateNote}>{busy ? "Saving…" : "Save my notes"}</button>
       </div>}
 
