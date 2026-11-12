@@ -115,6 +115,7 @@ export default function ManagerProjects({ me, initialProjectId = null, openItem,
   const [error, setError] = useState(null);
   const [area, setArea] = useState("overview");
   const [selectedWorkId, setSelectedWorkId] = useState(null);
+  const [workPresentation, setWorkPresentation] = useState("list");
   const [workFilter, setWorkFilter] = useState("all");
   const [phaseFilter, setPhaseFilter] = useState("all");
   // A unit switch must invalidate old async reads as well as their visible data.
@@ -405,13 +406,14 @@ export default function ManagerProjects({ me, initialProjectId = null, openItem,
         value={area}
         onChange={setArea}
         items={[
-          ["overview","Overview"],
+          ["overview","Progress"],
           ["work","Work",detail.work.length],
-          ["objectives","Objectives",detail.objectives.length],
+          ["milestones","Milestones",detail.milestones?.length],
+          ["objectives","Plan",detail.objectives.length],
           ["files","Files"],
           ["register","Register"],
-          ["collaboration","Collaboration"],
-          ["close","Close & record"],
+          ["collaboration","Coordination"],
+          ["close","Closeout"],
         ]}
       />
 
@@ -441,6 +443,15 @@ export default function ManagerProjects({ me, initialProjectId = null, openItem,
         </details>
       </section>}
 
+      {area === "milestones" && <section className="project-workspace-area project-timeline">
+        <h2>Milestone timeline</h2>
+        {detail.milestones === null ? <p>Milestone records are unavailable.</p>
+          : detail.milestones.length ? <ol>{detail.milestones.map(milestone => <li key={milestone.id}>
+            <span className="milestone-icon" aria-hidden="true">{milestone.status === "achieved" ? "✓" : "•"}</span>
+            <span><strong>{milestone.name}</strong><small>{String(milestone.status).replaceAll("_", " ")}{milestone.target_on ? " · " + dateOnly(milestone.target_on + "T00:00:00") : ""}</small></span>
+          </li>)}</ol> : <p>No milestones recorded.</p>}
+      </section>}
+
       {area === "work" && <section className="project-workspace-area fpg-project-work">
         <div className="fpg-project-work-head">
           <div><span className="eyebrow">Execution</span><h2>Project work</h2><p>Non-private work across participating units. Select a row for context or open the full record for complete evidence and review history.</p></div>
@@ -448,7 +459,8 @@ export default function ManagerProjects({ me, initialProjectId = null, openItem,
         </div>
         <div className="fpg-viewbar" aria-label="Project work views">
           <div className="fpg-view-switch" aria-label="Active project work presentation">
-            <span className="fpg-view-current" aria-current="true">Work register</span>
+            {[["list", "List"], ["board", "Board"]].map(([key, label]) => <button type="button" key={key}
+              aria-pressed={workPresentation === key} onClick={() => setWorkPresentation(key)}>{label}</button>)}
           </div>
           <div className="fpg-work-filters" aria-label="Work filters">
             <button type="button" className={workFilter === "all" ? "is-active" : ""} onClick={() => setWorkFilter("all")}>All</button>
@@ -456,7 +468,7 @@ export default function ManagerProjects({ me, initialProjectId = null, openItem,
             <button type="button" className={workFilter === "finished" ? "is-active" : ""} onClick={() => setWorkFilter("finished")}>Finished</button>
           </div>
         </div>
-        <ProjectIssueTable
+        {workPresentation === "board" ? <ProjectWorkBoard items={visibleWork} onSelect={setSelectedWorkId} /> : <ProjectIssueTable
           items={visibleWork}
           selectedId={selectedWorkId}
           objectiveById={objectiveById}
@@ -464,7 +476,7 @@ export default function ManagerProjects({ me, initialProjectId = null, openItem,
           onSelect={setSelectedWorkId}
           formatDue={dueLabel}
           renderStatus={statusPill}
-        />
+        />}
         {unattached.length > 0 && <p className="context-note">{unattached.length} item{unattached.length === 1 ? "" : "s"} are not attached to an objective. CEAC does not force a false objective relationship for administrative work.</p>}
         <ProjectWorkDrawer
           item={selectedWork}
@@ -663,4 +675,26 @@ function ObjectiveSheet({ me, draftSlot, value, busy, onClose, onSave }) {
     {["met", "partly_met", "not_met"].includes(status) && <AssistiveTextarea className="field" rows={3} placeholder="Outcome note" value={closedNote} onChange={(event) => setClosedNote(event.target.value)} />}
     <button className="btn" style={{ marginTop: 14 }} disabled={busy || !name.trim() || (targetValue !== "" && !targetUnit.trim()) || (achievedValue !== "" && targetValue === "")} onClick={() => onSave({ id: value?.id, ref, name, statement, measure, status, targetValue, targetUnit, achievedValue, closedNote }, draft.clear)}>{busy ? "Saving..." : value ? "Save objective" : "Save and add work"}</button>
   </Sheet>;
+}
+
+const boardColumns = [
+  ["To do", ["assigned", "not_started"]],
+  ["In progress", ["in_progress", "waiting_on", "returned"]],
+  ["Sent for review", ["in_review"]],
+  ["Done", ["completed", "self_certified"]],
+];
+
+function ProjectWorkBoard({ items, onSelect }) {
+  const known = new Set(boardColumns.flatMap(([, states]) => states));
+  const columns = boardColumns.map(([label, states]) => [label, items.filter(item => states.includes(item.status))]);
+  const other = items.filter(item => !known.has(item.status));
+  if (other.length) columns.push(["Other work", other]);
+  return <div className="project-board">
+    {columns.map(([label, work]) => <section key={label} aria-label={label}>
+      <h3>{label} <small>{work.length}</small></h3>
+      {work.map(item => <button key={item.id} type="button" onClick={() => onSelect(item.id)}>
+        <strong>{item.title}</strong><small>{item.profiles?.full_name || "Unassigned"} · {dueLabel(item.due_at)}</small>
+      </button>)}
+    </section>)}
+  </div>;
 }

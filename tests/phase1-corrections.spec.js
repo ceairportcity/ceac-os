@@ -132,7 +132,7 @@ for(const width of [390,1440]){
   await page.route('**/rest/v1/work_items*',route=>route.fulfill({contentType:'application/json',body:JSON.stringify([{id:'work',kind:'task',title:'Synthetic future work',status:'in_progress',due_at:date.toISOString()}])}));
   await page.goto('/tests/fixtures/phase1-corrections.html?screen=calendar');
   if(width===390){
-   await page.getByRole('button',{name:'Show full month',exact:true}).click();
+   await expect(page.getByRole('button',{name:'Collapse month',exact:true})).toBeVisible();
    const dateLabel=date.toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
    const targetDay=page.getByRole('grid',{name:'Personal month calendar'}).locator('.ev2cal-day-button[aria-label*=" '+dateLabel+'"]');
    await expect(targetDay).toHaveCount(1);

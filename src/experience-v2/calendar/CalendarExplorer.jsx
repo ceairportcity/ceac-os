@@ -35,12 +35,12 @@ const labelDay=day=>calendarDate(day).toLocaleDateString('en-GB',{timeZone:'Afri
 const time=value=>new Date(value).toLocaleTimeString('en-GB',{timeZone:'Africa/Accra',hour:'2-digit',minute:'2-digit'});
 export default function CalendarExplorer({me,scope,events,layers,cursor,setCursor,selectedDate,onSelectDate,children,defaultLayers,footer}) {
   const [view,setView]=useCalendarPreference(me,scope,'view','month');
-  const [density,setDensity]=useCalendarPreference(me,scope,'density','compact');
+  const [density,setDensity]=useCalendarPreference(me,scope,'density','auto');
   const [chosen,setChosen]=useCalendarPreference(me,scope,'layers',defaultLayers||layers.map(l=>l.value));
   const [query,setQuery]=useState('');
   // Keep the selected day close to hand on phones. Desktop and iPad always retain the full month.
   // Remember only presentation preferences; no calendar or private-task data is stored.
-  const [monthOpen,setMonthOpen]=useCalendarPreference(me,scope,'phoneMonthExpanded',false);
+  const [monthOpen,setMonthOpen]=useCalendarPreference(me,scope,'phoneMonthExpanded',true);
   const [agendaLimit,setAgendaLimit]=useState(100);
   const [showFilters,setShowFilters]=useState(false);
   const active=Array.isArray(chosen)?chosen:layers.map(l=>l.value);
@@ -64,7 +64,7 @@ export default function CalendarExplorer({me,scope,events,layers,cursor,setCurso
     <div className="ceac-calendar-controls">
       <CalendarViewTabs value={currentView} onChange={setView} items={[{value:'month',label:'Month'},{value:'week',label:'Week'},{value:'agenda',label:'Agenda'}]}/>
       <div className="ceac-calendar-tools"><button type="button" className="btn btn-ghost btn-sm" aria-expanded={showFilters} onClick={()=>setShowFilters(!showFilters)}>Filter{active.length!==layers.length?` · ${active.length}`:''}</button>
-      {currentView==='month'&&<label>Month detail<select aria-label="Month detail" value={density} onChange={e=>setDensity(e.target.value)}><option value="compact">Compact</option><option value="details">Details</option></select></label>}</div>
+      {currentView==='month'&&<label>Month detail<select aria-label="Month detail" value={density} onChange={e=>setDensity(e.target.value)}><option value="auto">Automatic</option><option value="compact">Compact</option><option value="details">Details</option></select></label>}</div>
     </div>
     <ModalDialog open={showFilters} onClose={()=>setShowFilters(false)} title="Show on calendar" panelClassName="ceac-calendar-filter"><fieldset className="ceac-calendar-layers"><legend>Show together</legend>{layers.map(layer=><label key={layer.value}><input type="checkbox" checked={active.includes(layer.value)} onChange={()=>toggle(layer.value)}/>{layer.label}</label>)}<button type="button" className="btn btn-ghost btn-sm" onClick={()=>setChosen(layers.map(l=>l.value))}>Show all</button><input type="search" aria-label="Search this calendar" placeholder="Search this calendar" value={query} onChange={e=>setQuery(e.target.value)}/></fieldset><button type="button" className="btn" onClick={()=>setShowFilters(false)}>Done</button></ModalDialog>
     {query&&<button type="button" className="btn btn-ghost btn-sm" onClick={()=>setQuery('')}>Clear search: {query}</button>}
@@ -72,7 +72,7 @@ export default function CalendarExplorer({me,scope,events,layers,cursor,setCurso
     <div className={`ceac-calendar-planner is-${currentView}`}>
       <div className={`ceac-calendar-main density-${density}${monthOpen?'':' is-month-collapsed'}`}>
         {currentView==='month'&&<button className="btn btn-ghost btn-sm ceac-calendar-collapse" type="button" aria-expanded={monthOpen} onClick={()=>setMonthOpen(!monthOpen)}>{monthOpen?'Collapse month':'Show full month'}</button>}
-        {currentView==='month'?<CalendarMonthGrid days={days} currentMonth={cursor.getUTCMonth()} selectedDateKey={selectedDate} onSelectDate={changeDate} getEvents={key=>index.get(key)||[]} compact={density!=="details"} ariaLabel={scope==='personal'?"Personal month calendar":scope==='unit'?"Unit month calendar":"Organisation month calendar"}/>:currentView==='week'?<CalendarWeek days={days} index={index} selectedDate={selectedDate} onSelectDate={changeDate}/>:groups.length?<><CalendarTimeline groups={agendaGroups}/>{agendaTotal>agendaLimit&&<button type="button" className="btn btn-ghost" onClick={()=>setAgendaLimit(limit=>limit+100)}>Show more · {agendaTotal-agendaLimit} remaining</button>}</>:<p className="screen-note" role="status">No matching items this month. Change the filters or add a plan.</p>}
+        {currentView==='month'?<CalendarMonthGrid days={days} currentMonth={cursor.getUTCMonth()} selectedDateKey={selectedDate} onSelectDate={changeDate} getEvents={key=>index.get(key)||[]} compact={density==="compact"} adaptive={density==="auto"} ariaLabel={scope==='personal'?"Personal month calendar":scope==='unit'?"Unit month calendar":"Organisation month calendar"}/>:currentView==='week'?<CalendarWeek days={days} index={index} selectedDate={selectedDate} onSelectDate={changeDate}/>:groups.length?<><CalendarTimeline groups={agendaGroups}/>{agendaTotal>agendaLimit&&<button type="button" className="btn btn-ghost" onClick={()=>setAgendaLimit(limit=>limit+100)}>Show more · {agendaTotal-agendaLimit} remaining</button>}</>:<p className="screen-note" role="status">No matching items this month. Change the filters or add a plan.</p>}
       </div>
       {(typeof children==='function'?children(visible,active):children)||<CalendarAgenda title={labelDay(selectedDate)} description="Meetings, plans and due work for this day." events={index.get(selectedDate)||[]} emptyTitle="Nothing scheduled for this day" emptyDescription="Choose another date or change the calendar filters."/>}
     </div>

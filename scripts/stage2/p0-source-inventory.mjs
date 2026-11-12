@@ -5,6 +5,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 const ROOT_COMPONENTS = Object.freeze({
+  "meetings": ["Meetings"],
   "guide": [
     "Guide"
   ],
@@ -164,7 +165,7 @@ const OVERLAY_ORDER = Object.freeze([
   ["manager-project", ": projectId && isUnitManager ? <ManagerProjects"],
   ["personal-goal", ": goalId ? <Goals"], ["manager-person", ": person && isManager ? <PersonDetail"],
   ["room", ": roomContext ? <Room"], ["meeting-draft", ": meetingDraft ? <MeetingScheduler"],
-  ["meeting", ": meetingId ? <Meeting"], ["fallback", ": pageForTab()"],
+  ["meeting", ': meetingId && tab !== "meetings" ? <Meeting'], ["fallback", ": pageForTab()"],
 ]);
 
 export function collectP0SourceInventory(root = process.cwd()) {
@@ -177,7 +178,7 @@ export function collectP0SourceInventory(root = process.cwd()) {
   const page = app.slice(begin, end);
   const branches = [...page.matchAll(/if\s*\(tab === "([^"]+)"(?:\s*&&\s*([^)]+))?\)/g)];
   const tabs = branches.map((b) => b[1]);
-  if (tabs.length !== 49 || new Set(tabs).size !== 49
+  if (tabs.length !== 50 || new Set(tabs).size !== 50
       || tabs.slice().sort().join("|") !== Object.keys(ROOT_COMPONENTS).sort().join("|")) {
     throw new Error("P0 root tab inventory changed; audit new or removed routes");
   }

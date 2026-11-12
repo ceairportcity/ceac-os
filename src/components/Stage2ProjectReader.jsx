@@ -29,7 +29,7 @@ export default function Stage2ProjectReader({ projectId, openItem, onBack, me, g
           .select("id,org_id,kind,name,purpose,status,starts_on,ends_on,lead_unit_id,created_by,created_at,creator:profiles!projects_created_by_fkey(full_name),units!projects_lead_unit_id_fkey(name)")
           .eq("id", projectId).single();
         if (projectResult.error) throw projectResult.error;
-        const [participation, phases, work, milestones] = await Promise.all([
+        const [participation, phases, work, milestones, objectives] = await Promise.all([
           supabase.from("project_units")
             .select("project_id,unit_id,role,units!project_units_unit_id_fkey(name)", { count:"exact" })
             .eq("project_id", projectId),
@@ -41,6 +41,8 @@ export default function Stage2ProjectReader({ projectId, openItem, onBack, me, g
             .order("due_at", { ascending: true, nullsFirst: false }),
           supabase.from("project_milestones").select("id,name,status,target_on,completed_at", { count:"exact" })
             .eq("project_id", projectId).order("target_on", { ascending: true, nullsFirst: false }),
+          supabase.from("objectives").select("id,name,measure,status,target_value,target_unit,achieved_value", { count:"exact" })
+            .eq("project_id", projectId).order("name"),
         ]);
         // Provider defaults can truncate a successful 2xx page. Never describe
         // partial authorised tasks/teams as complete project statistics.
@@ -55,6 +57,7 @@ export default function Stage2ProjectReader({ projectId, openItem, onBack, me, g
           phases: phases.data,
           work: work.data,
           milestones: milestonesVerified ? milestones.data : null,
+          objectives: fullyRead(objectives) ? objectives.data : null,
         });
       } catch {
         if (current) setError("This project's authorised overview could not be verified. No private project data was displayed.");
@@ -74,10 +77,10 @@ export default function Stage2ProjectReader({ projectId, openItem, onBack, me, g
       <p className="screen-note">This page shows the project updates available to you. Private employee information stays private.</p>
       {me?.is_exec && ["planned","active"].includes(project.status) && <div className="s2-project-quick-actions" aria-label="Project actions"><button type="button" className="btn btn-sm" onClick={() => goAssign?.({projectId:project.id})}>Assign project work</button><ExecutiveProjectDepartments me={me} project={project} onSaved={() => setReload(n => n+1)} /></div>}
       <ProjectTabs ariaLabel="Executive project details" items={[
-        ["overview", "Overview"],
+        ["overview", "Progress"],
         ["people", "People & departments", project.participants.length],
-        ["work", "Project tasks", project.work.filter(row => row.kind === "task").length],
-        ["milestones", "Milestones & activity", project.milestones?.length ?? undefined],
+        ["work", "Work", project.work.filter(row => row.kind === "task").length],
+        ["milestones", "Milestones", project.milestones?.length ?? undefined],
       ]} value={view} onChange={setView} />
       <Stage2ProjectOverview key={project.id} project={project} section={view} openWork={openItem} canAssign={false} />
     </>}

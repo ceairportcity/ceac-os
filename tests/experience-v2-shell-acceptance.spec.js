@@ -16,6 +16,7 @@ const roles = [
       ["team", "Team"],
       ["attendance", "Time & Leave"],
       ["staff-calendar", "Calendar"],
+      ["meetings", "Meetings"],
       ["messages", "Messages"],
       ["me", "My Hub"],
       ["account", "Settings"],
@@ -30,6 +31,7 @@ const roles = [
     secondary: [
       ["attendance", "Time & Leave"],
       ["staff-calendar", "Calendar"],
+      ["meetings", "Meetings"],
       ["messages", "Messages"],
       ["account", "Settings"],
       ["technical-help", "Get technical help"],
@@ -47,6 +49,7 @@ const roles = [
       ["projects", "Projects"],
       ["attendance", "Time & Leave"],
       ["calendar", "Calendar"],
+      ["meetings", "Meetings"],
       ["manager-finance", "Finance"],
       ["manager-reports", "Reports"],
       ["messages", "Messages"],
@@ -63,6 +66,7 @@ const roles = [
     secondary: [
       ["attendance", "Time & Leave"],
       ["calendar", "Calendar"],
+      ["meetings", "Meetings"],
       ["manager-finance", "Finance"],
       ["manager-reports", "Reports"],
       ["messages", "Messages"],
@@ -88,6 +92,7 @@ const roles = [
       ["admin-projects", "Projects"],
       ["attendance", "Time & Leave"],
       ["admin-calendar", "Calendar"],
+      ["meetings", "Meetings"],
       ["finance", "Finance"],
       ["payroll", "Payroll"],
       ["reporting", "Reports"],
@@ -109,6 +114,7 @@ const roles = [
       ["work", "Work"],
       ["admin-projects", "Projects"],
       ["admin-calendar", "Calendar"],
+      ["meetings", "Meetings"],
       ["payroll", "Payroll"],
       ["reporting", "Reports"],
       ["performance", "Reviews & Development"],
@@ -132,6 +138,7 @@ const roles = [
       ["exec-projects", "Projects"],
       ["exec-organisation", "Organisation"],
       ["exec-calendar", "Calendar"],
+      ["meetings", "Meetings"],
       ["exec-finance", "Finance"],
       ["payroll", "Payroll"],
       ["exec-reports", "Reports"],
@@ -149,6 +156,7 @@ const roles = [
       ["exec-projects", "Projects"],
       ["exec-organisation", "Organisation"],
       ["exec-calendar", "Calendar"],
+      ["meetings", "Meetings"],
       ["exec-finance", "Finance"],
       ["payroll", "Payroll"],
       ["exec-reports", "Reports"],
@@ -171,7 +179,7 @@ async function signIn(page, role) {
 }
 
 async function expectRoute(page, key) {
-  const target=page.locator(key === "messages" ? ".msg-workspace" : ".body").first();
+  const target=page.locator(key === "meetings" ? ".meetings-workspace" : key === "messages" ? ".msg-workspace" : ".body").first();
   try {
     await expect(target).toBeVisible({ timeout: 15000 });
   } catch (error) {

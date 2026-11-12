@@ -753,6 +753,7 @@ test("A Manager can schedule a Unit meeting with an explicit audience and Staff 
     await expect(meetingRow).toBeVisible();
     await meetingRow.click();
     await expect(page.getByRole("heading", { name: title })).toBeVisible();
+    await page.getByRole("button", { name: "During", exact: true }).click();
     await expect(page.getByRole("heading", { name: "Meeting workspace" })).toBeVisible();
     await expect(page.getByText("Prepare your own notes now. Shared decisions open when the meeting starts.",{exact:true})).toBeVisible();
     await expect(page.getByRole("button",{name:"Save my notes",exact:true})).toBeVisible();
@@ -1124,7 +1125,7 @@ test("Experience Stage 5 project register enforces payment, custody, slots and t
     await leadershipProject.getByRole("button", { name: "Open project", exact: true }).click();
     await expect(page.locator(".s2-project-reader")).toBeVisible();
     await expect(page.getByRole("heading", { name: projectName, exact: true })).toBeVisible();
-    await expect(page.getByRole("tab", { name: /Project tasks/ })).toBeVisible();
+    await expect(page.getByRole("tab", { name: /^Work/ })).toBeVisible();
     await expect(page.getByText(participantName, { exact: true })).toHaveCount(0);
     await expect(page.getByText("Confirmed remitted", { exact: true })).toHaveCount(0);
     await expect(page.getByText("Acceptance Dormitory", { exact: true })).toHaveCount(0);

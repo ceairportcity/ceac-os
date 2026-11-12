@@ -1,4 +1,3 @@
-import DailyScenicPhoto from "../../components/DailyScenicPhoto";
 import { CeacIcon } from "../icons";
 import { Button, StatusBadge } from "../components";
 import "./premium-projects.css";
@@ -71,7 +70,7 @@ export function ProjectWorkspaceHeader({
   return (
     <>
       <ProjectBackButton onClick={onBack} />
-      <header className="ev2p-workspace-header s2-landscape-hero"><DailyScenicPhoto />
+      <header className="ev2p-workspace-header">
         <div className="ev2p-workspace-kicker">
           {[kind ? projectLabel(kind) : null, context].filter(Boolean).join(" · ")}
         </div>

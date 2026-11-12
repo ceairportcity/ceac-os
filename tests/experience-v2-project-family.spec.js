@@ -103,13 +103,13 @@ for (const viewport of [
 
     await page.locator(".ev2p-row:visible").first().click();
     await expect(page.locator(".ev2-project-workspace")).toBeVisible();
-    await expect(page.getByRole("tab", { name: /^Overview/ })).toBeVisible();
+    await expect(page.getByRole("tab", { name: /^Progress/ })).toBeVisible();
     await expect(page.getByRole("tab", { name: /^Work/ })).toBeVisible();
     await expect(page.getByRole("tab", { name: /^Files/ })).toBeVisible();
-    await expect(page.getByRole("tab", { name: /^Objectives/ })).toBeVisible();
+    await expect(page.getByRole("tab", { name: /^Plan/ })).toBeVisible();
     await expect(page.getByRole("tab", { name: /^Register/ })).toBeVisible();
-    await expect(page.getByRole("tab", { name: /^Collaboration/ })).toBeVisible();
-    await expect(page.getByRole("tab", { name: /^Close & record/ })).toBeVisible();
+    await expect(page.getByRole("tab", { name: /^Coordination/ })).toBeVisible();
+    await expect(page.getByRole("tab", { name: /^Closeout/ })).toBeVisible();
 
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
 

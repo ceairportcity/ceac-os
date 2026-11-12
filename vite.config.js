@@ -11,8 +11,8 @@ export default defineConfig({
       // Optimise complete CSS chunks so rules shared across source stylesheets
       // can be merged. Keep all runtime CSS in its existing stylesheet assets.
       for (const asset of Object.values(bundle)) {
-        if (asset.type === "asset" && asset.fileName.endsWith(".css"))
-          asset.source = minifyProductionCss(String(asset.source));
+        if (asset.type !== "asset" || !asset.fileName.endsWith(".css")) continue;
+        asset.source = minifyProductionCss(String(asset.source), asset.fileName);
       }
     },
   }],

@@ -11,7 +11,6 @@ test("all role Overviews use one deterministic locally stored real-photography c
     "src/experience-v2/manager-overview/ManagerOverviewV2.jsx",
     "src/experience-v2/admin-overview/AdminOverviewV2.jsx",
     "src/experience-v2/executive-overview/ExecutiveOverviewV2.jsx",
-    "src/experience-v2/project-family/ProjectFamilyV2.jsx",
   ];
   for (const name of surfaces) {
     const source = file(name);
@@ -29,6 +28,7 @@ test("Projects presents one connected workspace with factual people and task tab
   const source = file("src/components/Stage2ProjectOverview.jsx");
   const parent = file("src/screens/ManagerProjects.jsx");
   const styles = file("src/components/Stage2ProjectOverview.css");
+  assert.doesNotMatch(file("src/experience-v2/project-family/ProjectFamilyV2.jsx"), /<DailyScenicPhoto/);
   assert.match(parent, /<Stage2ProjectOverview/);
   assert.match(parent, /ProjectParticipantRegister/);
   assert.match(parent, /ManagerProjectClose/);
@@ -202,7 +202,7 @@ test("P0 deep-link overlay precedence and sensitive route UI boundaries are expl
     ": person && isManager ? <PersonDetail",
     ": roomContext ? <Room",
     ": meetingDraft ? <MeetingScheduler",
-    ": meetingId ? <Meeting",
+    ": meetingId && tab !== \"meetings\" ? <Meeting",
     ": pageForTab()",
   ];
   let previous = -1;
@@ -239,6 +239,7 @@ test("P0 route census continuously matches JSX branches, actual screens and dire
   const app = file("src/App.jsx");
   const census = file("docs/continuity/CEAC_STAGE2_P0_ROUTE_DATA_AUTHORITY_CENSUS_2026-10-17.md");
   const matrix = Object.freeze({
+  "meetings": ["Meetings"],
   "guide": [
     "Guide"
   ],
@@ -398,9 +399,9 @@ test("P0 route census continuously matches JSX branches, actual screens and dire
   assert.ok(start >= 0 && end > start, "route dispatch no longer has its audited bounds");
   const dispatch = app.slice(start, end);
   const branchMatches = [...dispatch.matchAll(/if\s*\(tab === "([^"]+)"(?:\s*&&\s*([^)]+))?\)/g)];
-  assert.equal(branchMatches.length, 49);
+  assert.equal(branchMatches.length, 50);
   const actualKeys = branchMatches.map((m) => m[1]);
-  assert.equal(new Set(actualKeys).size, 49);
+  assert.equal(new Set(actualKeys).size, 50);
   assert.deepEqual(actualKeys.slice().sort(), Object.keys(matrix).sort());
 
   const lazyModules = new Map(
@@ -433,8 +434,8 @@ test("P0 executable census captures all mapped screen and direct data sources wi
   const { collectP0SourceInventory } = await import("../scripts/stage2/p0-source-inventory.mjs");
   const audit = collectP0SourceInventory();
   assert.equal(audit.status, "SOURCE_INVENTORY_ONLY");
-  assert.equal(audit.routeCount, 49);
-  assert.deepEqual(audit.roleNavigationCounts, { staff: 8, manager: 11, admin: 13, executive: 12 });
+  assert.equal(audit.routeCount, 50);
+  assert.deepEqual(audit.roleNavigationCounts, { staff: 9, manager: 12, admin: 14, executive: 13 });
   assert.equal(audit.overlays.length, 9);
   assert.ok(audit.routes.every((r) => r.components.length > 0
     && r.components.every((c) => c.path.startsWith("src/screens/"))));

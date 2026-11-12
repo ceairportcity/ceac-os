@@ -124,6 +124,7 @@ export function CalendarMonthGrid({
   maxEventsPerDay = 3,
   ariaLabel = "Calendar month",
   compact = false,
+  adaptive = false,
 }) {
   const instanceId = useId().replace(/:/g, "");
   const selectedWeek=selectedDateKey?new Set(calendarDays(calendarDate(selectedDateKey),"week").map(calendarDay)):new Set();
@@ -189,7 +190,8 @@ export function CalendarMonthGrid({
                 {today ? <small>Today</small> : null}
               </button>
               <div className="ev2cal-day-events">
-                {compact?<span className="ceac-calendar-dots" aria-hidden="true">{events.slice(0,3).map(event=><i key={event.id} className={`is-${event.kind||"neutral"}`}/>)}{events.length>3?<small>+{events.length-3}</small>:null}</span>:<>
+                {(compact || adaptive) && <span className="ceac-calendar-dots" aria-hidden="true">{events.slice(0,3).map(event=><i key={event.id} className={`is-${event.kind||"neutral"}`}/>)}{events.length>3?<small>+{events.length-3}</small>:null}</span>}
+                {!compact && <div className={adaptive ? "ev2cal-event-list is-adaptive" : "ev2cal-event-list"}>
                 {events.slice(0, maxEventsPerDay).map((event) => (
                   <EventChip key={event.id} event={event} onOpen={onOpenEvent} />
                 ))}
@@ -210,7 +212,7 @@ export function CalendarMonthGrid({
                     +{events.length - maxEventsPerDay} more
                   </button>
                 ) : null}
-                </>}
+                </div>}
               </div>
             </div>
           );

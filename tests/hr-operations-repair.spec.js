@@ -114,8 +114,8 @@ for(const width of [390,1440]){
   await dialog.getByRole('combobox',{name:'Lead department',exact:true}).selectOption(unit);
   await dialog.getByRole('button',{name:'Create project',exact:true}).click();
   await expect(page.locator('.ev2-project-workspace')).toContainText('Synthetic new HR project');
-  await expect(page.getByRole('tab',{name:/^Objectives/})).toBeVisible();
-  await page.getByRole('tab',{name:/^Objectives/}).click();
+  await expect(page.getByRole('tab',{name:/^Plan/})).toBeVisible();
+  await page.getByRole('tab',{name:/^Plan/}).click();
   await expect(page.getByRole('button',{name:'Add objective',exact:true})).toBeVisible();
   await page.reload();
   await expect(page.locator('.ev2-project-workspace')).toContainText('Synthetic new HR project');

@@ -10,7 +10,8 @@ test('build refuses media ranges instead of silently deleting their phone rules'
 test('supported phone, desktop, device, colour and print media survive the final compressor',()=>{
   for(const query of ['(max-width:720px)','(min-width:900px)','screen and (max-device-width:720px)','(prefers-color-scheme:dark)','print']){
     const out=minifyProductionCss('@media '+query+'{.responsive-proof{display:grid}}');
-    assert.match(out,/@media/);assert.match(out,/responsive-proof/);assert.match(out,/display:grid/);
+    assert.ok(out.includes(query), 'Preserve the original media query ' + query);
+    assert.match(out,/responsive-proof/);assert.match(out,/display:grid/);
   }
 });
 test('actual compact Manager phone rules survive production compression',()=>{

@@ -22,6 +22,7 @@ There are **48** explicit `tab ===` routing cases, plus a separate default `me` 
 | `messages` | staff, manager, admin, executive | Signed in; no additional root guard | `Inbox` | P0/P7 | SOURCE ONLY |
 | `projects` | manager | isUnitManager | `ManagerProjects` | P5 | SOURCE ONLY |
 | `calendar` | manager | isUnitManager | `ManagerCalendar` | P4 | SOURCE ONLY |
+| `meetings` | staff, manager, admin, executive | Signed in | `Meetings` | Workspace redesign | SOURCE ONLY |
 | `manager-finance` | manager | isUnitManager | `ManagerFinance` | P0/P7 | SOURCE ONLY |
 | `manager-reports` | manager | isUnitManager | `ManagerReports` | P6 | SOURCE ONLY |
 | `exec-projects` | executive | isExec | `AdminProjects` | P5 | SOURCE ONLY — newly audited Executive create route; RPC capability/MFA required |
@@ -140,4 +141,4 @@ The owner-authorised Executive Projects tab (`exec-projects`) is a separate rout
 
 ## 6 November 2026 — personal notification destination
 
-The notification-only `personal-calendar` route reuses StaffCalendar for each signed-in person's own events. It adds no navigation destination or access to another person's private planning. The executable source census now has 49 root routes; historical P0 acceptance above remains historical. Browser and SQL acceptance are recorded separately.
+The notification-only `personal-calendar` route reuses StaffCalendar for each signed-in person's own events. It adds no navigation destination or access to another person's private planning. The executable source census now has 50 root routes; historical P0 acceptance above remains historical. Browser and SQL acceptance are recorded separately.
