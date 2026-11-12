@@ -63,7 +63,7 @@ async function mock(page,{failTaskUpdate=false,notesSeed=[]}={}){
   if(name==='units')return reply([{id:unit,name:'Synthetic IT',active:true}]);
   return reply([]);
  });
- return {requests,writes,getNotes:()=>notes,getMeetingNote:()=>meetingNote};
+ return {requests,writes,getNotes:()=>notes,getMeetingNote:()=>meetingNote,setMeetingNote:(body)=>{meetingNote=body;}};
 }
 for(const [role,width] of [['staff',390],['staff',1024],['manager',390],['manager',1024],['manager',1440],['admin',390],['admin',1024],['executive',390],['executive',1024],['executive',1440]])test(`${role} Calendar views, layers, date context and phone containment at ${width}`,async({page})=>{
  await page.clock.setFixedTime(new Date("2026-11-07T12:00:00Z"));
@@ -161,12 +161,17 @@ test('meeting notes autosave, survive reopening, and reject destructive empty dr
   await expect(page.getByText('Saved automatically',{exact:true})).toBeVisible();
   await page.reload();
   await expect(editor).toHaveValue('Valuable photography and graphics training notes');
+  // An old local recovery draft must not overwrite a newer server copy.
+  data.setMeetingNote('Updated from another device');
+  await page.reload();
+  await page.waitForTimeout(1500);
+  expect(data.getMeetingNote()).toBe('Updated from another device');
   await editor.fill('');
   await page.getByRole('button',{name:'Save my notes'}).click();
-  expect(data.getMeetingNote()).toBe('Valuable photography and graphics training notes');
-  await expect(editor).toHaveValue('Valuable photography and graphics training notes');
+  expect(data.getMeetingNote()).toBe('Updated from another device');
+  await expect(editor).toHaveValue('Updated from another device');
   await page.reload();
-  await expect(editor).toHaveValue('Valuable photography and graphics training notes');
+  await expect(editor).toHaveValue('Updated from another device');
 });
 
 test('saved journal is discoverable by date and protected when leaving personal Calendar',async({page})=>{
