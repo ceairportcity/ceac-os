@@ -42,7 +42,7 @@ for(const width of [390,1440])test(`Admin project filters, calendar link and det
  await page.getByRole('button',{name:'Back to Projects',exact:true}).click();
  await expect(page.locator('.ev2p-context-list')).toBeVisible();
  await page.goto('/tests/fixtures/hr-overview-review.html?audit=screen&screen=calendar');
- await page.getByRole('grid').getByRole('button',{name:'Service Setup starts',exact:true}).click();
+ await page.locator('.ev2cal-agenda').getByRole('button',{name:/Service Setup starts/}).click();
  await expect(page.locator('.ev2-project-workspace')).toContainText('Service Setup');
  expect(await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
  await page.screenshot({path:`test-artifacts/admin-project-journey-${width}.png`,fullPage:true});
