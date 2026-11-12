@@ -45,10 +45,11 @@ test("People Access has one capability-gated employee-specific Authority link",(
  assert.equal((control.match(/title:"Access permissions"/g)||[]).length,1);
  assert.doesNotMatch(control,/label:"Authority"/);
 });
-test("project work register has no non-functional Board/Calendar view actions",()=>{
+test("project work List and Board both open the same authorised work drawer",()=>{
  assert.doesNotMatch(projects,/Board view is not connected/);
  assert.doesNotMatch(projects,/Calendar view is not connected/);
- assert.match(projects,/fpg-view-current/);
+ assert.match(projects,/<ProjectWorkBoard items=\{visibleWork\} onSelect=\{setSelectedWorkId\}/);
+ assert.match(projects,/onClick=\{\(\) => onSelect\(item.id\)\}/);
  assert.match(projects,/<ProjectIssueTable/);
  assert.match(projects,/<ProjectWorkDrawer/);
 });
