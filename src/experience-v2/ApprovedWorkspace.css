@@ -260,10 +260,23 @@
 }
 .ceac-approved-workspace :is(.ev2cal-day, .ev2cal-weekdays) { border-color: var(--workspace-divider); }
 .ceac-approved-workspace .ev2cal-day.is-selected { background: var(--workspace-selected); }
+.ceac-approved-workspace .ev2cal-role-page { background: var(--workspace-canvas); }
+.ceac-approved-workspace .ev2cal-day .ev2cal-day-button { justify-content: flex-end; padding-inline: 5px; }
+.ceac-approved-workspace .ev2cal-day .ev2cal-day-number {
+  display: inline-grid;
+  place-items: center;
+  min-width: 23px;
+  min-height: 23px;
+  font-variant-numeric: tabular-nums;
+}
 .ceac-approved-workspace .ev2cal-day.is-selected .ev2cal-day-number {
   border-radius: 50%;
   background: #c8312a;
   color: white;
+}
+.ceac-approved-workspace .ev2cal-selection-indicator { border: 0; background: transparent; }
+@media (max-width: 599px) {
+  .ceac-approved-workspace .ev2cal-day .ev2cal-day-button { justify-content: center; padding-inline: 0; }
 }
 .ceac-approved-workspace .ceac-calendar-planner > .phase6-day-workspace {
   border: 0;
