@@ -103,7 +103,7 @@ for (const viewport of [
 
     await page.locator(".ev2p-row:visible").first().click();
     await expect(page.locator(".ev2-project-workspace")).toBeVisible();
-    await expect(page.getByRole("tab", { name: /^Overview/ })).toBeVisible();
+    await expect(page.getByRole("tab", { name: /^Progress/ })).toBeVisible();
     await expect(page.getByRole("tab", { name: /^Work/ })).toBeVisible();
     await expect(page.getByRole("tab", { name: /^Files/ })).toBeVisible();
     await expect(page.getByRole("tab", { name: /^Plan/ })).toBeVisible();

@@ -43,8 +43,8 @@ test("Stage 11C Staff Calendar keeps selected-date context and factual non-actio
   await expect(page.locator(".ev2cal-staff-page")).toBeVisible();
   await expect(page.getByRole("heading", { name: "Calendar", exact: true })).toBeVisible();
   await expect(page.getByLabel("Personal month calendar")).toBeVisible();
-  // On phones the month defaults to the selected week; off-week days are intentionally hidden.
-  const day = page.locator(".ev2cal-day-button:visible").nth(2);
+  // Select a date inside the current month so the grid retains its identity.
+  const day = page.locator(".ev2cal-day:not(.is-muted) .ev2cal-day-button").nth(2);
   await expect(day).toBeVisible();
   await day.click();
   await expect(day).toHaveAttribute("aria-pressed", "true");

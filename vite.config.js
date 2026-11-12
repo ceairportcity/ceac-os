@@ -1,5 +1,6 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import { transform } from "lightningcss";
 import {minifyProductionCss} from "./scripts/build/production-css.mjs";
 
 export default defineConfig({
@@ -11,8 +12,10 @@ export default defineConfig({
       // Optimise complete CSS chunks so rules shared across source stylesheets
       // can be merged. Keep all runtime CSS in its existing stylesheet assets.
       for (const asset of Object.values(bundle)) {
-        if (asset.type === "asset" && asset.fileName.endsWith(".css"))
-          asset.source = minifyProductionCss(String(asset.source));
+        if (asset.type !== "asset" || !asset.fileName.endsWith(".css")) continue;
+        const code = Buffer.from(minifyProductionCss(String(asset.source)));
+        // Compact equivalent selectors and values without adding target-specific rewrites.
+        asset.source = transform({ filename: asset.fileName, code, minify: true }).code;
       }
     },
   }],

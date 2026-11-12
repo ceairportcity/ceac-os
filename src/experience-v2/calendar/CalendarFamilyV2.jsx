@@ -191,7 +191,7 @@ export function CalendarMonthGrid({
               </button>
               <div className="ev2cal-day-events">
                 {(compact || adaptive) && <span className="ceac-calendar-dots" aria-hidden="true">{events.slice(0,3).map(event=><i key={event.id} className={`is-${event.kind||"neutral"}`}/>)}{events.length>3?<small>+{events.length-3}</small>:null}</span>}
-                {!compact && <div className={adaptive ? "ceac-calendar-adaptive-events" : undefined}>
+                {!compact && <div className={adaptive ? "ev2cal-event-list is-adaptive" : "ev2cal-event-list"}>
                 {events.slice(0, maxEventsPerDay).map((event) => (
                   <EventChip key={event.id} event={event} onOpen={onOpenEvent} />
                 ))}

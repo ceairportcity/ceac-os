@@ -1450,10 +1450,11 @@ button.phase6-note-card {
  .ceac-calendar-week-scroll:not(.has-selected-times) .ceac-calendar-hours,.ceac-calendar-week-scroll:not(.has-selected-times) .ceac-calendar-time-column { display:none; }
  .ceac-calendar-week-scroll:not(.has-selected-times) .ceac-calendar-no-times { display:block; margin:12px; font-size:12px; }
 }
+.ev2cal-event-list { display: contents; }
 .ceac-calendar-main.density-auto .ceac-calendar-dots { display: none; }
 .ceac-calendar-main.density-auto .ev2cal-day { min-height: 76px; }
 @media (max-width: 599px) {
   .ceac-calendar-main.density-auto .ceac-calendar-dots { display: flex; }
-  .ceac-calendar-main.density-auto .ceac-calendar-adaptive-events { display: none; }
+  .ceac-calendar-main.density-auto .ev2cal-event-list.is-adaptive { display: none; }
   .ceac-calendar-main.density-auto .ev2cal-day { min-height: 53px; }
 }

@@ -535,6 +535,12 @@ export default function App() {
   }
 
   function pageForTab() {
+    if (tab === "meetings") return <Meetings key={[me.org_id, me.id, me.unit_id].join(":")} me={me} meetingId={meetingId} openMeeting={openMeeting}
+                closeMeeting={() => navigate({ tab: "meetings" }, { replace: true })} goAssign={startAssignment}
+                openItem={openItem} openProject={openSearchProject} openRoom={openRoom}
+                scheduleMeeting={(isAdmin || isExec || isUnitManager) ? () => startMeeting(isAdmin || isExec
+                  ? { scope: "organisation", organisation: true }
+                  : { scope: "unit", unitId: me.unit_id, unitName: me.unit_name }) : undefined} />;
     // All Work roles remount on actor/tenant/unit changes. This invalidates
     // previous-role drafts and pending state before any new request completes.
     const managerScopeKey = `${me.org_id}:${me.id}:${me.unit_id || "none"}`;
@@ -672,7 +678,7 @@ export default function App() {
   return (
     <ActiveMfaGate me={me} onVerified={boot}>
     <RolePresentationContext.Provider value={isExec ? "executive" : null}>
-    <div className={"app " + appModeClass + (approvedWorkspace ? " ceac-approved-workspace" : "")}>
+    <div className={"app " + appModeClass + (approvedWorkspace ? " ceac-ws" : "")}>
       <GlobalFormFeedback />
       {isExec ? <Suspense fallback={null}><ExecutiveRedesignStyles /></Suspense> : null}
       <SideNav
@@ -776,13 +782,8 @@ export default function App() {
             : person && isManager ? <PersonDetail me={me} profileId={person.id} focus={person.focus} openItem={openItem} openProject={openProject} back={() => setPerson(null)} />
             : roomContext ? <Room key={`${me.org_id}:${me.id}:${roomContext.mentionProfileId || ""}`} me={me} context={roomContext} back={closeRoom} openItem={openItem} openProject={openProject} scheduleMeeting={startMeeting} openAnnouncements={() => go("announcements")} onRoomChange={openRoom} startWorkFromMessage={isManager || isExec ? startAssignment : null} />
             : meetingDraft ? <MeetingScheduler me={me} context={meetingDraft} onClose={() => setMeetingDraft(null)} onCreated={(id) => { setMeetingDraft(null); openMeeting(id); }} />
-            : tab === "meetings" ? <Meetings key={[me.org_id, me.id, me.unit_id].join(":")} me={me} meetingId={meetingId} openMeeting={openMeeting}
-                closeMeeting={() => navigate({ tab: "meetings" }, { replace: true })} goAssign={startAssignment}
-                openItem={openItem} openProject={openSearchProject} openRoom={openRoom}
-                scheduleMeeting={(isAdmin || isExec || isUnitManager) ? () => startMeeting(isAdmin || isExec
-                  ? { scope: "organisation", organisation: true }
-                  : { scope: "unit", unitId: me.unit_id, unitName: me.unit_name }) : undefined} />
-            : meetingId ? <Meeting me={me} meetingId={meetingId} back={closeUrlOverlay} goAssign={startAssignment} openItem={openItem} openProject={openProject} openRoom={openRoom} />
+
+            : meetingId && tab !== "meetings" ? <Meeting me={me} meetingId={meetingId} back={closeUrlOverlay} goAssign={startAssignment} openItem={openItem} openProject={openProject} openRoom={openRoom} />
             : pageForTab()}
           </SettingsBack>
           </Suspense>

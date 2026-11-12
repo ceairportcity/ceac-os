@@ -27,7 +27,7 @@ function Fixture(){
  const role=new URLSearchParams(location.search).get('role')||'staff';
  const actor={...me,is_admin:role==='admin',is_exec:role==='executive'};
  const props={me:actor,openItem:(id,date)=>setOpened(`Work: ${id} ${date||''}`),openMeeting:id=>setOpened(`Meeting: ${id}`),openProject:id=>setOpened(`Project: ${id}`),openPerson:id=>setOpened(`Person: ${id}`),scheduleMeeting:setDraft};
- return <div className={`app ${role==='staff'?'staff-app':role==='manager'?'manager-app':role==='executive'?'executive-app':'office-app'} ceac-approved-workspace`} style={{minWidth:0}}><main style={{padding:16,minWidth:0}}>
+ return <div className={`app ${role==='staff'?'staff-app':role==='manager'?'manager-app':role==='executive'?'executive-app':'office-app'} ceac-ws`} style={{minWidth:0}}><main style={{padding:16,minWidth:0}}>
   {role==='meetings'?<Meetings me={actor} meetingId={selected} openMeeting={setSelected} closeMeeting={()=>setSelected(null)} />:role==='meeting'?<Meeting me={actor} meetingId="meeting-a" back={()=>{}}/>:role==='scheduler'?<MeetingScheduler me={actor} context={{startsAt:'2026-11-07T09:00',endsAt:'2026-11-07T10:00'}} onClose={()=>{}}/>:role==='staff'?<StaffCalendar {...props}/>:role==='manager'?<ManagerCalendar {...props}/>:<AdminCalendar {...props} roleMode={role==='executive'?'executive':'admin'}/>}
   {draft&&<MeetingScheduler me={actor} context={draft} onClose={()=>setDraft(null)}/>}
   {opened&&<p role="status">{opened}</p>}

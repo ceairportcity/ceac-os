@@ -135,7 +135,7 @@ test('release Executive PDF prints collapsed milestone content and restores its 
      return {heroInset:title.getBoundingClientRect().left-hero.getBoundingClientRect().left,
       clippedLabels:[...node.querySelectorAll('.s2-project-metrics small')].filter(label=>label.scrollWidth>label.clientWidth+1 || label.scrollHeight>label.clientHeight+1).map(label=>label.textContent)};
     });
-    expect(projectLayout.heroInset).toBeGreaterThanOrEqual(16);
+    expect(Math.abs(projectLayout.heroInset)).toBeLessThanOrEqual(1);
     expect(projectLayout.clippedLabels).toEqual([]);
     writeFileSync(`test-artifacts/release-project-layout-${viewport.width}.json`,JSON.stringify(projectLayout,null,2));
     await manager.page.screenshot({path:`test-artifacts/release-project-reference-${viewport.width}.png`,fullPage:true});

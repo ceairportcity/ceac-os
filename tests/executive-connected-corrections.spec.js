@@ -230,7 +230,7 @@ test('Executive project department, work, Back/reload and calendar date stay con
   await page.reload();
   await expect(page.getByRole('heading',{name:title,exact:true})).toBeVisible();
   await page.goto('/?tab=exec-calendar');
-  await page.getByRole('button',{name:new RegExp(title+' starts')}).click();
+  await page.getByRole('grid').getByRole('button',{name:title+' starts',exact:true}).click();
   await expect(page).toHaveURL(new RegExp(`tab=exec-projects&project=${projectId}`));
   await expect(page.getByRole('heading',{name:title,exact:true})).toBeVisible();
   test.info().annotations.push({type:'isolated_fixture',description:`project=${projectId};work=${task.id}`});

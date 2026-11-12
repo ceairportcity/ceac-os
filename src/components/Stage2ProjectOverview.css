@@ -91,7 +91,6 @@ border-radius:0;
 background:transparent;
 box-shadow:none;
 }
-.manager-projects.s2-owner-approved-projects>.fpg-project-tree,
 .manager-projects.s2-owner-approved-projects .fpg-project-facts{display:none}
 .manager-projects.s2-owner-approved-projects>.fpg-project-main{
 padding:0 5px 32px;
@@ -214,4 +213,15 @@ margin: 8px 0 14px;
 .s2-project-tasks-panel tr{margin-bottom:10px;padding:12px;border:1px solid var(--c122);border-radius:10px}
 .s2-project-tasks-panel td{border:0;padding:5px 0;white-space:normal;overflow-wrap:anywhere}
 .s2-project-tasks-panel td::before{content:attr(data-label);font-weight:700;margin-right:8px}
+}
+
+@media (min-width: 1101px) {
+  .ceac-ws .manager-projects.s2-owner-approved-projects.fpg-project-gold {
+    display: grid;
+    grid-template-columns: 176px minmax(0, 1fr);
+    gap: 20px;
+  }
+}
+@media (max-width: 1100px) {
+  .manager-projects.s2-owner-approved-projects > .fpg-project-tree { display: none; }
 }
