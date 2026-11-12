@@ -9,10 +9,11 @@ import { CeacIcon } from "../experience-v2/icons";
 import VoiceInput from "../components/VoiceInput";
 import { humanError } from "../lib/productLanguage";
 
-function whenLabel(value) {
+function whenLabel(value, timeOnly = false) {
   return new Date(value).toLocaleString("en-GB", {
     timeZone: "Africa/Accra",
-    weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit",
+    ...(!timeOnly && { weekday: "short", day: "numeric", month: "short" }),
+    hour: "2-digit", minute: "2-digit",
   });
 }
 
@@ -299,7 +300,7 @@ function MeetingDetail({ me, meetingId, back, goAssign, openItem, openProject, e
     <header className="meeting-hero">
       <div className="meeting-context"><span>{context}</span><span>{status}</span></div>
       <h1>{meeting.title}</h1>
-      <p className="meeting-time"><time dateTime={meeting.starts_at}>{whenLabel(meeting.starts_at)}</time>{meeting.ends_at && <> – <time dateTime={meeting.ends_at}>{whenLabel(meeting.ends_at)}</time></>} GMT</p>
+      <p className="meeting-time"><time dateTime={meeting.starts_at}>{whenLabel(meeting.starts_at)}</time>{meeting.ends_at && <> – <time dateTime={meeting.ends_at}>{whenLabel(meeting.ends_at, new Date(startsAt).toISOString().slice(0, 10) === new Date(endsAt).toISOString().slice(0, 10))}</time></>} GMT</p>
       {((upcoming && canManage && !editingDetails) || (meeting.join_url && !cancelled && !meetingEnded)) && <div className="meeting-toolbar">
         {meeting.join_url && !cancelled && !meetingEnded && <a className="btn btn-sm" href={meeting.join_url} target="_blank" rel="noreferrer">Join {providerLabel(meeting)} ↗</a>}
         {upcoming && canManage && !editingDetails && <button type="button" className="btn btn-ghost btn-sm" onClick={editDetails}>Edit meeting</button>}

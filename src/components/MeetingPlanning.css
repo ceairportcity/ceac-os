@@ -1,4 +1,6 @@
 .meeting-screen {
+  width: 100%;
+  min-width: 0;
   max-width: 1050px;
   margin-inline: auto;
   padding: clamp(18px, 3vw, 38px);
@@ -54,7 +56,8 @@
 .meeting-work-row { width: 100%; text-align: start; }
 .meeting-work-row small { display: block; }
 .meeting-record-form, .meeting-action-buttons { margin-top: 12px; }
-.meeting-record-form .btn { margin-top: 6px; }
+.meeting-record-form .btn { width: auto; margin-top: 6px; }
+.meeting-record-form .btn:disabled { background: var(--ws-panel); color: var(--ws-muted); }
 @media (max-width: 899px) {
   .meeting-detail-layout { grid-template-columns: minmax(0, 1fr); }
   .meeting-detail-inspector { padding: 14px 0 0; border: 0; border-top: 1px solid var(--ws-line); }
