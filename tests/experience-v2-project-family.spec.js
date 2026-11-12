@@ -108,7 +108,7 @@ for (const viewport of [
     await expect(page.getByRole("tab", { name: /^Files/ })).toBeVisible();
     await expect(page.getByRole("tab", { name: /^Plan/ })).toBeVisible();
     await expect(page.getByRole("tab", { name: /^Register/ })).toBeVisible();
-    await expect(page.getByRole("tab", { name: /^Collaboration/ })).toBeVisible();
+    await expect(page.getByRole("tab", { name: /^Coordination/ })).toBeVisible();
     await expect(page.getByRole("tab", { name: /^Closeout/ })).toBeVisible();
 
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
