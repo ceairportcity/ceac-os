@@ -42,7 +42,7 @@
 .ceac-ws :is(.ev2s-topbar, .ev2s-mobile-topbar, .ev2s-mobile-nav) {
   backdrop-filter: blur(20px) saturate(1.15);
 }
-.ceac-ws :is(.meeting-heading h1, .ev2cal-page-head h1, .ev2p-workspace-head h1) {
+.ceac-ws :is(.ev2cal-page-head h1, .ev2p-workspace-head h1) {
   font-weight: 735;
   letter-spacing: -.05em;
   line-height: 1.05;
@@ -51,7 +51,7 @@
 .meetings-workspace {
   display: grid;
   grid-template-columns: 224px minmax(0, 1fr);
-  min-height: min(72dvh, 740px);
+  min-height: min(65dvh, 680px);
 }
 .meeting-register {
   min-width: 0;
@@ -93,66 +93,6 @@
 .meeting-list-row :is(strong, small) { display: block; }
 .meeting-list-row small { color: var(--ws-muted); }
 .meeting-selected { min-width: 0; }
-.ceac-ws .meeting-screen {
-  max-width: 1160px;
-  margin-inline: auto;
-  padding: 26px clamp(16px, 3vw, 40px) 40px;
-}
-.ceac-ws .meeting-screen .meeting-hero {
-  padding: 10px 0 14px;
-  background: transparent;
-  border: 0;
-  box-shadow: none;
-}
-.meeting-heading {
-  display: flex;
-  align-items: center;
-  gap: 13px;
-  margin-bottom: 8px;
-}
-.meeting-heading h1 { margin: 3px 0 0; font-size: clamp(28px, 3vw, 43px); overflow-wrap: anywhere; }
-.meeting-heading .eyebrow { color: var(--ws-muted); letter-spacing: 0; text-transform: none; }
-.meeting-heading > .pill { margin-inline-start: auto; }
-.meeting-heading-icon {
-  display: grid;
-  place-items: center;
-  flex: 0 0 49px;
-  height: 49px;
-  color: white;
-  background: linear-gradient(145deg, #ef695d, #d3332c);
-  border-radius: 12px;
-}
-.meeting-view-tabs {
-  display: flex;
-  gap: 18px;
-  border-bottom: 1px solid var(--ws-line);
-  margin-bottom: 20px;
-}
-.meeting-view-tabs button {
-  background: transparent;
-  border: 0;
-  border-bottom: 2px solid transparent;
-  min-height: 44px;
-  padding: 8px 0;
-  color: var(--ws-muted);
-  font-weight: 600;
-}
-.meeting-view-tabs button[aria-pressed="true"] {
-  border-bottom-color: var(--ws-accent);
-  color: var(--ws-accent);
-}
-.meeting-detail-layout { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(180px, 1fr); gap: 24px; }
-.meeting-detail-inspector { min-width: 0; border-inline-start: 1px solid var(--ws-line); padding-inline-start: 17px; }
-.ceac-ws .meeting-detail-layout .meeting-panel {
-  padding: 0;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  box-shadow: none;
-}
-.meeting-detail-layout .meeting-panel[hidden] { display: none; }
-.ceac-ws .meeting-section-head h2 { font-size: 18px; letter-spacing: -.025em; }
-.ceac-ws .meeting-private-notes { background: var(--ws-panel); border-color: var(--ws-line); }
 .ceac-ws .s2-project .s2-project-layout {
   grid-template-columns: minmax(0, 1.45fr) minmax(225px, 1fr);
   gap: 25px;
@@ -283,13 +223,9 @@
 }
 @media (max-width: 1050px) {
   .meetings-workspace { grid-template-columns: 175px minmax(0, 1fr); }
-  .meeting-detail-layout { gap: 14px; }
-  .meeting-detail-inspector { padding-inline-start: 12px; }
 }
 @media (max-width: 899px) {
-  .meeting-detail-layout,
   .ceac-ws .s2-project .s2-project-layout { grid-template-columns: minmax(0, 1fr); }
-  .meeting-detail-inspector,
   .ceac-ws .s2-project .s2-project-aside,
   .ceac-ws .ceac-calendar-planner > .phase6-day-workspace {
     padding-inline-start: 0;
@@ -302,7 +238,6 @@
   .meetings-workspace:not(.is-browsing) .meeting-register { display: none; }
   .meeting-register { border: 0; }
   .meeting-list-row { min-height: 48px; }
-  .meeting-heading-icon { flex-basis: 41px; height: 41px; }
   .ceac-ws .ev2s-mobile-nav {
     background: var(--ws-chrome);
     border-color: var(--ws-line);

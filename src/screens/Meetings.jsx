@@ -48,7 +48,7 @@ export default function Meetings({ me, meetingId, openMeeting, closeMeeting, sch
       </button>) : <p>{filter ? "No matching meetings." : "No meetings are available."}</p>)}
     </aside>
     <div className="meeting-selected">
-      {selected && <Meeting {...detailProps} me={me} meetingId={selected}
+      {selected && <Meeting {...detailProps} me={me} meetingId={selected} embedded
         back={() => { setBrowse(true); if (meetingId) closeMeeting(); }} />}
     </div>
   </div>;

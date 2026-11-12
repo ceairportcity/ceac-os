@@ -2,9 +2,11 @@ import {test,expect} from '@playwright/test';
 import fs from 'node:fs';
 test.use({launchOptions:process.env.CEAC_CHROMIUM_EXECUTABLE_PATH?{executablePath:process.env.CEAC_CHROMIUM_EXECUTABLE_PATH}:undefined});
 const person='11111111-1111-4111-8111-111111111111',org='22222222-2222-4222-8222-222222222222',unit='33333333-3333-4333-8333-333333333333';
-async function mock(page,{failTaskUpdate=false,notesSeed=[]}={}){
- const requests=[],writes=[];let responses=[],notes=[...notesSeed],meetingNote=null;let privateTask={id:'private-task',title:'Prepare privately',plan_date:'2026-11-07',completed_at:null};
- const meeting={id:'meeting-a',org_id:org,title:'Media preparation',starts_at:'2026-11-07T09:00:00Z',ends_at:'2026-11-07T10:30:00Z',status:'scheduled',scope:'unit',created_by:person,unit_id:unit,provider:'external',join_url:'https://meet.google.com/example',location:'Church office',meeting_participants:[{profile_id:person,role:'organiser'}]};
+async function mock(page,{failTaskUpdate=false,notesSeed=[],meetingOrganiser=true}={}){
+ const requests=[],writes=[];let responses=[],notes=[...notesSeed],meetingNote=null,records=[];
+ const organiser=meetingOrganiser?person:'44444444-4444-4444-8444-444444444444';
+ const attendees=[{profile_id:organiser,role:'organiser',profiles:{full_name:'Synthetic Planner'}},...(!meetingOrganiser?[{profile_id:person,role:'attendee'}]:[])];let privateTask={id:'private-task',title:'Prepare privately',plan_date:'2026-11-07',completed_at:null};
+ const meeting={id:'meeting-a',org_id:org,title:'Media preparation',starts_at:'2026-11-07T09:00:00Z',ends_at:'2026-11-07T10:30:00Z',status:'scheduled',scope:'unit',created_by:organiser,unit_id:unit,provider:'external',join_url:'https://meet.google.com/example',location:'Church office',meeting_participants:attendees};
  await page.route('**/*',async route=>{
   const req=route.request(),url=new URL(req.url());
   if(!url.pathname.includes('/rest/v1/'))return ['127.0.0.1','localhost'].includes(url.hostname)?route.continue():route.abort();
@@ -13,6 +15,7 @@ async function mock(page,{failTaskUpdate=false,notesSeed=[]}={}){
   if(req.method()!=='GET'&&req.method()!=='HEAD'){
    const body=req.postDataJSON();writes.push({name,body});
    if(name==='meeting_sessions'){Object.assign(meeting,body);return reply(meeting);}
+   if(name==='meeting_records'){records.push({...body,id:'decision-a',created_at:meeting.ends_at});return reply(null);}
    if(name==='meeting_private_notes'){meetingNote=body.body;return reply(null);}
    if(name==='meeting_responses'){responses=[{...body,meeting_starts_at:meeting.starts_at,meeting_ends_at:meeting.ends_at}];return reply(responses[0]);}
    if(name==='personal_day_notes'){
@@ -55,7 +58,8 @@ async function mock(page,{failTaskUpdate=false,notesSeed=[]}={}){
    const overlap={...meeting,id:'meeting-b',title:'Overlapping planning',starts_at:'2026-11-07T10:00:00Z',ends_at:'2026-11-07T11:00:00Z'};
    return reply(url.searchParams.has('id')?(url.searchParams.get('id')==='eq.meeting-b'?overlap:meeting):[meeting,overlap]);
   }
-  if(name==='meeting_participants')return reply([{profile_id:person,role:'organiser',profiles:{full_name:'Synthetic Planner'}}]);
+  if(name==='meeting_participants')return reply(attendees);
+  if(name==='meeting_records')return reply(records);
   if(name==='meeting_private_notes')return reply(meetingNote===null?null:{body:meetingNote,updated_at:'2026-11-12T12:00:00Z'});
   if(name==='work_items')return reply(url.searchParams.get('kind')==='eq.routine'?[]:[{id:'work-review',org_id:org,unit_id:unit,assignee_id:person,ref:'IT-001',title:'Publicity awaiting review',kind:'task',status:'in_review',due_at:'2026-11-07T12:00:00Z'}]);
   if(name==='unit_memberships')return reply([{profile_id:person,unit_id:unit,role:'manager'}]);
@@ -138,25 +142,55 @@ test('failed private completion restores the previous state and preserves the pl
  const checkbox=page.locator('.phase6-private-task-card').filter({hasText:'Prepare privately'}).getByRole('checkbox');
  await checkbox.click();await expect(page.getByRole('alert').filter({hasText:'Could not load Calendar'})).toBeVisible();await expect(checkbox).not.toBeChecked();
 });
-test('meeting response persists, calendar export is a real file, preparation note remains private',async({page})=>{
+test('upcoming invitees can RSVP and download the calendar event',async({page})=>{
  await page.clock.setFixedTime(new Date('2026-11-07T07:00:00Z'));
- const data=await mock(page);await page.goto('/tests/fixtures/calendar-planning.html?role=meeting');
- await page.getByRole('button',{name:'Accept',exact:true}).click();await expect(page.getByRole('button',{name:'Accept',exact:true})).toHaveAttribute('aria-pressed','true');
- await page.getByRole('button',{name:'During',exact:true}).click();
- await page.locator('.meeting-private-notes textarea').fill('Private preparation');await page.getByRole('button',{name:'Save my notes'}).click();
- expect(data.writes.find(w=>w.name==='meeting_private_notes').body.author_id).toBe(person);
- await page.getByRole('button',{name:'Edit meeting',exact:true}).click();await page.getByLabel('Starts · Accra time',{exact:true}).fill('2026-11-07T09:30');await page.getByRole('button',{name:'Save changes',exact:true}).click();
- await expect(page.getByText('The meeting time changed. Please respond to the new time.',{exact:true})).toBeVisible();
- await expect(page.getByRole('button',{name:'Accept',exact:true})).toHaveAttribute('aria-pressed','false');
- await page.getByText('Add to another calendar',{exact:true}).click();
- const download=page.waitForEvent('download');await page.getByRole('button',{name:'Download calendar event'}).click();expect((await download).suggestedFilename()).toBe('ceac-meeting.ics');
+ const data=await mock(page,{meetingOrganiser:false});
+ await page.goto('/tests/fixtures/calendar-planning.html?role=meeting');
+ const response=page.getByRole('group',{name:'Your invitation response'});
+ await expect(response).toBeVisible();
+ await expect(page.getByRole('button',{name:'Edit meeting',exact:true})).toHaveCount(0);
+ await response.getByRole('button',{name:'Maybe',exact:true}).click();
+ await expect(response.getByRole('button',{name:'Maybe',exact:true})).toHaveAttribute('aria-pressed','true');
+ expect(data.writes.find(write=>write.name==='meeting_responses').body.response).toBe('tentative');
+ await page.reload();
+ await expect(response.getByRole('button',{name:'Maybe',exact:true})).toHaveAttribute('aria-pressed','true');
+ const download=page.waitForEvent('download');
+ await page.getByRole('button',{name:'Download calendar event (.ics)'}).click();
+ expect((await download).suggestedFilename()).toBe('ceac-meeting.ics');
+ await page.clock.setFixedTime(new Date('2026-11-07T11:00:00Z'));
+ await page.reload();
+ await expect(page.getByText('Past meeting',{exact:true})).toBeVisible();
+ await expect(response).toHaveCount(0);
+ await expect(page.getByRole('button',{name:'Assign follow-up'})).toHaveCount(0);
+});
+
+test('organisers can edit an upcoming meeting and record decisions or assign follow-up after it',async({page})=>{
+ await page.clock.setFixedTime(new Date('2026-11-07T07:00:00Z'));
+ const data=await mock(page);
+ await page.goto('/tests/fixtures/calendar-planning.html?role=meeting');
+ await page.getByRole('button',{name:'Edit meeting',exact:true}).click();
+ await page.getByLabel('Starts · Accra time',{exact:true}).fill('2026-11-07T09:30');
+ await page.getByRole('button',{name:'Save changes',exact:true}).click();
+ await expect(page.getByText(/Meeting updated/)).toBeVisible();
+ await expect(page.getByRole('group',{name:'Your invitation response'})).toHaveCount(0);
+ await page.clock.setFixedTime(new Date('2026-11-07T11:00:00Z'));
+ await page.reload();
+ await expect(page.getByText('Past meeting',{exact:true})).toBeVisible();
+ await expect(page.getByRole('link',{name:/Join Google Meet/})).toHaveCount(0);
+ await expect(page.getByRole('button',{name:'Download calendar event (.ics)'})).toHaveCount(0);
+ await page.getByPlaceholder('Record the decision exactly as agreed').fill('Approve the training materials');
+ await page.getByRole('button',{name:'Record shared decision'}).click();
+ await expect(page.getByText('Approve the training materials',{exact:true})).toBeVisible();
+ expect(data.writes.find(write=>write.name==='meeting_records').body).toMatchObject({meeting_id:'meeting-a',kind:'decision'});
+ await page.getByRole('button',{name:'Assign follow-up'}).click();
+ await expect(page.getByRole('status').filter({hasText:'meeting_outcome: meeting-a'})).toBeVisible();
 });
 
 test('meeting notes autosave, survive reopening, and reject destructive empty drafts',async({page})=>{
   await page.clock.setFixedTime(new Date('2026-11-07T07:00:00Z'));
   const data=await mock(page);
   await page.goto('/tests/fixtures/calendar-planning.html?role=meeting');
-  await page.getByRole('button',{name:'During',exact:true}).click();
+  await page.getByRole('button',{name:'My notes',exact:true}).click();
   const editor=page.locator('.meeting-private-notes textarea');
   await expect(editor).toBeEnabled();
   await editor.fill('Valuable photography and graphics training notes');
@@ -304,7 +338,7 @@ test('Meetings workspace opens the selected authorised record on a phone',async(
  await register.getByRole('button',{name:/Overlapping planning/}).click();
  await expect(page.getByRole('heading',{name:'Overlapping planning',exact:true})).toBeVisible();
  await expect(register).toBeHidden();
- await page.getByRole('button',{name:/Back/}).click();
+ await page.getByRole('button',{name:/← Meetings/}).click();
  await expect(register).toBeVisible();
  expect(data.requests.filter(r=>r.name==='meeting_sessions'&&new URL(r.url).searchParams.has('org_id'))).toHaveLength(1);
 });
