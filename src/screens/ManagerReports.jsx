@@ -720,7 +720,7 @@ export default function ManagerReports({ me, openItem, onOpenAchievements = null
     </ReportingSection>}
 
     {range && evidence && <>
-      {displayObjectives.some(hasDeliveryMeasure) && <ReportingSection title="Target and actual" className="ceac-report-delivery">
+      {displayObjectives.some(hasDeliveryMeasure) && <ReportingSection title="Target and actual" className="report-delivery">
         {displayObjectives.filter(hasDeliveryMeasure).map(objective => <DeliveryMeasure key={objective.id} objective={objective} chart />)}
       </ReportingSection>}
       <ReportingSection

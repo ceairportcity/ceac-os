@@ -41,7 +41,7 @@ export default function ExecutiveOutcomeBrief({period,units,issuedReports=[],obj
   </header>
   {!quarter && <p role="status" className="s2-exec-brief-warning">This is not a verified full calendar quarter. Select a quarterly reporting period before printing a quarterly report.</p>}
   {readError?<p role="alert" className="s2-exec-brief-warning">Detailed outcome records could not be verified. No achievement figures have been inferred.</p>:<>
-    {facts.objectives.some(hasDeliveryMeasure) && <section className="ceac-report-measures" aria-label="Recorded targets and actual results">
+    {facts.objectives.some(hasDeliveryMeasure) && <section className="report-measures" aria-label="Recorded targets and actual results">
       <h3>Current recorded targets and actuals</h3>
       {facts.objectives.filter(hasDeliveryMeasure).map(objective => <DeliveryMeasure key={objective.id} objective={objective} chart />)}
     </section>}

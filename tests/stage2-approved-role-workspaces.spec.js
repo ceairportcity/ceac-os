@@ -78,7 +78,7 @@ test("manager projects show the approved delivery, project list and task data", 
     await expect(workspace.getByText("Departments involved")).toBeVisible();
     await expect(workspace.getByText("Project tasks", { exact: true })).toBeVisible();
     await expect(workspace.locator(".s2-project-aside")).toBeVisible();
-    const summary = await workspace.locator('.ceac-project-delivery').boundingBox();
+    const summary = await workspace.locator('.project-delivery').boundingBox();
     const inspector = await workspace.locator('.s2-project-aside').boundingBox();
     const main = await workspace.locator('.s2-project-content').boundingBox();
     expect(Math.abs(summary.y - inspector.y), 'Project inspector aligns with the summary cards').toBeLessThanOrEqual(2);

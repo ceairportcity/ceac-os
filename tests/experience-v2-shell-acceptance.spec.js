@@ -179,7 +179,7 @@ async function signIn(page, role) {
 }
 
 async function expectRoute(page, key) {
-  const target=page.locator(key === "meetings" ? ".ceac-meetings-workspace" : key === "messages" ? ".msg-workspace" : ".body").first();
+  const target=page.locator(key === "meetings" ? ".meetings-workspace" : key === "messages" ? ".msg-workspace" : ".body").first();
   try {
     await expect(target).toBeVisible({ timeout: 15000 });
   } catch (error) {

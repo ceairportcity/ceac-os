@@ -443,11 +443,11 @@ export default function ManagerProjects({ me, initialProjectId = null, openItem,
         </details>
       </section>}
 
-      {area === "milestones" && <section className="project-workspace-area ceac-project-timeline">
+      {area === "milestones" && <section className="project-workspace-area project-timeline">
         <h2>Milestone timeline</h2>
         {detail.milestones === null ? <p>Milestone records are unavailable.</p>
           : detail.milestones.length ? <ol>{detail.milestones.map(milestone => <li key={milestone.id}>
-            <span className="ceac-milestone-icon" aria-hidden="true">{milestone.status === "achieved" ? "✓" : "•"}</span>
+            <span className="milestone-icon" aria-hidden="true">{milestone.status === "achieved" ? "✓" : "•"}</span>
             <span><strong>{milestone.name}</strong><small>{String(milestone.status).replaceAll("_", " ")}{milestone.target_on ? " · " + dateOnly(milestone.target_on + "T00:00:00") : ""}</small></span>
           </li>)}</ol> : <p>No milestones recorded.</p>}
       </section>}
@@ -689,7 +689,7 @@ function ProjectWorkBoard({ items, onSelect }) {
   const columns = boardColumns.map(([label, states]) => [label, items.filter(item => states.includes(item.status))]);
   const other = items.filter(item => !known.has(item.status));
   if (other.length) columns.push(["Other work", other]);
-  return <div className="ceac-project-board">
+  return <div className="project-board">
     {columns.map(([label, work]) => <section key={label} aria-label={label}>
       <h3>{label} <small>{work.length}</small></h3>
       {work.map(item => <button key={item.id} type="button" onClick={() => onSelect(item.id)}>

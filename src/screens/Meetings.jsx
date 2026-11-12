@@ -34,20 +34,20 @@ export default function Meetings({ me, meetingId, openMeeting, closeMeeting, sch
 
   const selected = meetingId || list.rows[0]?.id;
   const visible = list.rows.filter(row => row.title.toLocaleLowerCase().includes(filter.trim().toLocaleLowerCase()));
-  return <div className={"ceac-meetings-workspace" + (browse && !meetingId ? " is-browsing" : "")}>
-    <aside className="ceac-meeting-register" aria-label="Meeting list">
+  return <div className={"meetings-workspace" + (browse && !meetingId ? " is-browsing" : "")}>
+    <aside className="meeting-register" aria-label="Meeting list">
       <header><h1>Meetings</h1>{scheduleMeeting && <button type="button" className="btn btn-sm" onClick={scheduleMeeting}>+ New</button>}</header>
       <input type="search" aria-label="Search meetings" placeholder="Search meetings" value={filter} onChange={e => setFilter(e.target.value)} />
       {list.state === "loading" && <p role="status">Loading meetings…</p>}
       {list.state === "error" && <p role="alert">Meetings could not be loaded. <button type="button" onClick={() => setRetry(n => n + 1)}>Retry</button></p>}
       {list.state === "ready" && (visible.length ? visible.map(row => <button type="button" key={row.id}
-        className="ceac-meeting-list-row" aria-current={row.id === selected ? "true" : undefined}
+        className="meeting-list-row" aria-current={row.id === selected ? "true" : undefined}
         onClick={() => { setBrowse(false); openMeeting(row.id); }}>
         <CeacIcon name="meeting" size={17} />
         <span><strong>{row.title}</strong><small>{dateTime.format(new Date(row.starts_at))}{row.status === "cancelled" ? " · Cancelled" : ""}</small></span>
       </button>) : <p>{filter ? "No matching meetings." : "No meetings are available."}</p>)}
     </aside>
-    <div className="ceac-meeting-selected">
+    <div className="meeting-selected">
       {selected && <Meeting {...detailProps} me={me} meetingId={selected}
         back={() => { setBrowse(true); if (meetingId) closeMeeting(); }} />}
     </div>

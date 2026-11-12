@@ -128,21 +128,21 @@ export default function Stage2ProjectOverview({ project, openWork, addWork, show
     <MemoProjectOrigin project={project} />
     <div className="s2-project-layout">
       <div className="s2-project-content">
-        {(section === "all" || section === "overview") && <section className="ceac-project-delivery" aria-label="Recorded delivery results">
+        {(section === "all" || section === "overview") && <section className="project-delivery" aria-label="Recorded delivery results">
           <header><h2>Delivery progress</h2>{showWork && <button type="button" className="btn btn-ghost btn-sm" onClick={showWork}>View project work</button>}</header>
           {(project.objectives || []).some(hasDeliveryMeasure)
             ? project.objectives.filter(hasDeliveryMeasure).map(objective => <DeliveryMeasure key={objective.id} objective={objective} />)
             : <p>{project.objectives === null ? "Measured results are unavailable." : "No measured result recorded."}</p>}
         </section>}
-        {(section === "all" || section === "overview" || section === "milestones") && <section className="ceac-project-timeline">
+        {(section === "all" || section === "overview" || section === "milestones") && <section className="project-timeline">
           <h2>Milestone timeline</h2>
           {project.milestones === null ? <p>Milestone records are unavailable.</p>
             : project.milestones?.length ? <ol>{project.milestones.map(milestone => <li key={milestone.id}>
-              <span className={milestone.status === "achieved" ? "ceac-milestone-icon is-complete" : "ceac-milestone-icon"} aria-hidden="true">{milestone.status === "achieved" ? "✓" : "•"}</span>
+              <span className={milestone.status === "achieved" ? "milestone-icon is-complete" : "milestone-icon"} aria-hidden="true">{milestone.status === "achieved" ? "✓" : "•"}</span>
               <span><strong>{milestone.name}</strong><small>{when(milestone.completed_at || milestone.target_on)} · {String(milestone.status || "Not recorded").replaceAll("_", " ")}</small></span>
             </li>)}</ol> : <p>No milestones recorded.</p>}
         </section>}
-        {(section === "all" || section === "overview") && <details className="ceac-project-task-summary"><summary>Task activity</summary>
+        {(section === "all" || section === "overview") && <details className="project-task-summary"><summary>Task activity</summary>
     <section className="s2-project-metrics" aria-label="Recorded project metrics">
       <div className="s2-project-stat-card s2-project-progress-card">
         <span>Task completion</span>
@@ -203,7 +203,7 @@ export default function Stage2ProjectOverview({ project, openWork, addWork, show
         <header><h2>Project details</h2></header>
         <dl><div><dt>Status</dt><dd>{project.status || "Not recorded"}</dd></div><div><dt>Lead unit</dt><dd>{project.units?.name || "Not recorded"}</dd></div><div><dt>Start date</dt><dd>{when(project.starts_on)}</dd></div><div><dt>End date</dt><dd>{when(project.ends_on)}</dd></div><div><dt>Created by</dt><dd>{projectCreatorLabel(project)}</dd></div><div><dt>Created on</dt><dd>{projectCreatedAtLabel(project.created_at)}</dd></div></dl>
         {(project.objectives || []).some(objective => ["at_risk", "not_met"].includes(objective.status)) &&
-          <section className="ceac-project-attention"><h3>Needs attention</h3>
+          <section className="project-attention"><h3>Needs attention</h3>
             {(project.objectives || []).filter(objective => ["at_risk", "not_met"].includes(objective.status)).map(objective =>
               <p key={objective.id}><strong>{objective.name}</strong> · {objective.status === "at_risk" ? "At risk" : "Not met"}</p>)}
           </section>}
