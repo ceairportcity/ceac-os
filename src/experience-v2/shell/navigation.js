@@ -136,6 +136,7 @@ export function getShellNavigation({ me, ...context } = {}) {
   // Every signed-in person can report a support problem. Technical Support
   // is separate from employment roles and never implies administrative power.
   const destinations = [...ROLE_DESTINATIONS[role],
+    { key: "meetings", label: "Meetings", icon: "meeting", group: "planning" },
     { key: "technical-help", label: "Get technical help", icon: "help", group: "account" },
   ];
   if (role === "admin") {

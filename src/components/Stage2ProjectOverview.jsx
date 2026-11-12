@@ -1,3 +1,4 @@
+import DeliveryMeasure, { hasDeliveryMeasure } from "./DeliveryMeasure";
 import MemoProjectOrigin from "./MemoProjectOrigin";
 import { projectCreatorLabel, projectCreatedAtLabel } from "../lib/projectAttribution";
 import { useEffect, useMemo, useState } from "react";
@@ -127,6 +128,21 @@ export default function Stage2ProjectOverview({ project, openWork, addWork, show
     <MemoProjectOrigin project={project} />
     <div className="s2-project-layout">
       <div className="s2-project-content">
+        {(section === "all" || section === "overview") && <section className="ceac-project-delivery" aria-label="Recorded delivery results">
+          <header><h2>Delivery progress</h2>{showWork && <button type="button" className="btn btn-ghost btn-sm" onClick={showWork}>View project work</button>}</header>
+          {(project.objectives || []).some(hasDeliveryMeasure)
+            ? project.objectives.filter(hasDeliveryMeasure).map(objective => <DeliveryMeasure key={objective.id} objective={objective} />)
+            : <p>{project.objectives === null ? "Measured results are unavailable." : "No measured result recorded."}</p>}
+        </section>}
+        {(section === "all" || section === "overview" || section === "milestones") && <section className="ceac-project-timeline">
+          <h2>Milestone timeline</h2>
+          {project.milestones === null ? <p>Milestone records are unavailable.</p>
+            : project.milestones?.length ? <ol>{project.milestones.map(milestone => <li key={milestone.id}>
+              <span className={milestone.status === "achieved" ? "ceac-milestone-icon is-complete" : "ceac-milestone-icon"} aria-hidden="true">{milestone.status === "achieved" ? "✓" : "•"}</span>
+              <span><strong>{milestone.name}</strong><small>{when(milestone.completed_at || milestone.target_on)} · {String(milestone.status || "Not recorded").replaceAll("_", " ")}</small></span>
+            </li>)}</ol> : <p>No milestones recorded.</p>}
+        </section>}
+        {(section === "all" || section === "overview") && <details className="ceac-project-task-summary"><summary>Task activity</summary>
     <section className="s2-project-metrics" aria-label="Recorded project metrics">
       <div className="s2-project-stat-card s2-project-progress-card">
         <span>Task completion</span>
@@ -155,6 +171,7 @@ export default function Stage2ProjectOverview({ project, openWork, addWork, show
         <small>{next?.title || "No upcoming due date"}</small>
       </div>
     </section>
+        </details>}
         <section className="s2-project-panel s2-project-team-panel">
           <header><h2>Project team</h2><small aria-label={people.length + " people with visible assignments or dated actions"}>{people.length} {people.length === 1 ? "person" : "people"}</small></header>
           {displayActionError && <p role="alert">Additional contributors could not be verified; only visible assignments are shown.</p>}
@@ -183,10 +200,15 @@ export default function Stage2ProjectOverview({ project, openWork, addWork, show
         </section>
       </div>
       <aside className="s2-project-panel s2-project-aside">
-        <header><h2>About this project</h2></header>
+        <header><h2>Project details</h2></header>
         <dl><div><dt>Status</dt><dd>{project.status || "Not recorded"}</dd></div><div><dt>Lead unit</dt><dd>{project.units?.name || "Not recorded"}</dd></div><div><dt>Start date</dt><dd>{when(project.starts_on)}</dd></div><div><dt>End date</dt><dd>{when(project.ends_on)}</dd></div><div><dt>Created by</dt><dd>{projectCreatorLabel(project)}</dd></div><div><dt>Created on</dt><dd>{projectCreatedAtLabel(project.created_at)}</dd></div></dl>
+        {(project.objectives || []).some(objective => ["at_risk", "not_met"].includes(objective.status)) &&
+          <section className="ceac-project-attention"><h3>Needs attention</h3>
+            {(project.objectives || []).filter(objective => ["at_risk", "not_met"].includes(objective.status)).map(objective =>
+              <p key={objective.id}><strong>{objective.name}</strong> · {objective.status === "at_risk" ? "At risk" : "Not met"}</p>)}
+          </section>}
         {project.purpose && <section><h3>Description</h3><p>{project.purpose}</p></section>}
-        <section className="s2-project-detail-milestones"><h3>Key milestones</h3>{project.milestones === null ? <p>Milestone records are unavailable to this view.</p> : project.milestones?.length ? <ol className="s2-project-milestones">{project.milestones.map((milestone) => <li key={milestone.id} className={milestone.status === "achieved" ? "is-complete" : ""}><strong>{milestone.name}</strong><small>{String(milestone.status || "Not recorded").replaceAll("_", " ")} · {milestone.completed_at ? "Completed " + when(milestone.completed_at) : milestone.target_on ? "Target " + when(milestone.target_on) : "No recorded date"}</small></li>)}</ol> : <p>No milestones recorded.</p>}</section>
+
         <section className="s2-project-recent-activity" aria-label="Recent visible project activity" aria-description="Recorded actions visible to your account; entries are not automatic approvals.">
           <header><h3>Recent activity</h3><button type="button" onClick={() => setActionReload((n) => n + 1)}
             disabled={activityChecking}>Refresh</button></header>

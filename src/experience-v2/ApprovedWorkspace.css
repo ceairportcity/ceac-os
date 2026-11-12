@@ -1,0 +1,356 @@
+/* Approved workspace surfaces. Functional chrome is translucent; records stay opaque. */
+.ceac-approved-workspace {
+  --workspace-ink: #1d1d1f;
+  --workspace-secondary: #626268;
+  --workspace-divider: #e5e5ea;
+  --workspace-canvas: #fff;
+  --workspace-panel: #f5f5f7;
+  --workspace-selected: #e8effa;
+  --workspace-accent: #0066cc;
+  --workspace-measure: #f2f6fd;
+  --workspace-attention: #fff3e2;
+  --workspace-chrome: rgb(248 248 251 / 94%);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, system-ui, sans-serif;
+}
+[data-theme="dark"] .ceac-approved-workspace,
+.ceac-approved-workspace[data-theme="dark"] {
+  --workspace-ink: #f5f5f7;
+  --workspace-secondary: #b4b4bd;
+  --workspace-divider: #3a3a42;
+  --workspace-canvas: #1c1c20;
+  --workspace-panel: #28282e;
+  --workspace-selected: #263955;
+  --workspace-accent: #75b4ff;
+  --workspace-measure: #202d41;
+  --workspace-attention: #37291e;
+  --workspace-chrome: rgb(37 37 43 / 94%);
+}
+.ceac-approved-workspace .ev2s-workspace,
+.ceac-approved-workspace .ev2s-content {
+  background: var(--workspace-canvas);
+  color: var(--workspace-ink);
+}
+.ceac-approved-workspace .ev2s-sidebar,
+.ceac-approved-workspace .ev2s-topbar,
+.ceac-approved-workspace .ev2s-mobile-topbar {
+  background: var(--workspace-chrome);
+  border-color: var(--workspace-divider);
+  color: var(--workspace-ink);
+}
+.ceac-approved-workspace .ev2s-sidebar-group-items button.is-active {
+  background: var(--workspace-selected);
+  color: var(--workspace-ink);
+  border-radius: 8px;
+}
+.ceac-approved-workspace .ev2s-topbar,
+.ceac-approved-workspace .ev2s-mobile-topbar,
+.ceac-approved-workspace .ev2s-mobile-nav {
+  backdrop-filter: blur(20px) saturate(1.15);
+}
+.ceac-approved-workspace :is(.meeting-heading h1, .ev2cal-page-head h1, .ev2p-workspace-head h1) {
+  font-weight: 735;
+  letter-spacing: -.05em;
+  line-height: 1.05;
+  color: var(--workspace-ink);
+}
+.ceac-meetings-workspace {
+  display: grid;
+  grid-template-columns: 224px minmax(0, 1fr);
+  min-height: min(72dvh, 740px);
+}
+.ceac-meeting-register {
+  min-width: 0;
+  background: var(--workspace-panel);
+  border-inline-end: 1px solid var(--workspace-divider);
+  padding: 16px 10px;
+}
+.ceac-meeting-register header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0 5px 12px;
+}
+.ceac-meeting-register h1 { margin: 0; font-size: 15px; }
+.ceac-meeting-register input {
+  width: 100%;
+  padding: 8px 10px;
+  margin-bottom: 8px;
+  color: var(--workspace-ink);
+  background: var(--workspace-canvas);
+  border: 1px solid var(--workspace-divider);
+  border-radius: 8px;
+}
+.ceac-meeting-list-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  text-align: start;
+  padding: 9px 7px;
+  color: var(--workspace-ink);
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+}
+.ceac-meeting-list-row[aria-current], .ceac-meeting-list-row:hover { background: var(--workspace-selected); }
+.ceac-meeting-list-row svg { flex: none; color: var(--workspace-accent); }
+.ceac-meeting-list-row :is(strong, small) { display: block; }
+.ceac-meeting-list-row small { color: var(--workspace-secondary); }
+.ceac-meeting-selected { min-width: 0; }
+.ceac-approved-workspace .meeting-screen {
+  max-width: 1160px;
+  margin-inline: auto;
+  padding: 26px clamp(16px, 3vw, 40px) 40px;
+}
+.ceac-approved-workspace .meeting-screen .meeting-hero {
+  padding: 10px 0 14px;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+.meeting-heading {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  margin-bottom: 8px;
+}
+.meeting-heading h1 { margin: 3px 0 0; font-size: clamp(28px, 3vw, 43px); overflow-wrap: anywhere; }
+.meeting-heading .eyebrow { color: var(--workspace-secondary); letter-spacing: 0; text-transform: none; }
+.meeting-heading > .pill { margin-inline-start: auto; }
+.meeting-heading-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 49px;
+  height: 49px;
+  color: white;
+  background: linear-gradient(145deg, #ef695d, #d3332c);
+  border-radius: 12px;
+}
+.meeting-view-tabs {
+  display: flex;
+  gap: 18px;
+  border-bottom: 1px solid var(--workspace-divider);
+  margin-bottom: 20px;
+}
+.meeting-view-tabs button {
+  background: transparent;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  min-height: 44px;
+  padding: 8px 0;
+  color: var(--workspace-secondary);
+  font-weight: 600;
+}
+.meeting-view-tabs button[aria-pressed="true"] {
+  border-bottom-color: var(--workspace-accent);
+  color: var(--workspace-accent);
+}
+.meeting-detail-layout { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(180px, 1fr); gap: 24px; }
+.meeting-detail-inspector { min-width: 0; border-inline-start: 1px solid var(--workspace-divider); padding-inline-start: 17px; }
+.ceac-approved-workspace .meeting-detail-layout .meeting-panel {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.meeting-detail-layout .meeting-panel[hidden] { display: none; }
+.ceac-approved-workspace .meeting-section-head h2 { font-size: 18px; letter-spacing: -.025em; }
+.ceac-approved-workspace .meeting-private-notes { background: var(--workspace-panel); border-color: var(--workspace-divider); }
+.ceac-approved-workspace .s2-project .s2-project-layout {
+  grid-template-columns: minmax(0, 1.45fr) minmax(225px, 1fr);
+  gap: 25px;
+}
+.ceac-approved-workspace .s2-project .s2-project-panel,
+.ceac-approved-workspace .fpg-project-main .fpg-project-facts {
+  background: transparent;
+  border-color: var(--workspace-divider);
+  box-shadow: none;
+}
+.ceac-approved-workspace .s2-project .s2-project-aside {
+  border: 0;
+  border-inline-start: 1px solid var(--workspace-divider);
+  border-radius: 0;
+  padding: 0 0 0 19px;
+}
+.ceac-approved-workspace .fpg-project-tree {
+  background: var(--workspace-panel);
+  border-color: var(--workspace-divider);
+  box-shadow: none;
+}
+.ceac-approved-workspace .fpg-project-tree-list button.is-selected { background: var(--workspace-selected); color: var(--workspace-ink); }
+.ceac-project-delivery {
+  padding: 19px 21px;
+  border-radius: 16px;
+  background: var(--workspace-measure);
+  color: var(--workspace-ink);
+}
+.ceac-project-delivery header { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.ceac-project-delivery h2, .ceac-project-timeline h2 { font-size: 19px; letter-spacing: -.025em; margin: 0 0 8px; }
+.ceac-project-timeline { margin-block: 8px 12px; }
+.ceac-project-timeline ol { list-style: none; padding: 0; margin: 0; }
+.ceac-project-timeline li {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--workspace-divider);
+}
+.ceac-project-timeline small { display: block; color: var(--workspace-secondary); }
+.ceac-milestone-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 25px;
+  height: 25px;
+  border-radius: 50%;
+  color: var(--workspace-accent);
+  background: var(--workspace-selected);
+}
+.ceac-milestone-icon.is-complete { color: #25743b; background: #e7f6eb; }
+.ceac-project-attention { background: var(--workspace-attention); padding: 12px 14px; border-radius: 12px; }
+.ceac-project-task-summary summary { cursor: pointer; color: var(--workspace-accent); font-weight: 650; }
+.ceac-measure { margin-block: 11px; }
+.ceac-measure h3 { margin: 0 0 8px; font-size: 15px; }
+.ceac-measure-value { font-size: clamp(36px, 4vw, 60px); font-weight: 740; letter-spacing: -.07em; line-height: 1.1; }
+.ceac-measure-value small { font-size: 19px; font-weight: 570; letter-spacing: -.025em; color: var(--workspace-secondary); }
+.ceac-measure progress { width: 100%; height: 8px; accent-color: var(--workspace-accent); }
+.ceac-measure p { color: var(--workspace-secondary); margin-block: 7px 0; }
+.ceac-measure-bar-row {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr) max-content;
+  gap: 10px;
+  align-items: center;
+  margin-block: 6px;
+  font-variant-numeric: tabular-nums;
+}
+.ceac-measure-track { height: 13px; border-radius: 4px; background: var(--workspace-panel); overflow: hidden; }
+.ceac-measure-track i { display: block; height: 100%; background: #74747d; border-radius: inherit; }
+.ceac-measure-track.is-actual i { background: var(--workspace-accent); }
+.ceac-approved-workspace .s2-exec-brief {
+  background: var(--workspace-canvas);
+  color: var(--workspace-ink);
+  border: 1px solid var(--workspace-divider);
+  border-radius: 12px;
+  box-shadow: 0 3px 12px #00000006;
+}
+.ceac-report-measures { padding-block: 12px 16px; border-bottom: 1px solid var(--workspace-divider); }
+.ceac-approved-workspace .ceac-calendar-explorer .ev2cal-period {
+  grid-template-columns: minmax(0, 1fr) auto auto auto;
+  background: transparent;
+  box-shadow: none;
+  border: 0;
+  padding-inline: 0;
+}
+.ceac-approved-workspace .ceac-calendar-explorer .ev2cal-period-label {
+  grid-column: 1;
+  grid-row: 1;
+  justify-content: flex-start;
+  font-size: clamp(23px, 3vw, 39px);
+  letter-spacing: -.05em;
+  color: var(--workspace-ink);
+  overflow: visible;
+}
+.ceac-approved-workspace .ev2cal-period-label > strong { font: inherit; font-weight: 730; }
+.ceac-approved-workspace .ev2cal-month {
+  background: var(--workspace-canvas);
+  border: 1px solid var(--workspace-divider);
+  border-radius: 9px;
+  box-shadow: none;
+}
+.ceac-approved-workspace :is(.ev2cal-day, .ev2cal-weekdays) { border-color: var(--workspace-divider); }
+.ceac-approved-workspace .ev2cal-day.is-selected { background: var(--workspace-selected); }
+.ceac-approved-workspace .ev2cal-day.is-selected .ev2cal-day-number {
+  border-radius: 50%;
+  background: #c8312a;
+  color: white;
+}
+.ceac-approved-workspace .ceac-calendar-planner > .phase6-day-workspace {
+  border: 0;
+  border-radius: 0;
+  border-inline-start: 1px solid var(--workspace-divider);
+  background: transparent;
+  box-shadow: none;
+}
+@media (max-width: 1050px) {
+  .ceac-meetings-workspace { grid-template-columns: 175px minmax(0, 1fr); }
+  .meeting-detail-layout { gap: 14px; }
+  .meeting-detail-inspector { padding-inline-start: 12px; }
+}
+@media (max-width: 899px) {
+  .meeting-detail-layout,
+  .ceac-approved-workspace .s2-project .s2-project-layout { grid-template-columns: minmax(0, 1fr); }
+  .meeting-detail-inspector,
+  .ceac-approved-workspace .s2-project .s2-project-aside,
+  .ceac-approved-workspace .ceac-calendar-planner > .phase6-day-workspace {
+    padding-inline-start: 0;
+    border-inline-start: 0;
+  }
+}
+@media (max-width: 699px) {
+  .ceac-meetings-workspace { display: block; }
+  .ceac-meetings-workspace.is-browsing .ceac-meeting-selected,
+  .ceac-meetings-workspace:not(.is-browsing) .ceac-meeting-register { display: none; }
+  .ceac-meeting-register { border: 0; }
+  .ceac-meeting-list-row { min-height: 48px; }
+  .meeting-heading-icon { flex-basis: 41px; height: 41px; }
+  .ceac-approved-workspace .ev2s-mobile-nav {
+    background: var(--workspace-chrome);
+    border-color: var(--workspace-divider);
+    border-radius: 24px;
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .ceac-approved-workspace :is(.ev2s-topbar, .ev2s-mobile-topbar, .ev2s-mobile-nav) { backdrop-filter: none; background: var(--workspace-panel); }
+}
+.ceac-approved-workspace .ev2p-workspace-header {
+  background: transparent;
+  color: var(--workspace-ink);
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  padding-inline: 0;
+}
+.ceac-approved-workspace .ev2p-workspace-header :is(h1, p, .ev2p-workspace-kicker) { color: inherit; }
+.ceac-approved-workspace .ev2p-workspace-header h1 { font-size: clamp(30px, 3.1vw, 46px); letter-spacing: -.05em; }
+.ceac-approved-workspace .ev2p-tabs {
+  padding-inline: 0;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--workspace-divider);
+  border-radius: 0;
+  box-shadow: none;
+}
+.ceac-approved-workspace .ev2p-tabs button.is-selected { color: var(--workspace-accent); background: transparent; box-shadow: inset 0 -2px var(--workspace-accent); }
+.ceac-project-board { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 9px; }
+.ceac-project-board section { min-width: 0; background: var(--workspace-panel); padding: 9px; border-radius: 9px; }
+.ceac-project-board h3 { font-size: 13px; margin: 3px 0 8px; }
+.ceac-project-board h3 small { color: var(--workspace-secondary); }
+.ceac-project-board button {
+  width: 100%; text-align: start; padding: 9px; margin-bottom: 5px; color: var(--workspace-ink);
+  background: var(--workspace-canvas); border: 1px solid var(--workspace-divider); border-radius: 7px; overflow-wrap: anywhere;
+}
+.ceac-project-board button :is(strong, small) { display: block; }
+.ceac-project-board button small { color: var(--workspace-secondary); }
+.ceac-approved-workspace .fpg-view-switch button[aria-pressed="true"] { background: var(--workspace-selected); color: var(--workspace-accent); }
+.ceac-approved-workspace .s2-project[data-project-view="milestones"] .s2-project-content { display: block; }
+.ceac-approved-workspace .s2-project[data-project-view="milestones"] .s2-project-layout,
+.ceac-approved-workspace .s2-project[data-project-view="people"] .s2-project-layout,
+.ceac-approved-workspace .s2-project[data-project-view="work"] .s2-project-layout { grid-template-columns: minmax(0, 1fr); }
+@media (max-width: 760px) {
+  .ceac-project-board { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 699px) {
+  .ceac-approved-workspace .ev2s-mobile-nav { left: 12px; right: 12px; bottom: max(9px, env(safe-area-inset-bottom)); border: 1px solid var(--workspace-divider); }
+}
+.ceac-executive-project-layout { display: grid; grid-template-columns: 210px minmax(0, 1fr); gap: 20px; }
+.ceac-executive-project-content { min-width: 0; }
+.ceac-project-register h2 { font-size: 14px; margin: 0; }
+.ceac-approved-workspace .ev2rep-header h1,
+.ceac-approved-workspace .ev2-work-page h1 { font-weight: 735; letter-spacing: -.05em; }
+.ceac-approved-workspace .ev2rep-section.ceac-report-delivery { background: var(--workspace-canvas); border-color: var(--workspace-divider); border-radius: 12px; }
+.ceac-approved-workspace .ev2rep-tabs { background: transparent; border-bottom: 1px solid var(--workspace-divider); border-radius: 0; }
+@media (max-width: 760px) {
+  .ceac-executive-project-layout { display: block; }
+  .ceac-executive-project-layout .ceac-project-register { display: none; }
+}

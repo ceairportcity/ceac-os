@@ -1,3 +1,4 @@
+import DeliveryMeasure, { hasDeliveryMeasure } from "./DeliveryMeasure";
 import {useEffect,useMemo,useRef} from "react";
 import {ministryPeriodEvidence} from "../lib/ministryReportingFacts";
 import { verifiedReportingQuarter } from "../lib/quarterlyReportingWindow";
@@ -40,6 +41,10 @@ export default function ExecutiveOutcomeBrief({period,units,issuedReports=[],obj
   </header>
   {!quarter && <p role="status" className="s2-exec-brief-warning">This is not a verified full calendar quarter. Select a quarterly reporting period before printing a quarterly report.</p>}
   {readError?<p role="alert" className="s2-exec-brief-warning">Detailed outcome records could not be verified. No achievement figures have been inferred.</p>:<>
+    {facts.objectives.some(hasDeliveryMeasure) && <section className="ceac-report-measures" aria-label="Recorded targets and actual results">
+      <h3>Current recorded targets and actuals</h3>
+      {facts.objectives.filter(hasDeliveryMeasure).map(objective => <DeliveryMeasure key={objective.id} objective={objective} chart />)}
+    </section>}
     <div className="s2-exec-brief-stats">
       <article><strong>{facts.filing.submitted} / {facts.filing.visibleUnits}</strong><span>Units with issued report</span><small>Filing status only</small></article>
       <article><strong>{facts.objectives.length}</strong><span>Currently visible objectives</span><small>Not independently verified achievements</small></article>

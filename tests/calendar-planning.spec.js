@@ -51,7 +51,10 @@ async function mock(page,{failTaskUpdate=false,notesSeed=[]}={}){
    if(pattern){const match=pattern.match(/title\.ilike\.%(.*?)%/);const term=match?.[1]?.toLowerCase();if(term)found=found.filter(note=>(note.title||'').toLowerCase().includes(term)||(note.body||'').toLowerCase().includes(term));}
    return reply(found);
   }
-  if(name==='meeting_sessions')return reply(url.searchParams.has('id')?meeting:[meeting,{...meeting,id:'meeting-b',title:'Overlapping planning',starts_at:'2026-11-07T10:00:00Z',ends_at:'2026-11-07T11:00:00Z'}]);
+  if(name==='meeting_sessions'){
+   const overlap={...meeting,id:'meeting-b',title:'Overlapping planning',starts_at:'2026-11-07T10:00:00Z',ends_at:'2026-11-07T11:00:00Z'};
+   return reply(url.searchParams.has('id')?(url.searchParams.get('id')==='eq.meeting-b'?overlap:meeting):[meeting,overlap]);
+  }
   if(name==='meeting_participants')return reply([{profile_id:person,role:'organiser',profiles:{full_name:'Synthetic Planner'}}]);
   if(name==='meeting_private_notes')return reply(meetingNote===null?null:{body:meetingNote,updated_at:'2026-11-12T12:00:00Z'});
   if(name==='work_items')return reply(url.searchParams.get('kind')==='eq.routine'?[]:[{id:'work-review',org_id:org,unit_id:unit,assignee_id:person,ref:'IT-001',title:'Publicity awaiting review',kind:'task',status:'in_review',due_at:'2026-11-07T12:00:00Z'}]);
@@ -87,14 +90,12 @@ for(const [role,width] of [['staff',390],['staff',1024],['manager',390],['manage
  if(spacing.notices.length)console.log('CALENDAR_NOTICES '+role+' '+width+' '+JSON.stringify(spacing.notices));
  expect(spacing.largestUnusedGap,'Calendar must not insert empty space between visible controls').toBeLessThanOrEqual(24);
  if(width<600){
-  await expect(page.getByRole('button',{name:'Show full month'})).toBeVisible();
-  await expect(page.locator('.ev2cal-day:visible')).toHaveCount(7);
-  const day=await page.locator('.phase6-day-workspace,.ev2cal-agenda').first().boundingBox();
-  expect(day.y).toBeLessThan(950);
-  await page.getByRole('button',{name:'Show full month'}).click();
+  await expect(page.getByRole('button',{name:'Collapse month'})).toBeVisible();
   expect(await page.locator('.ev2cal-day:visible').count()).toBeGreaterThan(7);
   await page.getByRole('button',{name:'Collapse month'}).click();
   await expect(page.locator('.ev2cal-day:visible')).toHaveCount(7);
+  const day=await page.locator('.phase6-day-workspace,.ev2cal-agenda').first().boundingBox();
+  expect(day.y).toBeLessThan(950);
  }
  await page.getByRole('tab',{name:'Week',exact:true}).click();
  await expect(page.getByLabel('Weekly time schedule, Africa/Accra')).toBeVisible();
@@ -141,6 +142,7 @@ test('meeting response persists, calendar export is a real file, preparation not
  await page.clock.setFixedTime(new Date('2026-11-07T07:00:00Z'));
  const data=await mock(page);await page.goto('/tests/fixtures/calendar-planning.html?role=meeting');
  await page.getByRole('button',{name:'Accept',exact:true}).click();await expect(page.getByRole('button',{name:'Accept',exact:true})).toHaveAttribute('aria-pressed','true');
+ await page.getByRole('button',{name:'During',exact:true}).click();
  await page.locator('.meeting-private-notes textarea').fill('Private preparation');await page.getByRole('button',{name:'Save my notes'}).click();
  expect(data.writes.find(w=>w.name==='meeting_private_notes').body.author_id).toBe(person);
  await page.getByRole('button',{name:'Edit meeting',exact:true}).click();await page.getByLabel('Starts · Accra time',{exact:true}).fill('2026-11-07T09:30');await page.getByRole('button',{name:'Save changes',exact:true}).click();
@@ -154,6 +156,7 @@ test('meeting notes autosave, survive reopening, and reject destructive empty dr
   await page.clock.setFixedTime(new Date('2026-11-07T07:00:00Z'));
   const data=await mock(page);
   await page.goto('/tests/fixtures/calendar-planning.html?role=meeting');
+  await page.getByRole('button',{name:'During',exact:true}).click();
   const editor=page.locator('.meeting-private-notes textarea');
   await expect(editor).toBeEnabled();
   await editor.fill('Valuable photography and graphics training notes');
@@ -289,4 +292,19 @@ test('an unfinished journal returns to the same editor after repeated reloads',a
  await page.getByRole('button',{name:'Save journal'}).click();
  await expect.poll(()=>fixture.getNotes().map(note=>note.body)).toEqual([message]);
  await expect(journal).toHaveValue(message);
+});
+
+test('Meetings workspace opens the selected authorised record on a phone',async({page})=>{
+ await page.setViewportSize({width:390,height:844});
+ await page.clock.setFixedTime(new Date('2026-11-07T07:00:00Z'));
+ const data=await mock(page);
+ await page.goto('/tests/fixtures/calendar-planning.html?role=meetings');
+ const register=page.getByRole('complementary',{name:'Meeting list'});
+ await register.getByRole('searchbox',{name:'Search meetings'}).fill('Overlapping');
+ await register.getByRole('button',{name:/Overlapping planning/}).click();
+ await expect(page.getByRole('heading',{name:'Overlapping planning',exact:true})).toBeVisible();
+ await expect(register).toBeHidden();
+ await page.getByRole('button',{name:/Back/}).click();
+ await expect(register).toBeVisible();
+ expect(data.requests.filter(r=>r.name==='meeting_sessions'&&new URL(r.url).searchParams.has('org_id'))).toHaveLength(1);
 });

@@ -5,6 +5,7 @@ import { supabase } from "../lib/supabase";
 import { statusPill, Avatar } from "../components/bits";
 import "../components/MeetingPlanning.css";
 import { downloadMeetingCalendar } from "../lib/calendarExport";
+import { CeacIcon } from "../experience-v2/icons";
 import VoiceInput from "../components/VoiceInput";
 import { humanError } from "../lib/productLanguage";
 
@@ -26,6 +27,7 @@ export default function Meeting(props) {
 }
 
 function MeetingDetail({ me, meetingId, back, goAssign, openItem, openProject, openRoom }) {
+  const [section, setSection] = useEditorPosition(me, "meeting-view:" + meetingId, null);
   const [meeting, setMeeting] = useState(null);
   const [records, setRecords] = useState([]);
   const [links, setLinks] = useState([]);
@@ -259,16 +261,19 @@ function MeetingDetail({ me, meetingId, back, goAssign, openItem, openProject, o
       ? meeting.units?.name || "Unit meeting"
       : "Organisation meeting";
 
+  const currentSection = section || (meetingEnded ? "recap" : meetingStarted ? "during" : "agenda");
   return <div className="body meeting-screen">
     <button className="back meeting-back" onClick={back}>← Back</button>
 
     <header className="meeting-hero">
-      <div className="eyebrow">{context}</div>
-      <h1>{meeting.title}</h1>
+      <div className="meeting-heading">
+        <span className="meeting-heading-icon"><CeacIcon name="meeting" size={25} /></span>
+        <div><div className="eyebrow">{context}</div><h1>{meeting.title}</h1></div>
+        {statusPill(meeting.status)}
+      </div>
       <div className="meeting-time">{whenLabel(meeting.starts_at)}{meeting.ends_at ? ` → ${whenLabel(meeting.ends_at)}` : ""}</div>
       <div className="meeting-status-row">
-        {statusPill(meeting.status)}
-        <span>{providerLabel(meeting)}</span>
+        <span>{meeting.join_url ? providerLabel(meeting) : "In person"}</span>
       </div>
       {meeting.location && <div className="meeting-location">{meeting.location} <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(meeting.location)}`} target="_blank" rel="noreferrer">Get directions ↗</a></div>}
       <details className="meeting-calendar-export"><summary>Add to another calendar</summary><p>Save a copy to Apple Calendar, Outlook or Google Calendar. Later changes stay in CEAC OS; this copy will not sync automatically.</p><button className="btn btn-ghost btn-sm" onClick={()=>downloadMeetingCalendar(meeting)}>Download calendar event</button><a className="btn btn-ghost btn-sm" href="https://calendar.google.com/calendar/u/0/r" target="_blank" rel="noreferrer">Open Google Calendar</a></details>
@@ -289,8 +294,13 @@ function MeetingDetail({ me, meetingId, back, goAssign, openItem, openProject, o
 
     {error && <div className="flag flag-brick"><h4>Could not complete that</h4>{error}</div>}
 
-    <div className="form-grid two">
-    <section className="meeting-panel">
+    <nav className="meeting-view-tabs" aria-label="Meeting views">
+      {[["agenda", "Agenda"], ["during", "During"], ["recap", "Recap"]].map(([key, label]) =>
+        <button type="button" key={key} aria-pressed={currentSection === key} onClick={() => setSection(key)}>{label}</button>)}
+    </nav>
+    <div className="meeting-detail-layout">
+      <div className="meeting-detail-content">
+    <section className="meeting-panel" hidden={currentSection !== "agenda"}>
       <div className="meeting-section-head"><div><span>Before</span><h2>Agenda</h2></div><small>{meetingStarted ? "Meeting started" : "Preparation"}</small></div>
       {!meetingStarted && canManage
         ? <div className="meeting-agenda-editor">
@@ -304,14 +314,9 @@ function MeetingDetail({ me, meetingId, back, goAssign, openItem, openProject, o
         {participants.length > 1 && <div>{participants.slice(0,8).map((participant) => <b key={participant.profile_id}>{participant.profiles?.full_name || "CEAC member"}{responses.find(r=>r.profile_id===participant.profile_id)?.response?` · ${responseCurrent(responses.find(r=>r.profile_id===participant.profile_id))?responses.find(r=>r.profile_id===participant.profile_id).response:"Awaiting new response"}`:""}</b>)}</div>}
       </div>}
     </section>
-    <aside className="meeting-panel" aria-label="Meeting details"><div className="meeting-section-head"><div><span>Meeting details</span><h2>{canManage?"Organiser view":"Viewer mode"}</h2></div></div>
-      <p><strong>Organiser</strong><br/>{participants.filter(row=>row.role==="organiser"||row.profile_id===meeting.created_by).map(row=>row.profiles?.full_name).filter(Boolean).join(", ")||"Name not recorded"}</p>
-      <p><strong>When</strong><br/>{whenLabel(meeting.starts_at)}</p>
-      {meeting.location&&<p><strong>Location</strong><br/>{meeting.location}</p>}
-      <p>{canManage?"You can prepare the agenda before the meeting starts.":"The organiser prepares the agenda. Your personal notes stay private."}</p>
-    </aside></div>
 
-    <section className="meeting-panel">
+
+    <section className="meeting-panel" hidden={currentSection !== "during"}>
       <div className="meeting-section-head">
         <div><span>During</span><h2>Meeting workspace</h2></div>
         <small>{meetingStarted ? (meetingEnded ? "Meeting time has passed" : "In session") : "Prepare your private notes"}</small>
@@ -353,7 +358,7 @@ function MeetingDetail({ me, meetingId, back, goAssign, openItem, openProject, o
       </div>}
     </section>
 
-    <section className="meeting-panel">
+    <section className="meeting-panel" hidden={currentSection !== "recap"}>
       <div className="meeting-section-head">
         <div><span>After</span><h2>Actions & outcomes</h2></div>
         <small>{links.length} linked</small>
@@ -369,10 +374,20 @@ function MeetingDetail({ me, meetingId, back, goAssign, openItem, openProject, o
       </div>}
     </section>
 
+    </div>
+    <div className="meeting-detail-inspector">
+    <aside className="meeting-panel" aria-label="Meeting details"><div className="meeting-section-head"><div><span>Meeting details</span><h2>{canManage?"Organiser view":"Viewer mode"}</h2></div></div>
+      <p><strong>Organiser</strong><br/>{participants.filter(row=>row.role==="organiser"||row.profile_id===meeting.created_by).map(row=>row.profiles?.full_name).filter(Boolean).join(", ")||"Name not recorded"}</p>
+      <p><strong>When</strong><br/>{whenLabel(meeting.starts_at)}</p>
+      {meeting.location&&<p><strong>Location</strong><br/>{meeting.location}</p>}
+      <p>{canManage?"You can prepare the agenda before the meeting starts.":"The organiser prepares the agenda. Your personal notes stay private."}</p>
+    </aside>
     {meeting.project_id && openProject && <button className="meeting-project-link" onClick={() => openProject(meeting.project_id)}>Open project →</button>}
 
-    <div className="meeting-provider-note">
-      <span>Video calls open in {providerLabel(meeting)}. Your agenda, decisions and follow-up work stay in CEAC OS.</span>
+    {meeting.join_url && <div className="meeting-provider-note">
+      <span>Video calls open in {providerLabel(meeting)}.</span>
+    </div>}
+    </div>
     </div>
   </div>;
 }

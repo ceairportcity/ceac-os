@@ -1,3 +1,4 @@
+import DeliveryMeasure, { hasDeliveryMeasure } from "../components/DeliveryMeasure";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { isIssuedUnitReport } from "../lib/ministryReportingFacts";
 import { deadlineOverdue } from "../lib/stage2AchievementMetrics";
@@ -179,7 +180,7 @@ export default function ManagerReports({ me, openItem, onOpenAchievements = null
       supabase.from("report_periods").select("id,kind,label,starts_on,ends_on,status", { count:"exact" }).order("starts_on", { ascending: false }),
       supabase.from("work_items").select("id,ref,title,kind,status,due_at,completed_at,project_id,assignee_id,origin,projects(name),profiles!work_items_assignee_id_fkey(full_name)", { count:"exact" }).eq("unit_id", me.unit_id).neq("visibility", "private"),
       supabase.from("unit_memberships").select("profile_id", { count:"exact" }).eq("unit_id", me.unit_id),
-      supabase.from("objectives").select("id,project_id,unit_id,ref,name,status", { count:"exact" }).eq("unit_id", me.unit_id),
+      supabase.from("objectives").select("id,project_id,unit_id,ref,name,status,target_value,target_unit,achieved_value", { count:"exact" }).eq("unit_id", me.unit_id),
     ]);
     if (!isCurrent()) return;
     const first = [projectResult.error, periodResult.error, workResult.error, memberResult.error, objectiveResult.error].find(Boolean);
@@ -536,7 +537,7 @@ export default function ManagerReports({ me, openItem, onOpenAchievements = null
       by_project: projectRows.map(({ label, value, projectId: id, section }) => ({ label, value, projectId: id, section })),
       status_mix: statusRows.map(({ label, value, section }) => ({ label, value, section })),
       attendance: attendanceHeat.map(({ date, label, value, section }) => ({ date, label, value, section })),
-      objectives: (evidence?.relevantObjectives || []).map((row) => ({ id: row.id, ref: row.ref, name: row.name, status: row.status })),
+      objectives: (evidence?.relevantObjectives || []).map((row) => ({ id: row.id, ref: row.ref, name: row.name, status: row.status, target_value: row.target_value, target_unit: row.target_unit, achieved_value: row.achieved_value })),
     };
   }
 
@@ -719,6 +720,9 @@ export default function ManagerReports({ me, openItem, onOpenAchievements = null
     </ReportingSection>}
 
     {range && evidence && <>
+      {displayObjectives.some(hasDeliveryMeasure) && <ReportingSection title="Target and actual" className="ceac-report-delivery">
+        {displayObjectives.filter(hasDeliveryMeasure).map(objective => <DeliveryMeasure key={objective.id} objective={objective} chart />)}
+      </ReportingSection>}
       <ReportingSection
         eyebrow={viewingFrozen ? "Submitted evidence" : "Live evidence"}
         title={viewingFrozen ? "Frozen report evidence" : range.label}

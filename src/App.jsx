@@ -1,3 +1,4 @@
+import "./experience-v2/ApprovedWorkspace.css";
 import { clearEditorPositions, useEditorPosition } from "./lib/useEditorPosition";
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { supabase, loadMe } from "./lib/supabase";
@@ -84,6 +85,7 @@ const ManagerReports = lazy(() => import("./screens/ManagerReports"));
 const Announcements = lazy(() => import("./screens/Announcements"));
 const Room = lazy(() => import("./screens/Room"));
 const Meeting = lazy(() => import("./screens/Meeting"));
+const Meetings = lazy(() => import("./screens/Meetings"));
 const DesignPrimitives = lazy(() => import("./screens/DesignPrimitives"));
 const Settings = lazy(() => import("./screens/Settings"));
 const Guide = lazy(() => import("./screens/Guide"));
@@ -646,6 +648,7 @@ export default function App() {
     return <MeScreen me={me} openSettings={() => go("account")} onOpenWork={openItem} onOpenAchievements={() => openAchievements("me")} openGoal={setGoalId} openRecord={() => go("record")} openPerformance={() => go("performance")} openWorkforce={() => go("attendance")} openLearning={() => go("learning")} openAssets={() => go("assets")} openCompliance={() => go("compliance")} />;
   }
 
+  const approvedWorkspace = meetingId || ["work", "projects", "admin-projects", "exec-projects", "meetings", "calendar", "staff-calendar", "admin-calendar", "exec-calendar", "personal-calendar", "manager-reports", "exec-reports", "reporting"].includes(tab);
   const appModeClass = isExec ? "executive-app" : isUnitManager ? "manager-app" : (!isAdmin ? "staff-app" : "office-app");
   const roleLabel = isExec ? "Group Pastor" : isAdmin ? "Administration" : isUnitManager ? "Manager" : "Staff";
   const routeTransitionKey = itemId
@@ -662,14 +665,14 @@ export default function App() {
               ? `room:${roomContext.kind}:${roomContext.unitId || roomContext.subTeamId || roomContext.projectId || ""}`
               : meetingDraft
                 ? `meeting-draft:${meetingDraft.scope || "context"}`
-                : meetingId
+                : meetingId && tab !== "meetings"
                   ? `meeting:${meetingId}`
                   : `tab:${tab}`;
 
   return (
     <ActiveMfaGate me={me} onVerified={boot}>
     <RolePresentationContext.Provider value={isExec ? "executive" : null}>
-    <div className={`app ${appModeClass}`}>
+    <div className={"app " + appModeClass + (approvedWorkspace ? " ceac-approved-workspace" : "")}>
       <GlobalFormFeedback />
       {isExec ? <Suspense fallback={null}><ExecutiveRedesignStyles /></Suspense> : null}
       <SideNav
@@ -773,6 +776,12 @@ export default function App() {
             : person && isManager ? <PersonDetail me={me} profileId={person.id} focus={person.focus} openItem={openItem} openProject={openProject} back={() => setPerson(null)} />
             : roomContext ? <Room key={`${me.org_id}:${me.id}:${roomContext.mentionProfileId || ""}`} me={me} context={roomContext} back={closeRoom} openItem={openItem} openProject={openProject} scheduleMeeting={startMeeting} openAnnouncements={() => go("announcements")} onRoomChange={openRoom} startWorkFromMessage={isManager || isExec ? startAssignment : null} />
             : meetingDraft ? <MeetingScheduler me={me} context={meetingDraft} onClose={() => setMeetingDraft(null)} onCreated={(id) => { setMeetingDraft(null); openMeeting(id); }} />
+            : tab === "meetings" ? <Meetings key={[me.org_id, me.id, me.unit_id].join(":")} me={me} meetingId={meetingId} openMeeting={openMeeting}
+                closeMeeting={() => navigate({ tab: "meetings" }, { replace: true })} goAssign={startAssignment}
+                openItem={openItem} openProject={openSearchProject} openRoom={openRoom}
+                scheduleMeeting={(isAdmin || isExec || isUnitManager) ? () => startMeeting(isAdmin || isExec
+                  ? { scope: "organisation", organisation: true }
+                  : { scope: "unit", unitId: me.unit_id, unitName: me.unit_name }) : undefined} />
             : meetingId ? <Meeting me={me} meetingId={meetingId} back={closeUrlOverlay} goAssign={startAssignment} openItem={openItem} openProject={openProject} openRoom={openRoom} />
             : pageForTab()}
           </SettingsBack>
