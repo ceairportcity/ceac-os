@@ -105,7 +105,7 @@ function MeetingDetail({ me, meetingId, back, goAssign, openItem, openProject, o
   const meetingEnded = Boolean(meeting?.ends_at && Date.now() > new Date(meeting.ends_at).getTime());
 
   const noteRecovery = useWorkFormDraft(me, canContribute && meeting.status !== "cancelled" ? `meeting-note:${meetingId}` : "",
-    {noteEdit}, saved => setPrivateNote(saved.noteEdit));
+    {noteEdit}, saved => setPrivateNote(typeof saved.noteEdit === "string" && saved.noteEdit.trim() ? saved.noteEdit : null));
   const agendaRecovery = useWorkFormDraft(me, canManage && !meetingStarted ? `meeting-agenda:${meetingId}:${meeting.updated_at || ""}` : "",
     {agendaEdit}, saved => setAgendaDraft(saved.agendaEdit));
   const decisionRecovery = useWorkFormDraft(me, canManage && meetingStarted && meeting.status !== "cancelled" ? `meeting-decision:${meetingId}` : "",
@@ -169,7 +169,11 @@ function MeetingDetail({ me, meetingId, back, goAssign, openItem, openProject, o
     if (!meeting || !canContribute || meeting.status === "cancelled" || !noteRecovery.ready) return;
     // Empty saves are never allowed to destroy previously written meeting notes.
     if (!privateNote.trim()) {
-      setNotice("Nothing to save. Existing notes have not been changed.");
+      // An empty local draft must not mask a non-empty saved server note on reopen.
+      await noteRecovery.clear({ noteEdit: null });
+      setPrivateNote(null);
+      setNoteSaveState("");
+      setNotice("Nothing to save. Your existing notes are unchanged.");
       return;
     }
     setBusy(true); setError(null);
