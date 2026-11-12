@@ -45,6 +45,7 @@ function MeetingDetail({ me, meetingId, back, goAssign, openItem, openProject, o
   const [noteSaveState, setNoteSaveState] = useState("");
   const noteWriteQueue = useRef(Promise.resolve());
   const latestNote = useRef(null);
+  const noteUserEdited = useRef(false);
   latestNote.current = noteEdit;
   const [decision, setDecision] = useState("");
   const [agendaEdit, setAgendaDraft] = useState(null);
@@ -154,7 +155,7 @@ function MeetingDetail({ me, meetingId, back, goAssign, openItem, openProject, o
 
   useEffect(() => {
     if (!meeting || !canContribute || meeting.status === "cancelled" ||
-        !noteRecovery.ready || noteEdit === null || !noteEdit.trim()) return;
+        !noteRecovery.ready || !noteUserEdited.current || noteEdit === null || !noteEdit.trim()) return;
     setNoteSaveState("Saving draft…");
     const timer = setTimeout(() => {
       const snapshot = noteEdit;
@@ -172,6 +173,7 @@ function MeetingDetail({ me, meetingId, back, goAssign, openItem, openProject, o
       // An empty local draft must not mask a non-empty saved server note on reopen.
       await noteRecovery.clear({ noteEdit: null });
       setPrivateNote(null);
+      noteUserEdited.current = false;
       setNoteSaveState("");
       setNotice("Nothing to save. Your existing notes are unchanged.");
       return;
@@ -183,6 +185,7 @@ function MeetingDetail({ me, meetingId, back, goAssign, openItem, openProject, o
       if (latestNote.current === snapshot) {
         await noteRecovery.clear({ noteEdit: null });
         setPrivateNote(null);
+        noteUserEdited.current = false;
       }
       setNoteSaveState("Saved");
       setNotice("Your private notes have been saved.");
@@ -322,8 +325,8 @@ function MeetingDetail({ me, meetingId, back, goAssign, openItem, openProject, o
           <span className="pill p-grey">Private</span>
         </div>
         <div className="assistive-field textarea">
-          <textarea rows={7} value={privateNote} disabled={busy || !noteRecovery.ready} onChange={(event) => setPrivateNote(event.target.value)} placeholder="Write your own notes from this meeting…" />
-          {noteRecovery.ready && !busy && <VoiceInput compact label="Speak private note" onResult={(text) => setPrivateNote(privateNote ? privateNote + " " + text : text)} />}
+          <textarea rows={7} value={privateNote} disabled={busy || !noteRecovery.ready} onChange={(event) => { noteUserEdited.current = true; setPrivateNote(event.target.value); }} placeholder="Write your own notes from this meeting…" />
+          {noteRecovery.ready && !busy && <VoiceInput compact label="Speak private note" onResult={(text) => { noteUserEdited.current = true; setPrivateNote(privateNote ? privateNote + " " + text : text); }} />}
         </div>
         {noteRecovery.notice&&<p role="status">{noteRecovery.notice}</p>}
         {noteSaveState&&<p role="status">{noteSaveState}</p>}
