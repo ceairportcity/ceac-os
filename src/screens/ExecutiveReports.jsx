@@ -284,6 +284,12 @@ export default function ExecutiveReports({ me, openItem, onOpenAchievements = nu
       ) : (
         <>
 
+          {(workspaceView==="brief" || workspaceView==="quarterly") &&
+          <ExecutiveOutcomeBrief period={period} units={units}
+            issuedReports={outcomeSources.issued} objectives={outcomeSources.objectives}
+            milestones={outcomeSources.milestones} targets={outcomeSources.targets}
+            evidenceRefs={outcomeSources.evidenceRefs} decisions={outcomeSources.decisions} readError={outcomeError} />}
+
           {workspaceView==="quarterly" && <>
           <div className="exec-redesign-tabs ev2rep-status-tabs" role="tablist" aria-label="Report filters">
             {[
@@ -329,19 +335,13 @@ export default function ExecutiveReports({ me, openItem, onOpenAchievements = nu
           </div>
 
           </>}
-          {workspaceView==="brief" && <>
-          <ExecutiveOutcomeBrief period={period} units={units}
-            issuedReports={outcomeSources.issued} objectives={outcomeSources.objectives}
-            milestones={outcomeSources.milestones} targets={outcomeSources.targets}
-            evidenceRefs={outcomeSources.evidenceRefs} decisions={outcomeSources.decisions} readError={outcomeError} />
-          <ExecutiveIntelligence
+          {workspaceView==="brief" && <ExecutiveIntelligence
             mode="brief" period={period} rows={unitStatusRows}
             sources={outcomeSources} readError={outcomeError}
             onQuarterly={()=>setWorkspaceView("quarterly")}
             onExplore={()=>setWorkspaceView("explore")}
             onSelectDepartment={(id)=>{setSelectedUnitId(id);setWorkspaceView("departments");}}
-            onOpenWork={openItem} />
-          </>}
+            onOpenWork={openItem} />}
           {workspaceView==="departments" && <ExecutiveIntelligence
             mode="departments" period={period} rows={unitStatusRows}
             sources={outcomeSources} readError={outcomeError}

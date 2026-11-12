@@ -303,7 +303,10 @@
 @media (prefers-reduced-transparency: reduce) {
   .ceac-approved-workspace :is(.ev2s-topbar, .ev2s-mobile-topbar, .ev2s-mobile-nav) { backdrop-filter: none; background: var(--workspace-panel); }
 }
-.ceac-approved-workspace .ev2p-workspace-header {
+.app.ceac-approved-workspace .ev2-project-workspace .ev2p-workspace-header {
+  display: grid;
+  align-items: stretch;
+  gap: 8px;
   background: transparent;
   color: var(--workspace-ink);
   border: 0;
@@ -353,4 +356,8 @@
 @media (max-width: 760px) {
   .ceac-executive-project-layout { display: block; }
   .ceac-executive-project-layout .ceac-project-register { display: none; }
+}
+
+@media print {
+  .s2-exec-brief .ceac-report-measures { display: none; }
 }

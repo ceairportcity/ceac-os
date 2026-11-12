@@ -1124,7 +1124,7 @@ test("Experience Stage 5 project register enforces payment, custody, slots and t
     await leadershipProject.getByRole("button", { name: "Open project", exact: true }).click();
     await expect(page.locator(".s2-project-reader")).toBeVisible();
     await expect(page.getByRole("heading", { name: projectName, exact: true })).toBeVisible();
-    await expect(page.getByRole("tab", { name: /Project tasks/ })).toBeVisible();
+    await expect(page.getByRole("tab", { name: /^Work/ })).toBeVisible();
     await expect(page.getByText(participantName, { exact: true })).toHaveCount(0);
     await expect(page.getByText("Confirmed remitted", { exact: true })).toHaveCount(0);
     await expect(page.getByText("Acceptance Dormitory", { exact: true })).toHaveCount(0);

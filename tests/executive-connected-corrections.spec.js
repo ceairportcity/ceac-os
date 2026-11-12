@@ -221,7 +221,7 @@ test('Executive project department, work, Back/reload and calendar date stay con
   expect(taskResponse.ok()).toBe(true);
   const task=await taskResponse.json();
   await page.reload();
-  await page.getByRole('tab',{name:/Project tasks/}).click();
+  await page.getByRole('tab',{name:/^Work/}).click();
   await page.getByRole('button',{name:new RegExp(`^${taskTitle}`)}).click();
   await expect(page).toHaveURL(new RegExp(`project=${projectId}`));
   await expect(page.getByRole('heading',{name:taskTitle,exact:true})).toBeVisible();

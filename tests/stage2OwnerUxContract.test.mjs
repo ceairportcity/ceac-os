@@ -11,7 +11,6 @@ test("all role Overviews use one deterministic locally stored real-photography c
     "src/experience-v2/manager-overview/ManagerOverviewV2.jsx",
     "src/experience-v2/admin-overview/AdminOverviewV2.jsx",
     "src/experience-v2/executive-overview/ExecutiveOverviewV2.jsx",
-    "src/experience-v2/project-family/ProjectFamilyV2.jsx",
   ];
   for (const name of surfaces) {
     const source = file(name);
@@ -29,6 +28,7 @@ test("Projects presents one connected workspace with factual people and task tab
   const source = file("src/components/Stage2ProjectOverview.jsx");
   const parent = file("src/screens/ManagerProjects.jsx");
   const styles = file("src/components/Stage2ProjectOverview.css");
+  assert.doesNotMatch(file("src/experience-v2/project-family/ProjectFamilyV2.jsx"), /<DailyScenicPhoto/);
   assert.match(parent, /<Stage2ProjectOverview/);
   assert.match(parent, /ProjectParticipantRegister/);
   assert.match(parent, /ManagerProjectClose/);

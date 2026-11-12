@@ -299,10 +299,9 @@ for (const viewport of [
     await calendar.getByRole("button", { name: "Next period", exact: true }).click();
     await expect.poll(async () => (await periodLabel.innerText()).trim()).not.toBe(before);
 
-    // The phone planner initially shows the selected week. Expand before
-    // interacting with an off-week day so this checks motion, not hidden content.
+    // The approved phone calendar opens to the full month.
     if (viewport.width < 600) {
-      await calendar.getByRole("button", { name: "Show full month" }).click();
+      await expect(calendar.getByRole("button", { name: "Collapse month" })).toBeVisible();
     }
     const day = calendar.locator(".ev2cal-day-button").nth(8);
     await day.click();
