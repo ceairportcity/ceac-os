@@ -395,7 +395,10 @@ function MeetingDetail({ me, meetingId, back, goAssign, openItem, openProject, e
               <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(meeting.location)}`} target="_blank" rel="noreferrer">Get directions ↗</a>
             </dd></>}
           </dl>
-          {upcoming && <button type="button" className="meeting-export" onClick={() => downloadMeetingCalendar(meeting)}>Download calendar event (.ics)</button>}
+          {upcoming && <div>
+            <button type="button" className="meeting-export" onClick={() => downloadMeetingCalendar(meeting)}>Download calendar event (.ics)</button>
+            <p>Changes will not sync automatically to your other calendar.</p>
+          </div>}
           {meeting.project_id && openProject && <button className="meeting-project-link" onClick={() => openProject(meeting.project_id)}>Open project →</button>}
           {participants.length > 0 && <details className="meeting-attendees">
             <summary>Participants ({participants.length})</summary>

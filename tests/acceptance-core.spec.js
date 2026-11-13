@@ -781,7 +781,13 @@ test("Administration can combine multiple units into one meeting audience", asyn
   await dialog.getByRole("button", { name: "Schedule and notify" }).click();
 
   await expect(page.getByRole("heading", { name: title })).toBeVisible();
-  await expect(page.getByText(/participant/).first()).toBeVisible();
+  const meetingDetails = page.getByRole("complementary", { name: "Meeting details", exact: true });
+  const participants = meetingDetails.getByText(/^Participants \((?:[2-9]|[1-9]\d+)\)$/);
+  await expect(participants).toBeVisible();
+  await participants.click();
+  const attendees = meetingDetails.getByRole("listitem");
+  expect(await attendees.count()).toBeGreaterThan(1);
+  await expect(attendees.first()).toBeVisible();
   await context.close();
 });
 
