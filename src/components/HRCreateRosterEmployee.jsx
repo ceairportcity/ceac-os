@@ -118,7 +118,7 @@ export default function HRCreateRosterEmployee({me,units=[],employees=[],account
     <FieldGroup label="Job title"><input className="field" aria-label="Employee job title" maxLength={180} value={form.jobTitle} onChange={e=>set("jobTitle",e.target.value)}/></FieldGroup>
     <FieldGroup label="Employment type"><select className="field" aria-label="New employee employment type" value={form.employmentType} onChange={e=>set("employmentType",e.target.value)}>
      <option value="not_recorded">Not yet recorded</option><option value="permanent">Permanent</option>
-     <option value="fixed_term">Fixed term</option><option value="volunteer">Volunteer</option>
+     <option value="fixed_term">Fixed term</option><option value="hybrid">Hybrid</option><option value="volunteer">Volunteer</option>
     </select></FieldGroup>
     <FieldGroup label="Employment status"><select className="field" aria-label="New employee status" value={form.status} onChange={e=>set("status",e.target.value)}>
      <option value="active">Active</option><option value="inactive">Inactive</option>
