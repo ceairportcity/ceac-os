@@ -7,7 +7,10 @@ import { FieldGroup, ProductNotice } from "./bits";
  * operational unit, full email confirmation and locked employee revision can link.
  */
 export default function RosterAccountLink({ me, employee, documents = [], onLinked }) {
-  const context = `${me.org_id}:${me.id}:${employee.id}`;
+  const previousProfileId = employee.profile_id || null;
+  const correcting = Boolean(previousProfileId);
+  const context = `${me.org_id}:${me.id}:${employee.id}:${previousProfileId || ""}`;
+  const [showCorrection, setShowCorrection] = useState(false);
   const [scopeReady,setScopeReady] = useState("");
   const [accounts,setAccounts] = useState([]);
   const [revision,setRevision] = useState(null);
@@ -22,13 +25,14 @@ export default function RosterAccountLink({ me, employee, documents = [], onLink
   const [notice,setNotice] = useState("");
   const seq = useRef(0);
   const pendingWrite = useRef(false);
-  const allowed = Boolean(me.is_admin && employee.id && !employee.profile_id);
+  const allowed = Boolean(me.is_admin && employee.id);
+  const formOpen = allowed && (!correcting || showCorrection);
 
   useEffect(()=>{
     const current=++seq.current;
     setScopeReady("");setSelectedId("");setRevision(null);
     setAccounts([]);setLoading(true);setError("");setNotice("");
-    if (!allowed) { setLoading(false);return () => {seq.current+=1;}; }
+    if (!formOpen) { setLoading(false);return () => {seq.current+=1;}; }
     (async()=>{
       try {
         const [people,roster,record] = await Promise.all([
@@ -42,7 +46,7 @@ export default function RosterAccountLink({ me, employee, documents = [], onLink
           || people.count !== people.data.length || people.count>500
           || roster.error || !Array.isArray(roster.data)
           || record.error || record.count!==1 || record.data?.length!==1
-          || record.data[0].profile_id !== null) {
+          || record.data[0].profile_id !== previousProfileId) {
           throw new Error("Existing identity records cannot be verified.");
         }
         if (current!==seq.current) return;
@@ -56,8 +60,8 @@ export default function RosterAccountLink({ me, employee, documents = [], onLink
       } finally {if (current===seq.current)setLoading(false);}
     })();
     return()=>{seq.current+=1;};
-  },[context,allowed]);
-  const available = allowed && !loading && scopeReady===context && !error;
+  },[context,formOpen,previousProfileId]);
+  const available = formOpen && !loading && scopeReady===context && !error;
   const candidate = accounts.find(profile=>profile.id===selectedId);
   const evidence = documents.filter(file=>file.state==="active" && file.storage_bucket==="ceac-operational-private");
   const canSubmit = available && candidate && revision && evidence.some(file=>file.id===fileId)
@@ -69,29 +73,35 @@ export default function RosterAccountLink({ me, employee, documents = [], onLink
     if (!canSubmit || pendingWrite.current) return;
     pendingWrite.current=true;setBusy(true);setError("");setNotice("");
     try {
-      const response=await supabase.rpc("admin_confirm_existing_roster_account_link",{
+      const action = correcting ? "admin_correct_roster_account_link" : "admin_confirm_existing_roster_account_link";
+      const response=await supabase.rpc(action,{
         p_employee_id:employee.id,p_profile_id:candidate.id,
+        ...(correcting ? { p_previous_profile_id: previousProfileId } : {}),
         p_expected_updated_at:revision,p_evidence_file_id:fileId,
         p_confirmed_account_email:confirmedEmail.trim(),
         p_independently_verified:true,p_reason:reason.trim(),
       });
       if (response.error || !response.data?.linked)
-        throw new Error("Link not verified.");
+        throw new Error(response.error?.message || "The account link could not be verified.");
       const readback=await supabase.rpc("admin_employee_roster_detail",{p_employee_id:employee.id});
       if (readback.error || readback.data?.employee?.profile_id!==candidate.id)
         throw new Error("Link may be recorded but its authoritative readback is unavailable.");
-      setNotice("Existing employee and login identity confirmed. No Auth user or capability was created.");
+      setNotice(correcting ? "Employee login link corrected." : "Existing employee and login identity confirmed.");
       onLinked?.(candidate.id);
-    } catch {
+    } catch (failure) {
       setScopeReady("");
-      setError("Identity linking outcome is uncertain or refused. Do not retry blindly. Refresh the employee record and reconcile the current account state first.");
+      setError(`${failure.message || "The account link could not be verified."} Reopen the employee record to check the current link before retrying.`);
     } finally {pendingWrite.current=false;setBusy(false);}
   }
 
   if (!allowed) return null;
+  if (correcting && !showCorrection) return <div className="workforce-setup-actions">
+    <button type="button" className="btn btn-ghost" onClick={()=>setShowCorrection(true)}>Correct linked login</button>
+  </div>;
   return <section className="ev2p-admin-schedule" aria-label="Verify existing employee account link">
-    <h3>Match existing employee to an existing login</h3>
-    <p className="screen-note">HR must independently verify the person and account; names alone are insufficient. This action never invites a new user or grants roles, and it is not available until a private employee-document proof is finalised and the existing account has matching CEAC unit membership.</p>
+    <h3>{correcting ? "Replace the linked employee login" : "Match existing employee to an existing login"}</h3>
+    {correcting ? <p className="screen-note">Current login {employee.email || "Email unavailable"}. This links the same employee record and its schedules to the verified replacement login. Roles, work assignments and account access status are managed separately.</p>
+      : <p className="screen-note">HR must verify the person and login using a finalised private employee document and matching CEAC unit membership.</p>}
     {loading && <p role="status">Verifying the existing employee and account directory…</p>}
     {error && <ProductNotice tone="error" title="Identity reconciliation">{error}</ProductNotice>}
     {notice && <ProductNotice tone="success" title="Identity reconciliation">{notice}</ProductNotice>}
@@ -121,12 +131,13 @@ export default function RosterAccountLink({ me, employee, documents = [], onLink
           onChange={e=>setReason(e.target.value)} required />
       </FieldGroup>
       <label><input type="checkbox" checked={confirmed} onChange={e=>setConfirmed(e.target.checked)} />
-        I independently verified this employee, their confirmed CEAC account, the attached document and matching operational unit. I understand the link changes attribution across existing records.
+        I independently verified this employee, the confirmed CEAC login, the private document and matching operational unit.
       </label>
       <div className="workforce-setup-actions">
         <button type="submit" className="btn" disabled={!canSubmit}>
-          {busy ? "Verifying link…" : "Confirm verified existing identity"}
+          {busy ? "Verifying link…" : correcting ? "Replace linked login" : "Confirm verified existing identity"}
         </button>
+        {correcting && <button type="button" className="btn btn-ghost" disabled={busy} onClick={()=>setShowCorrection(false)}>Cancel</button>}
       </div>
       <p className="screen-note">The server independently checks active employee/account, exact verified email, private file finalisation, same-unit membership, unique profile and optimistic record version. Conflicts are refused.</p>
     </form>}
