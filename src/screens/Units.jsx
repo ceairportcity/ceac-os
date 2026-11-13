@@ -285,13 +285,13 @@ export default function Units({ me, openItem, openPeopleAccess, openProject }) {
           <div><strong>{member.profiles?.full_name || "—"}</strong><span>{member.role === "manager" ? "Unit Head" : member.role === "sub_team_lead" ? "Sub-team lead" : "Staff"}{member.profiles?.job_title ? ` · ${member.profiles.job_title}` : ""}</span></div>
           {!member.profiles?.active && <span className="pill p-grey">Inactive</span>}
         </div>)}
-        {!openUnit.head && openUnit.people.length > 0 && <div className="admin-head-assignment">
-          <label className="field-label" htmlFor={`head-${openUnit.id}`}>Assign Unit Head</label>
+        {openUnit.people.some(member => member.profiles?.active && member.profile_id !== openUnit.head?.profile_id) && <div className="admin-head-assignment">
+          <label className="field-label" htmlFor={`head-${openUnit.id}`}>{openUnit.head ? "Replace Unit Head" : "Assign Unit Head"}</label>
           <select id={`head-${openUnit.id}`} className="field" value={headChoice[openUnit.id] || ""} onChange={(event) => setHeadChoice((current) => ({ ...current, [openUnit.id]: event.target.value }))}>
             <option value="">Choose an existing unit member</option>
-            {openUnit.people.map((member) => <option key={member.profile_id} value={member.profile_id}>{member.profiles?.full_name || member.profile_id}</option>)}
+            {openUnit.people.filter(member => member.profiles?.active && member.profile_id !== openUnit.head?.profile_id).map((member) => <option key={member.profile_id} value={member.profile_id}>{member.profiles?.full_name || member.profile_id}</option>)}
           </select>
-          <button className="btn btn-sm" disabled={!headChoice[openUnit.id] || savingHead === openUnit.id} onClick={() => assignHead(openUnit)}>{savingHead === openUnit.id ? "Assigning…" : "Make Unit Head"}</button>
+          <button className="btn btn-sm" disabled={!headChoice[openUnit.id] || savingHead === openUnit.id} onClick={() => assignHead(openUnit)}>{savingHead === openUnit.id ? "Assigning…" : openUnit.head ? "Replace Unit Head" : "Make Unit Head"}</button>
         </div>}
       </section>}
 
