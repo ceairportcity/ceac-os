@@ -1046,11 +1046,11 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
           </div>
           <Button variant="quiet" size="compact" onClick={() => openAccessAdministration(person.profile_id || null)}>Review invitation</Button>
         </div> : null}
-        {!person.profile_id && <RosterAccountLink
-          key={`${me.org_id}:${me.id}:${person.employee_id}`}
+        <RosterAccountLink
+          key={`${me.org_id}:${me.id}:${person.employee_id}:${person.profile_id || ""}`}
           me={me} employee={person} documents={employeeFiles.documents}
           onLinked={()=>{personGeneration.current+=1;setPerson(null);setDrill(null);void load();}}
-        />}
+        />
         <p className="phase5-person-access-note">
           Job title never grants application authority. Additional unit or team responsibility is recorded against the existing identity; access deactivation and offboarding use the controlled lifecycle workflow.
         </p>
