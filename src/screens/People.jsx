@@ -1346,10 +1346,11 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
         <FieldGroup label="Effective date"><input className="field" aria-label="Effective date" type="date" value={employmentForm.effectiveOn} onChange={(event) => setEmploymentForm({ ...employmentForm, effectiveOn: event.target.value })} /></FieldGroup>
         <FieldGroup label="Employment type">
           <select className="field" aria-label="Employment type" value={employmentForm.employmentType} onChange={(event) => setEmploymentForm({ ...employmentForm, employmentType: event.target.value, role: event.target.value === "volunteer" && employmentForm.role === "manager" ? "staff" : employmentForm.role, workingPattern: event.target.value === "volunteer" ? "no_attendance" : employmentForm.workingPattern })}>
-            {!["not_recorded","permanent","fixed_term","volunteer"].includes(employmentForm.employmentType) && <option value={employmentForm.employmentType}>{employmentForm.employmentType}</option>}
+            {!["not_recorded","permanent","fixed_term","hybrid","volunteer"].includes(employmentForm.employmentType) && <option value={employmentForm.employmentType}>{employmentForm.employmentType}</option>}
             <option value="not_recorded">Not recorded</option>
             <option value="permanent">Permanent employee</option>
             <option value="fixed_term">Fixed-term employee</option>
+            <option value="hybrid">Hybrid</option>
             <option value="volunteer">Volunteer</option>
           </select>
         </FieldGroup>
