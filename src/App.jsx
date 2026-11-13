@@ -515,7 +515,7 @@ export default function App() {
   const overlay = itemId || assigning || goalId || person || (projectId && isUnitManager) || roomContext || meetingId || meetingDraft;
 
   function startAssignment(context = {}) {
-    if (context.projectId) setProjectId(context.projectId);
+    if (context.projectId && !context.meetingId) setProjectId(context.projectId);
     setAssignmentContext({actor:assignmentActor,context});
     const position = {};
     for (const field of ["unitId", "projectId", "objectiveId", "phaseId", "subTeamId", "assigneeId", "meetingId", "sourceRoomId", "sourceMessageId"]) {
@@ -534,10 +534,12 @@ export default function App() {
     setCreateIntent(intent);
   }
 
+  const assignMeetingWork = isAdmin || isExec || (isUnitManager && me.role === "manager") ? startAssignment : undefined;
+
   function pageForTab() {
     if (tab === "meetings") return <Meetings key={[me.org_id, me.id, me.unit_id].join(":")} me={me} meetingId={meetingId} openMeeting={openMeeting}
-                closeMeeting={() => navigate({ tab: "meetings" }, { replace: true })} goAssign={startAssignment}
-                openItem={openItem} openProject={openSearchProject} openRoom={openRoom}
+                closeMeeting={() => navigate({ tab: "meetings" }, { replace: true })} goAssign={assignMeetingWork}
+                openItem={openItem} openProject={openSearchProject}
                 scheduleMeeting={(isAdmin || isExec || isUnitManager) ? () => startMeeting(isAdmin || isExec
                   ? { scope: "organisation", organisation: true }
                   : { scope: "unit", unitId: me.unit_id, unitName: me.unit_name }) : undefined} />;
@@ -783,7 +785,7 @@ export default function App() {
             : roomContext ? <Room key={`${me.org_id}:${me.id}:${roomContext.mentionProfileId || ""}`} me={me} context={roomContext} back={closeRoom} openItem={openItem} openProject={openProject} scheduleMeeting={startMeeting} openAnnouncements={() => go("announcements")} onRoomChange={openRoom} startWorkFromMessage={isManager || isExec ? startAssignment : null} />
             : meetingDraft ? <MeetingScheduler me={me} context={meetingDraft} onClose={() => setMeetingDraft(null)} onCreated={(id) => { setMeetingDraft(null); openMeeting(id); }} />
 
-            : meetingId && tab !== "meetings" ? <Meeting me={me} meetingId={meetingId} back={closeUrlOverlay} goAssign={startAssignment} openItem={openItem} openProject={openProject} openRoom={openRoom} />
+            : meetingId && tab !== "meetings" ? <Meeting me={me} meetingId={meetingId} back={closeUrlOverlay} goAssign={assignMeetingWork} openItem={openItem} openProject={openProject} />
             : pageForTab()}
           </SettingsBack>
           </Suspense>

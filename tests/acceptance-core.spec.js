@@ -740,7 +740,7 @@ test("A Manager can schedule a Unit meeting with an explicit audience and Staff 
     await expect(page).toHaveURL(/(?:\?|&)meeting=/);
     await expect(page.getByRole("heading", { name: title })).toBeVisible();
     await expect(page.getByRole("link", { name: /Join Zoom/ })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Open meeting discussion", exact: true })).toBeVisible();
+    await expect(page.getByRole("group", { name: "Your invitation response" })).toHaveCount(0);
     await page.reload();
     await expect(page.getByRole("heading", { name: title })).toBeVisible();
     await context.close();
@@ -753,11 +753,10 @@ test("A Manager can schedule a Unit meeting with an explicit audience and Staff 
     await expect(meetingRow).toBeVisible();
     await meetingRow.click();
     await expect(page.getByRole("heading", { name: title })).toBeVisible();
-    await page.getByRole("button", { name: "During", exact: true }).click();
-    await expect(page.getByRole("heading", { name: "Meeting workspace" })).toBeVisible();
-    await expect(page.getByText("Prepare your own notes now. Shared decisions open when the meeting starts.",{exact:true})).toBeVisible();
+    await page.getByRole("button", { name: "My notes", exact: true }).click();
+    await expect(page.getByRole("heading", { name: "My notes" })).toBeVisible();
+    await expect(page.getByText("Only you can read these notes.",{exact:true})).toBeVisible();
     await expect(page.getByRole("button",{name:"Save my notes",exact:true})).toBeVisible();
-    await expect(page.getByText("My notes", { exact: true })).toBeVisible();
     await context.close();
   }
 });
@@ -782,7 +781,13 @@ test("Administration can combine multiple units into one meeting audience", asyn
   await dialog.getByRole("button", { name: "Schedule and notify" }).click();
 
   await expect(page.getByRole("heading", { name: title })).toBeVisible();
-  await expect(page.getByText(/participant/).first()).toBeVisible();
+  const meetingDetails = page.getByRole("complementary", { name: "Meeting details", exact: true });
+  const participants = meetingDetails.getByText(/^Participants \((?:[2-9]|[1-9]\d+)\)$/);
+  await expect(participants).toBeVisible();
+  await participants.click();
+  const attendees = meetingDetails.getByRole("listitem");
+  expect(await attendees.count()).toBeGreaterThan(1);
+  await expect(attendees.first()).toBeVisible();
   await context.close();
 });
 

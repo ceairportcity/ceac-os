@@ -97,7 +97,7 @@ for(const width of [390,1440]){
   await expect(page.getByRole('button',{name:'Save agenda',exact:true})).toHaveCount(0);
   await expect(page.locator('.meeting-agenda-editor textarea')).toHaveCount(0);
   await expect(page.getByRole('button',{name:'Edit meeting',exact:true})).toHaveCount(0);
-  await page.getByRole('button',{name:'During',exact:true}).click();
+  await page.getByRole('button',{name:'My notes',exact:true}).click();
   await expect(page.locator('.meeting-private-notes textarea')).toBeVisible();
  });
  test(`recorded organiser retains agenda editing at ${width}px`,async({page})=>{
@@ -189,7 +189,13 @@ for(const width of [390,1440])test(`retained mockup compositions render with rea
    await expect(page.getByRole('tab',{name:'1 · Prepare',exact:true})).toBeVisible();
    await expect(page.getByRole('heading',{name:'Manager assessment',exact:true})).not.toBeVisible();
   }
-  if(screen==='meeting')await expect(page.getByRole('complementary',{name:'Meeting details',exact:true})).toContainText('Viewer mode');
+  if(screen==='meeting'){
+   const details=page.getByRole('complementary',{name:'Meeting details',exact:true});
+   await expect(details.getByRole('heading',{name:'Details',exact:true})).toBeVisible();
+   await expect(details.getByText('Format',{exact:true})).toBeVisible();
+   await expect(page.getByRole('button',{name:'Edit meeting',exact:true})).toHaveCount(0);
+   await expect(page.getByRole('button',{name:'Save agenda',exact:true})).toHaveCount(0);
+  }
   if(screen==='announcements'){
    await expect(page.getByRole('tablist',{name:'Announcement views'})).toBeVisible();
    await expect(page.getByRole('heading',{name:'Announcements',exact:true})).toBeVisible();

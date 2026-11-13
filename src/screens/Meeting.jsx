@@ -2,17 +2,18 @@ import { useEditorPosition } from "../lib/useEditorPosition";
 import { useWorkFormDraft } from "../lib/useWorkFormDraft";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
-import { statusPill, Avatar } from "../components/bits";
+import { statusPill } from "../components/bits";
 import "../components/MeetingPlanning.css";
 import { downloadMeetingCalendar } from "../lib/calendarExport";
 import { CeacIcon } from "../experience-v2/icons";
 import VoiceInput from "../components/VoiceInput";
 import { humanError } from "../lib/productLanguage";
 
-function whenLabel(value) {
+function whenLabel(value, timeOnly = false) {
   return new Date(value).toLocaleString("en-GB", {
     timeZone: "Africa/Accra",
-    weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit",
+    ...(!timeOnly && { weekday: "short", day: "numeric", month: "short" }),
+    hour: "2-digit", minute: "2-digit",
   });
 }
 
@@ -26,8 +27,9 @@ export default function Meeting(props) {
   return <MeetingDetail key={`${props.me.org_id}:${props.me.id}:${props.meetingId}`} {...props} />;
 }
 
-function MeetingDetail({ me, meetingId, back, goAssign, openItem, openProject, openRoom }) {
+function MeetingDetail({ me, meetingId, back, goAssign, openItem, openProject, embedded = false }) {
   const [section, setSection] = useEditorPosition(me, "meeting-view:" + meetingId, null);
+  const [, refreshStatus] = useState(0);
   const [meeting, setMeeting] = useState(null);
   const [records, setRecords] = useState([]);
   const [links, setLinks] = useState([]);
@@ -104,23 +106,46 @@ function MeetingDetail({ me, meetingId, back, goAssign, openItem, openProject, o
   const canManage = Boolean(meeting && (meeting.created_by === me.id || myParticipant?.role === "organiser"));
   const canContribute = Boolean(myParticipant);
   const decisions = records.filter((row) => row.kind === "decision");
-  const meetingStarted = Boolean(meeting && Date.now() >= new Date(meeting.starts_at).getTime());
-  const meetingEnded = Boolean(meeting?.ends_at && Date.now() > new Date(meeting.ends_at).getTime());
+  const startsAt = Date.parse(meeting?.starts_at);
+  // Accra uses GMT year-round. Without an end time, treat earlier dates as past.
+  const dayMs = 24 * 60 * 60 * 1000;
+  const endsAt = meeting?.ends_at ? Date.parse(meeting.ends_at) : (Math.floor(startsAt / dayMs) + 1) * dayMs;
+  const cancelled = meeting?.status === "cancelled";
+  const clock = Date.now();
+  const meetingStarted = clock >= startsAt || meeting?.status === "completed";
+  const meetingEnded = meeting?.status === "completed" || clock >= endsAt;
+  const upcoming = Boolean(meeting && !cancelled && !meetingStarted);
+  const canRespond = upcoming && canContribute && !canManage && responsesReady;
+  const canRecord = canManage && clock >= startsAt && !cancelled;
+
+  useEffect(() => {
+    const current = Date.now();
+    const boundary = [startsAt, endsAt].filter(time => time > current).sort((a, b) => a - b)[0];
+    if (!boundary) return;
+    let timer;
+    function refreshAtBoundary() {
+      const remaining = boundary - Date.now();
+      if (remaining <= 0) refreshStatus(version => version + 1);
+      else timer = setTimeout(refreshAtBoundary, Math.min(remaining, 2147483647));
+    }
+    refreshAtBoundary();
+    return () => clearTimeout(timer);
+  }, [startsAt, endsAt, meetingStarted, meetingEnded]);
 
   const noteRecovery = useWorkFormDraft(me, canContribute && meeting.status !== "cancelled" ? `meeting-note:${meetingId}` : "",
     {noteEdit}, saved => setPrivateNote(typeof saved.noteEdit === "string" && saved.noteEdit.trim() ? saved.noteEdit : null));
-  const agendaRecovery = useWorkFormDraft(me, canManage && !meetingStarted ? `meeting-agenda:${meetingId}:${meeting.updated_at || ""}` : "",
+  const agendaRecovery = useWorkFormDraft(me, canManage && upcoming ? `meeting-agenda:${meetingId}:${meeting.updated_at || ""}` : "",
     {agendaEdit}, saved => setAgendaDraft(saved.agendaEdit));
-  const decisionRecovery = useWorkFormDraft(me, canManage && meetingStarted && meeting.status !== "cancelled" ? `meeting-decision:${meetingId}` : "",
+  const decisionRecovery = useWorkFormDraft(me, canRecord ? `meeting-decision:${meetingId}` : "",
     {decision}, saved => setDecision(saved.decision));
 
-  const detailsRecovery = useWorkFormDraft(me, editingDetails && canManage && !meetingStarted && meeting.status === "scheduled"
+  const detailsRecovery = useWorkFormDraft(me, editingDetails && canManage && upcoming
     ? `meeting-edit:${meetingId}:${meeting.updated_at || ""}` : "", {detailsEdit},
     saved => setDetailsDraft(saved.detailsEdit));
   const responseCurrent=row=>row&&new Date(row.meeting_starts_at).getTime()===new Date(meeting.starts_at).getTime()&&(row.meeting_ends_at?new Date(row.meeting_ends_at).getTime():null)===(meeting.ends_at?new Date(meeting.ends_at).getTime():null);
   function editDetails(){setDetailsDraft(null);setEditingDetails(true);}
   async function saveDetails(){
-    if(!canManage||meetingStarted||meeting.status!=="scheduled"||!detailsRecovery.ready||busy||!detailsDraft.title?.trim()||!detailsDraft.starts||detailsDraft.ends&&detailsDraft.ends<=detailsDraft.starts)return;
+    if(!canManage||!upcoming||Date.now()>=startsAt||!detailsRecovery.ready||busy||!detailsDraft.title?.trim()||!detailsDraft.starts||detailsDraft.ends&&detailsDraft.ends<=detailsDraft.starts)return;
     setBusy(true);setError(null);setNotice("");
     try{
       let write=supabase.from("meeting_sessions").update({title:detailsDraft.title.trim(),starts_at:new Date(`${detailsDraft.starts}:00Z`).toISOString(),ends_at:detailsDraft.ends?new Date(`${detailsDraft.ends}:00Z`).toISOString():null,location:detailsDraft.location.trim()||null,updated_by:me.id,updated_at:new Date().toISOString()}).eq("id",meeting.id).eq("starts_at",meeting.starts_at).eq("status","scheduled");
@@ -132,7 +157,7 @@ function MeetingDetail({ me, meetingId, back, goAssign, openItem, openProject, o
   }
 
   async function respond(response){
-    if(!canContribute||!responsesReady||busy||meeting.status==="cancelled")return;
+    if (!canRespond || busy || Date.now() >= startsAt) return;
     setBusy(true);setError(null);setNotice("");
     try{
       const result=await supabase.from("meeting_responses").upsert({meeting_id:meeting.id,profile_id:me.id,org_id:me.org_id,response,updated_at:new Date().toISOString()},{onConflict:"meeting_id,profile_id"}).select("profile_id,response,meeting_starts_at,meeting_ends_at").single();
@@ -201,7 +226,7 @@ function MeetingDetail({ me, meetingId, back, goAssign, openItem, openProject, o
 
   async function addDecision() {
     const clean = decision.trim();
-    if (!clean || !meeting || !meetingStarted || !canManage) return;
+    if (!clean || !canRecord || busy) return;
     setBusy(true); setError(null);
     try {
       const result = await supabase.from("meeting_records").insert({
@@ -223,7 +248,7 @@ function MeetingDetail({ me, meetingId, back, goAssign, openItem, openProject, o
   }
 
   async function saveAgenda() {
-    if (!meeting || !canManage || meetingStarted || !agendaRecovery.ready) return;
+    if (!upcoming || !canManage || Date.now() >= startsAt || !agendaRecovery.ready || busy) return;
     setBusy(true); setError(null);
     try {
       const result = await supabase.from("meeting_sessions").update({ agenda: agendaDraft.trim() || null }).eq("id",meeting.id);
@@ -237,21 +262,23 @@ function MeetingDetail({ me, meetingId, back, goAssign, openItem, openProject, o
     }
   }
 
-  function createAction(kind = "task") {
-    goAssign?.({
+  function createAction() {
+    if (!canRecord || !goAssign) return;
+    goAssign({
       meetingId: meeting.id,
       meetingTitle: meeting.title,
       meetingOn: String(meeting.starts_at).slice(0, 10),
       meetingNote: "From " + meeting.title,
       projectId: meeting.project_id || "",
-      kind,
+      unitId: meeting.unit_id || me.unit_id,
+      kind: "meeting_outcome",
     });
   }
 
-  if (loading) return <div className="body meeting-screen"><div className="spin">Opening meeting...</div></div>;
+  if (loading) return <div className="meeting-screen"><div className="spin">Opening meeting...</div></div>;
 
-  if (!meeting) return <div className="body meeting-screen">
-    <button className="back" onClick={back}>← Back</button>
+  if (!meeting) return <div className="meeting-screen">
+    <button className="back meeting-back" data-embedded={embedded || undefined} onClick={back}>← {embedded ? "Meetings" : "Back"}</button>
     <div className="flag flag-brick"><h4>Meeting unavailable</h4>{error || "This meeting is not available to your account."}</div>
   </div>;
 
@@ -261,133 +288,130 @@ function MeetingDetail({ me, meetingId, back, goAssign, openItem, openProject, o
       ? meeting.units?.name || "Unit meeting"
       : "Organisation meeting";
 
-  const currentSection = section || (meetingEnded ? "recap" : meetingStarted ? "during" : "agenda");
-  return <div className="body meeting-screen">
-    <button className="back meeting-back" onClick={back}>← Back</button>
+  const currentSection = section || (cancelled ? "agenda" : meetingEnded ? "recap" : meetingStarted ? "during" : "agenda");
+  const myResponse = responses.find(row => row.profile_id === me.id);
+  const status = cancelled ? "Cancelled" : meeting.status === "completed" ? "Completed"
+    : meetingEnded ? "Past meeting" : meetingStarted ? "Start time passed" : "Upcoming";
+  const organiser = participants.filter(row => row.role === "organiser" || row.profile_id === meeting.created_by)
+    .map(row => row.profiles?.full_name).filter(Boolean).join(", ") || (canManage ? me.full_name : "");
+  return <div className="meeting-screen">
+    <button className="back meeting-back" data-embedded={embedded || undefined} onClick={back}>← {embedded ? "Meetings" : "Back"}</button>
 
     <header className="meeting-hero">
-      <div className="meeting-heading">
-        <span className="meeting-heading-icon"><CeacIcon name="meeting" size={25} /></span>
-        <div><div className="eyebrow">{context}</div><h1>{meeting.title}</h1></div>
-        {statusPill(meeting.status)}
-      </div>
-      <div className="meeting-time">{whenLabel(meeting.starts_at)}{meeting.ends_at ? ` → ${whenLabel(meeting.ends_at)}` : ""}</div>
-      <div className="meeting-status-row">
-        <span>{meeting.join_url ? providerLabel(meeting) : "In person"}</span>
-      </div>
-      {meeting.location && <div className="meeting-location">{meeting.location} <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(meeting.location)}`} target="_blank" rel="noreferrer">Get directions ↗</a></div>}
-      <details className="meeting-calendar-export"><summary>Add to another calendar</summary><p>Save a copy to Apple Calendar, Outlook or Google Calendar. Later changes stay in CEAC OS; this copy will not sync automatically.</p><button className="btn btn-ghost btn-sm" onClick={()=>downloadMeetingCalendar(meeting)}>Download calendar event</button><a className="btn btn-ghost btn-sm" href="https://calendar.google.com/calendar/u/0/r" target="_blank" rel="noreferrer">Open Google Calendar</a></details>
-      {canContribute&&responsesReady&&meeting.status!=="cancelled"&&<div className="meeting-response" role="group" aria-label="Your invitation response">{[["accepted","Accept"],["tentative","Maybe"],["declined","Decline"]].map(([value,label])=><button type="button" key={value} className="btn btn-ghost btn-sm" aria-pressed={responses.some(r=>r.profile_id===me.id&&r.response===value&&responseCurrent(r))} disabled={busy} onClick={()=>respond(value)}>{label}</button>)}</div>}
-      {responses.some(r=>r.profile_id===me.id&&!responseCurrent(r))&&<p className="screen-note">The meeting time changed. Please respond to the new time.</p>}
-      {canManage&&!meetingStarted&&meeting.status==="scheduled"&&<button type="button" className="btn btn-ghost btn-sm" onClick={editDetails}>Edit meeting</button>}
-      {editingDetails&&canManage&&!meetingStarted&&meeting.status==="scheduled"&&detailsRecovery.ready&&<div className="meeting-details-editor"><label>Title<input className="field" value={detailsDraft.title} maxLength={220} onChange={e=>setDetailsDraft(d=>({...(d??detailsDraft),title:e.target.value}))}/></label><label>Starts · Accra time<input className="field" type="datetime-local" value={detailsDraft.starts} onChange={e=>setDetailsDraft(d=>({...(d??detailsDraft),starts:e.target.value}))}/></label><label>Ends · Accra time<input className="field" type="datetime-local" value={detailsDraft.ends} onChange={e=>setDetailsDraft(d=>({...(d??detailsDraft),ends:e.target.value}))}/></label><label>Location<input className="field" value={detailsDraft.location} onChange={e=>setDetailsDraft(d=>({...(d??detailsDraft),location:e.target.value}))}/></label><button className="btn" disabled={busy||!detailsDraft.title?.trim()||!detailsDraft.starts||Boolean(detailsDraft.ends&&detailsDraft.ends<=detailsDraft.starts)} onClick={saveDetails}>Save changes</button><button className="btn btn-ghost" disabled={busy} onClick={()=>{void detailsRecovery.clear({detailsEdit:null});setDetailsDraft(null);setEditingDetails(false);}}>Cancel editing</button></div>}
+      <div className="meeting-context"><span>{context}</span><span>{status}</span></div>
+      <h1>{meeting.title}</h1>
+      <p className="meeting-time"><time dateTime={meeting.starts_at}>{whenLabel(meeting.starts_at)}</time>{meeting.ends_at && <> – <time dateTime={meeting.ends_at}>{whenLabel(meeting.ends_at, new Date(startsAt).toISOString().slice(0, 10) === new Date(endsAt).toISOString().slice(0, 10))}</time></>} GMT</p>
+      {((upcoming && canManage && !editingDetails) || (meeting.join_url && !cancelled && !meetingEnded)) && <div className="meeting-toolbar">
+        {meeting.join_url && !cancelled && !meetingEnded && <a className="btn btn-sm" href={meeting.join_url} target="_blank" rel="noreferrer">Join {providerLabel(meeting)} ↗</a>}
+        {upcoming && canManage && !editingDetails && <button type="button" className="btn btn-ghost btn-sm" onClick={editDetails}>Edit meeting</button>}
+      </div>}
+      {canRespond && <div className="meeting-invitation">
+        <strong>{myResponse && !responseCurrent(myResponse) ? "The time changed. Please respond again." : "Will you attend?"}</strong>
+        <div className="meeting-response" role="group" aria-label="Your invitation response">
+          {[["accepted", "Accept"], ["tentative", "Maybe"], ["declined", "Decline"]].map(([value, label]) => <button
+            type="button" key={value} className="btn btn-ghost btn-sm"
+            aria-pressed={responseCurrent(myResponse) && myResponse.response === value}
+            disabled={busy} onClick={() => respond(value)}>{label}</button>)}
+        </div>
+      </div>}
+      {editingDetails&&canManage&&upcoming&&detailsRecovery.ready&&<div className="meeting-details-editor"><label>Title<input className="field" value={detailsDraft.title} maxLength={220} onChange={e=>setDetailsDraft(d=>({...(d??detailsDraft),title:e.target.value}))}/></label><label>Starts · Accra time<input className="field" type="datetime-local" value={detailsDraft.starts} onChange={e=>setDetailsDraft(d=>({...(d??detailsDraft),starts:e.target.value}))}/></label><label>Ends · Accra time<input className="field" type="datetime-local" value={detailsDraft.ends} onChange={e=>setDetailsDraft(d=>({...(d??detailsDraft),ends:e.target.value}))}/></label><label>Location<input className="field" value={detailsDraft.location} onChange={e=>setDetailsDraft(d=>({...(d??detailsDraft),location:e.target.value}))}/></label><button className="btn" disabled={busy||!detailsDraft.title?.trim()||!detailsDraft.starts||Boolean(detailsDraft.ends&&detailsDraft.ends<=detailsDraft.starts)} onClick={saveDetails}>Save changes</button><button className="btn btn-ghost" disabled={busy} onClick={()=>{void detailsRecovery.clear({detailsEdit:null});setDetailsDraft(null);setEditingDetails(false);}}>Cancel editing</button></div>}
       {notice&&<p role="status">{notice}</p>}
-      {meeting.join_url && meeting.status !== "cancelled" && <a className="meeting-join" href={meeting.join_url} target="_blank" rel="noreferrer">
-        Join {providerLabel(meeting)} <span aria-hidden="true">↗</span>
-      </a>}
-      {openRoom && meeting.scope !== "organisation" && <button className="btn btn-ghost btn-sm" onClick={() => openRoom(meeting.scope === "project"
-        ? { kind:"project", projectId:meeting.project_id }
-        : { kind:"unit", unitId:meeting.unit_id })}>
-        Open meeting discussion
-      </button>}
     </header>
 
-    {error && <div className="flag flag-brick"><h4>Could not complete that</h4>{error}</div>}
+    {error && <div className="flag flag-brick" role="alert"><h4>Could not complete that</h4>{error}</div>}
 
     <nav className="meeting-view-tabs" aria-label="Meeting views">
-      {[["agenda", "Agenda"], ["during", "During"], ["recap", "Recap"]].map(([key, label]) =>
+      {[["agenda", "Agenda"], ["during", "My notes"], ["recap", "Recap"]].map(([key, label]) =>
         <button type="button" key={key} aria-pressed={currentSection === key} onClick={() => setSection(key)}>{label}</button>)}
     </nav>
     <div className="meeting-detail-layout">
       <div className="meeting-detail-content">
-    <section className="meeting-panel" hidden={currentSection !== "agenda"}>
-      <div className="meeting-section-head"><div><span>Before</span><h2>Agenda</h2></div><small>{meetingStarted ? "Meeting started" : "Preparation"}</small></div>
-      {!meetingStarted && canManage
-        ? <div className="meeting-agenda-editor">
-            <textarea rows={4} value={agendaDraft} disabled={busy || !agendaRecovery.ready} onChange={(event) => setAgendaDraft(event.target.value)} placeholder="What should this meeting cover?" />
-            {agendaRecovery.notice&&<p role="status">{agendaRecovery.notice}</p>}
-            <button className="btn btn-sm" disabled={busy || !agendaRecovery.ready} onClick={saveAgenda}>{busy ? "Saving…" : "Save agenda"}</button>
-          </div>
-        : meeting.agenda ? <p className="meeting-agenda">{meeting.agenda}</p> : <div className="quiet-empty compact"><strong>No agenda recorded</strong><span>No shared agenda is on the record.</span></div>}
-      {participants.length > 0 && <div className="meeting-participant-summary">
-        <span>{participants.length === 1 && participants[0].profile_id === me.id ? "You are invited" : `${participants.length} participant${participants.length === 1 ? "" : "s"}`}</span>
-        {participants.length > 1 && <div>{participants.slice(0,8).map((participant) => <b key={participant.profile_id}>{participant.profiles?.full_name || "CEAC member"}{responses.find(r=>r.profile_id===participant.profile_id)?.response?` · ${responseCurrent(responses.find(r=>r.profile_id===participant.profile_id))?responses.find(r=>r.profile_id===participant.profile_id).response:"Awaiting new response"}`:""}</b>)}</div>}
-      </div>}
-    </section>
+        <section className="meeting-panel" hidden={currentSection !== "agenda"}>
+          <h2>Agenda</h2>
+          {upcoming && canManage
+            ? <div className="meeting-agenda-editor">
+                <textarea rows={4} aria-label="Meeting agenda" value={agendaDraft} disabled={busy || !agendaRecovery.ready} onChange={(event) => setAgendaDraft(event.target.value)} placeholder="What should this meeting cover?" />
+                {agendaRecovery.notice&&<p role="status">{agendaRecovery.notice}</p>}
+                <button className="btn btn-sm" disabled={busy || !agendaRecovery.ready} onClick={saveAgenda}>{busy ? "Saving…" : "Save agenda"}</button>
+              </div>
+            : meeting.agenda ? <p className="meeting-agenda">{meeting.agenda}</p> : <p>No agenda recorded.</p>}
+        </section>
 
+        <section className="meeting-panel" hidden={currentSection !== "during"}>
+          <h2>My notes</h2>
+          {(!canContribute || cancelled) && <p className="meeting-agenda">{savedPrivateNote || "No private notes available."}</p>}
+          {canContribute && meeting.status!=="cancelled" && <div className="meeting-private-notes">
+            <div className="meeting-private-note-head">
+              <span>Only you can read these notes.</span>
+            </div>
+            <div className="assistive-field textarea">
+              <textarea rows={7} aria-label="Private meeting notes" value={privateNote} disabled={busy || !noteRecovery.ready} onChange={(event) => { noteUserEdited.current = true; setPrivateNote(event.target.value); }} placeholder="Write your own notes from this meeting…" />
+              {noteRecovery.ready && !busy && <VoiceInput compact label="Speak private note" onResult={(text) => { noteUserEdited.current = true; setPrivateNote(privateNote ? privateNote + " " + text : text); }} />}
+            </div>
+            {noteRecovery.notice&&<p role="status">{noteRecovery.notice}</p>}
+            {noteSaveState&&<p role="status">{noteSaveState}</p>}
+            <button className="btn btn-sm" disabled={busy || !noteRecovery.ready} onClick={savePrivateNote}>{busy ? "Saving…" : "Save my notes"}</button>
+          </div>}
 
-    <section className="meeting-panel" hidden={currentSection !== "during"}>
-      <div className="meeting-section-head">
-        <div><span>During</span><h2>Meeting workspace</h2></div>
-        <small>{meetingStarted ? (meetingEnded ? "Meeting time has passed" : "In session") : "Prepare your private notes"}</small>
+        </section>
+
+        <section className="meeting-panel" hidden={currentSection !== "recap"}>
+          {decisions.length === 0 && !meetingStarted && <p>Decisions and follow-up work will appear here.</p>}
+          {(meetingStarted || decisions.length > 0) && <div className="meeting-shared-decisions">
+            <div className="meeting-section-subhead"><h2>Shared decisions</h2></div>
+            {decisions.length === 0 && <p>No decisions recorded.</p>}
+            {decisions.map((row) => <article className="meeting-record meeting-record-decision" key={row.id}>
+              <div className="meeting-record-meta">
+                <span>{row.profiles?.full_name || "CEAC member"} · {new Date(row.created_at).toLocaleTimeString("en-GB",{timeZone:"Africa/Accra",hour:"2-digit",minute:"2-digit"})}</span>
+              </div>
+              <p>{row.body}</p>
+            </article>)}
+            {canRecord && <div className="meeting-record-form">
+              <div className="assistive-field textarea">
+                <textarea rows={3} aria-label="Shared decision" value={decision} disabled={busy || !decisionRecovery.ready} onChange={(event) => setDecision(event.target.value)} placeholder="Record the decision exactly as agreed" />
+                {decisionRecovery.ready && !busy && <VoiceInput compact label="Speak decision" onResult={(text) => setDecision((current) => current ? current + " " + text : text)} />}
+              </div>
+              <button className="btn" disabled={busy || !decisionRecovery.ready || !decision.trim()} onClick={addDecision}>{busy ? "Saving…" : "Record shared decision"}</button>
+            </div>}
+          </div>}
+          {(meetingStarted || links.length > 0) && <h2>Follow-up work</h2>}
+          {links.map((link) => <button type="button" className="meeting-work-row" key={link.work_item_id} disabled={!openItem || !link.work_items} onClick={() => openItem(link.work_item_id)}>
+            <span><strong>{link.work_items?.title || "Work item"}</strong><small>{link.work_items?.ref} · {link.relation.replaceAll("_"," ")}</small></span>
+            {link.work_items && statusPill(link.work_items.status)}
+          </button>)}
+          {meetingStarted && links.length === 0 && <p>No follow-up work yet.</p>}
+          {canRecord && goAssign && <div className="meeting-action-buttons">
+            <button type="button" className="btn btn-sm" onClick={createAction}>Assign follow-up</button>
+          </div>}
+        </section>
       </div>
-
-      {!meetingStarted&&<p className="screen-note">Prepare your own notes now. Shared decisions open when the meeting starts.</p>}
-
-      {canContribute && meeting.status!=="cancelled" && <div className="meeting-private-notes">
-        <div className="meeting-private-note-head">
-          <div><strong>My notes</strong><span>Only you can read these notes.</span></div>
-          <span className="pill p-grey">Private</span>
-        </div>
-        <div className="assistive-field textarea">
-          <textarea rows={7} value={privateNote} disabled={busy || !noteRecovery.ready} onChange={(event) => { noteUserEdited.current = true; setPrivateNote(event.target.value); }} placeholder="Write your own notes from this meeting…" />
-          {noteRecovery.ready && !busy && <VoiceInput compact label="Speak private note" onResult={(text) => { noteUserEdited.current = true; setPrivateNote(privateNote ? privateNote + " " + text : text); }} />}
-        </div>
-        {noteRecovery.notice&&<p role="status">{noteRecovery.notice}</p>}
-        {noteSaveState&&<p role="status">{noteSaveState}</p>}
-        <button className="btn btn-sm" disabled={busy || !noteRecovery.ready} onClick={savePrivateNote}>{busy ? "Saving…" : "Save my notes"}</button>
-      </div>}
-
-      {meetingStarted && <div className="meeting-shared-decisions">
-        <div className="meeting-section-subhead"><div><strong>Shared decisions</strong><span>Visible to invited participants.</span></div><b>{decisions.length}</b></div>
-        {decisions.length === 0 && <div className="quiet-empty compact"><strong>No shared decision recorded</strong><span>Use this only for decisions that belong on the organisation record.</span></div>}
-        {decisions.map((row) => <article className="meeting-record meeting-record-decision" key={row.id}>
-          <div className="meeting-record-meta">
-            <strong>Decision</strong>
-            <span>{row.profiles?.full_name || "CEAC member"} · {new Date(row.created_at).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"})}</span>
-          </div>
-          <p>{row.body}</p>
-        </article>)}
-        {canManage && <div className="meeting-record-form">
-          <div className="assistive-field textarea">
-            <textarea rows={3} value={decision} disabled={busy || !decisionRecovery.ready} onChange={(event) => setDecision(event.target.value)} placeholder="Record the decision exactly as agreed" />
-            {decisionRecovery.ready && !busy && <VoiceInput compact label="Speak decision" onResult={(text) => setDecision((current) => current ? current + " " + text : text)} />}
-          </div>
-          <button className="btn" disabled={busy || !decisionRecovery.ready || !decision.trim()} onClick={addDecision}>{busy ? "Saving…" : "Record shared decision"}</button>
-        </div>}
-      </div>}
-    </section>
-
-    <section className="meeting-panel" hidden={currentSection !== "recap"}>
-      <div className="meeting-section-head">
-        <div><span>After</span><h2>Actions & outcomes</h2></div>
-        <small>{links.length} linked</small>
+      <div className="meeting-detail-inspector">
+        <aside className="meeting-panel" aria-label="Meeting details">
+          <h2>Details</h2>
+          <dl>
+            {organiser && <><dt>Organiser</dt><dd>{organiser}</dd></>}
+            <dt>Format</dt><dd>{meeting.join_url ? providerLabel(meeting) : meeting.location ? "In person" : "Unspecified"}</dd>
+            {meeting.location && <><dt>Location</dt><dd>{meeting.location}<br />
+              <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(meeting.location)}`} target="_blank" rel="noreferrer">Get directions ↗</a>
+            </dd></>}
+          </dl>
+          {upcoming && <div>
+            <button type="button" className="meeting-export" onClick={() => downloadMeetingCalendar(meeting)}>Download calendar event (.ics)</button>
+            <p>Changes will not sync automatically to your other calendar.</p>
+          </div>}
+          {meeting.project_id && openProject && <button className="meeting-project-link" onClick={() => openProject(meeting.project_id)}>Open project →</button>}
+          {participants.length > 0 && <details className="meeting-attendees">
+            <summary>Participants ({participants.length})</summary>
+            <ul>{participants.map(participant => {
+              const response = responses.find(row => row.profile_id === participant.profile_id);
+              const label = responseCurrent(response) ? {accepted:"Accepted", tentative:"Maybe", declined:"Declined"}[response.response] : null;
+              const isOrganiser = participant.role === "organiser" || participant.profile_id === meeting.created_by;
+              return <li key={participant.profile_id}>{participant.profiles?.full_name || "CEAC member"}
+                {isOrganiser ? " · Organiser" : label ? " · " + label : ""}</li>;
+            })}</ul>
+          </details>}
+        </aside>
       </div>
-      {links.map((link) => <button className="meeting-work-row" key={link.work_item_id} onClick={() => openItem?.(link.work_item_id)}>
-        <span><strong>{link.work_items?.title || "Work item"}</strong><small>{link.work_items?.ref} · {link.relation.replaceAll("_"," ")}</small></span>
-        {link.work_items && statusPill(link.work_items.status)}
-      </button>)}
-      {links.length === 0 && <div className="quiet-empty compact"><strong>No actions linked yet</strong><span>Turn agreed actions into real CEAC work instead of leaving them buried in notes.</span></div>}
-      {meetingStarted && canManage && <div className="meeting-action-buttons">
-        <button className="btn" onClick={() => createAction("task")}>Create action</button>
-        <button className="btn btn-ghost" onClick={() => createAction("meeting_outcome")}>Record meeting outcome</button>
-      </div>}
-    </section>
-
-    </div>
-    <div className="meeting-detail-inspector">
-    <aside className="meeting-panel" aria-label="Meeting details"><div className="meeting-section-head"><div><span>Meeting details</span><h2>{canManage?"Organiser view":"Viewer mode"}</h2></div></div>
-      <p><strong>Organiser</strong><br/>{participants.filter(row=>row.role==="organiser"||row.profile_id===meeting.created_by).map(row=>row.profiles?.full_name).filter(Boolean).join(", ")||"Name not recorded"}</p>
-      <p><strong>When</strong><br/>{whenLabel(meeting.starts_at)}</p>
-      {meeting.location&&<p><strong>Location</strong><br/>{meeting.location}</p>}
-      <p>{canManage?"You can prepare the agenda before the meeting starts.":"The organiser prepares the agenda. Your personal notes stay private."}</p>
-    </aside>
-    {meeting.project_id && openProject && <button className="meeting-project-link" onClick={() => openProject(meeting.project_id)}>Open project →</button>}
-
-    {meeting.join_url && <div className="meeting-provider-note">
-      <span>Video calls open in {providerLabel(meeting)}.</span>
-    </div>}
-    </div>
     </div>
   </div>;
 }
