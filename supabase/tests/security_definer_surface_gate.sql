@@ -180,6 +180,7 @@ insert into s2_expected_authenticated_definers(signature) values
 -- execute grant and therefore MUST NOT be added to this REST allowlist.
 insert into s2_expected_authenticated_definers(signature) values
  ('public.admin_confirm_existing_roster_account_link(p_employee_id uuid, p_profile_id uuid, p_expected_updated_at timestamp with time zone, p_evidence_file_id uuid, p_confirmed_account_email text, p_independently_verified boolean, p_reason text)'),
+ ('public.admin_correct_roster_account_link(p_employee_id uuid, p_previous_profile_id uuid, p_profile_id uuid, p_expected_updated_at timestamp with time zone, p_evidence_file_id uuid, p_confirmed_account_email text, p_independently_verified boolean, p_reason text)'),
  ('public.admin_employee_published_development(p_profile_id uuid)'),
  ('public.admin_record_roster_employment_profile(p_employee_id uuid, p_expected_updated_at timestamp with time zone, p_full_name text, p_preferred_name text, p_job_title text, p_employment_type text, p_employment_status text, p_primary_unit_id uuid, p_secondary_unit_ids uuid[], p_manager_profile_id uuid, p_contact_email text, p_contact_phone text, p_started_on date, p_reason text)'),
  ('public.admin_record_linked_person_contact(p_employee_id uuid, p_profile_id uuid, p_expected_full_name text, p_expected_preferred_name text, p_expected_phone text, p_full_name text, p_preferred_name text, p_phone text, p_reason text)'),
@@ -340,7 +341,7 @@ begin
 
   -- The three new Executive-only projections have explicit signatures and
   -- actor/tenant/no-anon/read-only checks above.
-  if v_actual<>192 or v_expected<>192 or v_unexpected is not null or v_missing is not null then
+  if v_actual<>193 or v_expected<>193 or v_unexpected is not null or v_missing is not null then
     raise exception E'S2 SECURITY DEFINER allowlist mismatch. actual=% expected=%\nunexpected:\n%\nmissing:\n%',
       v_actual,v_expected,coalesce(v_unexpected,'(none)'),coalesce(v_missing,'(none)');
   end if;

@@ -291,7 +291,7 @@ test("S3 security gates and newer Phase 6 gates coexist", () => {
   // The exact allowlist and obsolete-grant denial remain enforced in the
   // dedicated security_definer_surface_gate.sql (not just this count check).
   assert.match(mfa, /callable_count<>192/);
-  assert.match(surface, /v_actual<>192 or v_expected<>192/);
+  assert.match(surface, /v_actual<>193 or v_expected<>193/);
   assert.match(read("supabase/tests/admin_hr_security_gate.sql"), /if n<>192 then/);
   assert.match(read("supabase/tests/platform_kernel_gate.sql"), /if n<>192 then/);
   assert.ok(surface.includes("public.executive_assign_project_department(p_project_id uuid, p_unit_id uuid, p_reason text)"));
