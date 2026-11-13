@@ -90,6 +90,9 @@ DECLARE
  v_unit uuid;
 BEGIN
  SELECT id INTO STRICT v_unit FROM public.units WHERE org_id=v_org AND active ORDER BY id LIMIT 1;
+ INSERT INTO public.pending_invitations(org_id,email,full_name,unit_id,role,invited_by,expires_at)
+ VALUES(v_org,'old-roster-login@example.invalid','Old fixture login',v_unit,'staff',v_admin,now()+interval '1 day'),
+       (v_org,'new-roster-login@example.invalid','New fixture login',v_unit,'staff',v_admin,now()+interval '1 day');
  INSERT INTO auth.users(id,email,email_confirmed_at)
  VALUES(v_old,'old-roster-login@example.invalid',now()),(v_new,'new-roster-login@example.invalid',now());
  INSERT INTO public.profiles(id,org_id,full_name,email,active)
@@ -99,7 +102,8 @@ BEGIN
  UPDATE public.employee_roster SET profile_id=v_old,identity_state='linked' WHERE id=v_employee;
  INSERT INTO public.employee_unit_memberships(org_id,employee_id,unit_id,is_primary)
  VALUES(v_org,v_employee,v_unit,true);
- INSERT INTO public.unit_memberships(org_id,profile_id,unit_id,role) VALUES(v_org,v_new,v_unit,'staff');
+ INSERT INTO public.unit_memberships(org_id,profile_id,unit_id,role)
+ VALUES(v_org,v_new,v_unit,'staff') ON CONFLICT(profile_id,unit_id) DO NOTHING;
  INSERT INTO public.operational_files(id,org_id,filename,mime_type,size_bytes,storage_path,uploaded_by,state,finalised_at)
  VALUES(v_file,v_org,'correction-proof.pdf','application/pdf',42,v_org||'/'||v_file||'/correction-proof.pdf',v_admin,'active',now());
  INSERT INTO public.operational_file_links(org_id,file_id,context_type,context_id,relation,linked_by)
