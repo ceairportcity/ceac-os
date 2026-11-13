@@ -2,7 +2,7 @@ import {useEffect,useRef,useState} from "react";
 import {supabase} from "../lib/supabase";
 import {eligibleRosterManagers} from "../lib/eligibleRosterManagers";
 
-const types=[["not_recorded","Not yet recorded"],["permanent","Permanent"],["fixed_term","Fixed-term"],["volunteer","Volunteer"]];
+const types=[["not_recorded","Not yet recorded"],["permanent","Permanent"],["fixed_term","Fixed-term"],["hybrid","Hybrid"],["volunteer","Volunteer"]];
 const statuses=[["active","Active"],["inactive","Inactive"]];
 const blank=()=>({fullName:"",preferredName:"",jobTitle:"",employmentType:"not_recorded",status:"active",primaryUnit:"",secondaryUnits:[],managerId:"",contactEmail:"",contactPhone:"",startedOn:"",reason:""});
 const timestamp=value=>value?new Date(value).toLocaleString("en-GB",{timeZone:"Africa/Accra"}):"Not recorded";
