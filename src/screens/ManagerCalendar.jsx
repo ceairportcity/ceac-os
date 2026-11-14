@@ -1,3 +1,4 @@
+import PlanCalendarActivity from "../components/PlanCalendarActivity";
 import { useEditorPosition } from "../lib/useEditorPosition";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
@@ -32,7 +33,10 @@ const accraDateKey = (value) => {
   const byType = Object.fromEntries(parts.map((part) => [part.type, part.value]));
   return `${byType.year}-${byType.month}-${byType.day}`;
 };
-export default function ManagerCalendar({ me, openItem, openProject, openMeeting, scheduleMeeting, openPerson, initialDate, onFocusHandled }) {
+export default function ManagerCalendar({ me, openItem, openProject, openMeeting, scheduleMeeting, openPerson, initialDate, onFocusHandled, onGuideTour }) {
+  const [activityDate, setActivityDate] = useState(null);
+  const [activityNotice, setActivityNotice] = useState("");
+  const canPlan = Boolean(me.unit_id && (me.role === "manager" || me.memberships?.some((item) => item.unit_id === me.unit_id && item.role === "manager")));
   const [calendarScope,setCalendarScope]=useEditorPosition(me,"manager-calendar-scope","unit");
   const {cursor,setCursor,selectedDate,setSelectedDate}=useCalendarPosition(me,"unit",initialDate);
   useEffect(()=>{if(initialDate)onFocusHandled?.();},[]);
@@ -61,7 +65,7 @@ export default function ManagerCalendar({ me, openItem, openProject, openMeeting
       supabase.from("work_items").select("id,ref,title,due_at,status,project_id").eq("unit_id",me.unit_id).gte("due_at",range.fromAt).lt("due_at",range.toAt).neq("visibility","private").neq("kind","routine"),
       supabase.from("unit_memberships").select("profile_id").eq("unit_id",me.unit_id),
       supabase.from("leave_requests").select("id,profile_id,kind,start_date,end_date,status,profiles!leave_requests_profile_id_fkey(full_name)").eq("status","approved").gte("end_date",range.from).lt("start_date",range.to),
-      supabase.from("ministry_events").select("id,title,kind,scope,unit_id,starts_at,ends_at,all_day,location,notes,cancelled").or(`ends_at.gte.${range.fromAt},and(ends_at.is.null,starts_at.gte.${range.fromAt})`).lt("starts_at",range.toAt),
+      supabase.from("ministry_events").select("id,title,kind,scope,unit_id,starts_at,ends_at,all_day,location,notes,cancelled,project_id").or(`ends_at.gte.${range.fromAt},and(ends_at.is.null,starts_at.gte.${range.fromAt})`).lt("starts_at",range.toAt),
       supabase.from("ministry_event_units").select("event_id,unit_id,note").eq("unit_id",me.unit_id),
       supabase.from("meeting_sessions").select("id,title,scope,unit_id,project_id,starts_at,ends_at,status,provider,join_url,meeting_participants(profile_id,role)").or(`ends_at.gt.${range.fromAt},and(ends_at.is.null,starts_at.gte.${range.fromAt})`).lt("starts_at",range.toAt).neq("status","cancelled").order("starts_at")
     ]);
@@ -106,6 +110,7 @@ export default function ManagerCalendar({ me, openItem, openProject, openMeeting
             notes: event.notes,
             cancelled: event.cancelled,
             unit_note: needNote || null,
+            projectId: event.project_id,
           },
         });
       });
@@ -173,12 +178,13 @@ export default function ManagerCalendar({ me, openItem, openProject, openMeeting
   const displayEvents=useMemo(()=>calendarEvents.map(displayEvent),[calendarEvents,displayEvent]);
 
   const scopeControl=<div className="phase6-calendar-scope" role="tablist" aria-label="Manager calendar scope">
-    <button type="button" role="tab" aria-selected={calendarScope==="my"} className={calendarScope==="my"?"is-selected":""} onClick={()=>setCalendarScope("my")}>My calendar</button>
-    <button type="button" role="tab" aria-selected={calendarScope==="unit"} className={calendarScope==="unit"?"is-selected":""} onClick={()=>{if(canLeaveCalendarJournal())setCalendarScope("unit");}}>Unit calendar</button>
+    <button type="button" data-guide="calendar-personal" role="tab" aria-selected={calendarScope==="my"} className={calendarScope==="my"?"is-selected":""} onClick={()=>setCalendarScope("my")}>My calendar</button>
+    <button type="button" data-guide="calendar-shared" role="tab" aria-selected={calendarScope==="unit"} className={calendarScope==="unit"?"is-selected":""} onClick={()=>{if(canLeaveCalendarJournal())setCalendarScope("unit");}}>Unit calendar</button>
   </div>;
 
   if(calendarScope==="my") return <StaffCalendar
     me={me}
+    onGuideTour={onGuideTour}
     openItem={openItem}
     openMeeting={openMeeting}
     statusLabel="Manager · My calendar"
@@ -192,10 +198,14 @@ export default function ManagerCalendar({ me, openItem, openProject, openMeeting
       title="Calendar"
       description="Your unit’s meetings, work and important dates."
       statusTone="action"
-      action={<Button icon="meeting" onClick={()=>scheduleMeeting?.({ scope:"unit", unitId:me.unit_id, unitName:me.unit_name,startsAt:`${selectedDate}T09:00` })}>Schedule meeting</Button>}
+      action={<div className="ceac-calendar-plan-actions">{onGuideTour && <Button variant="quiet" onClick={() => onGuideTour("unit-week")}>Show me around</Button>}{canPlan && <Button variant="secondary" data-guide="calendar-activity" onClick={() => { setActivityNotice(""); setActivityDate(selectedDate); }}>Plan activity</Button>}<Button data-guide="calendar-meeting" icon="meeting" onClick={()=>scheduleMeeting?.({ scope:"unit", unitId:me.unit_id, unitName:me.unit_name,startsAt:`${selectedDate}T09:00` })}>Schedule meeting</Button></div>}
     />
 
     {scopeControl}
+    {activityNotice && <ProductNotice tone="success">{activityNotice}</ProductNotice>}
+    {activityDate && <PlanCalendarActivity me={me} unitId={me.unit_id} unitName={me.unit_name} date={activityDate}
+      onClose={() => setActivityDate(null)}
+      onSaved={(title) => { setActivityDate(null); setActivityNotice(`${title} added to Unit calendar.`); void load(); }} />}
 
     {error&&<ProductNotice tone="error" title="Could not load the calendar">{error}</ProductNotice>}
 
@@ -228,6 +238,7 @@ export default function ManagerCalendar({ me, openItem, openProject, openMeeting
         {selectedActivity.unit_note&&<div className="row-note"><b>Your unit:</b> {selectedActivity.unit_note}</div>}
         {selectedActivity.notes&&<div className="row-note">{selectedActivity.notes}</div>}
       </div>
+      {selectedActivity.projectId && openProject && <Button variant="secondary" onClick={() => { const id = selectedActivity.projectId; setSelectedActivity(null); openProject(id); }}>Open project</Button>}
       <button className="btn btn-ghost" style={{marginTop:12}} onClick={()=>setSelectedActivity(null)}>Close</button>
     </Sheet>}
   </div>;

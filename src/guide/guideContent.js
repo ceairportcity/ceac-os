@@ -7,6 +7,8 @@ export const CEAC_GUIDE_ROUTE_LABELS = Object.freeze({
   projects: "Projects",
   attendance: "Time & Leave",
   "staff-calendar": "Calendar",
+  "personal-calendar": "Calendar",
+  meetings: "Meetings",
   calendar: "Calendar",
   "admin-calendar": "Calendar",
   "exec-calendar": "Calendar",
@@ -40,7 +42,7 @@ export const CEAC_GUIDE_GETTING_STARTED = Object.freeze({
     { id: "work", label: "Open Work and review an assignment or request", route: "work" },
     { id: "leave", label: "Review Time & Leave and your annual-leave context", route: "attendance" },
     { id: "calendar", label: "Open Calendar and check your working week", route: "staff-calendar" },
-    { id: "messages", label: "Open Messages and understand your operational rooms", route: "messages" },
+    { id: "messages", label: "Find your Memos and updates", route: "messages" },
     { id: "me", label: "Open My Hub and review your personal CEAC information", route: "me" },
   ]),
   manager: Object.freeze([
@@ -48,8 +50,8 @@ export const CEAC_GUIDE_GETTING_STARTED = Object.freeze({
     { id: "team", label: "Open Team and confirm your authorised people scope", route: "team" },
     { id: "work", label: "Open Work and review an item that needs Manager attention", route: "work" },
     { id: "projects", label: "Open Projects and inspect delivery context", route: "projects" },
-    { id: "leave", label: "Review Time & Leave and the Manager-first approval boundary", route: "attendance" },
-    { id: "messages", label: "Open Messages and review your operational rooms", route: "messages" },
+    { id: "leave", label: "Check approved leave before planning the unit’s week", route: "attendance" },
+    { id: "messages", label: "Find Memos, updates and Rooms", route: "messages" },
   ]),
   admin: Object.freeze([
     { id: "overview", label: "Open Overview and identify Administration priorities", route: "home" },
@@ -91,7 +93,7 @@ export const CEAC_GUIDE_ARTICLES = Object.freeze([
         steps: [
           "Open Home or Overview to see what needs attention now.",
           "Use Work for assignments, requests, submissions and review activity.",
-          "Use Messages for operational communication and rooms.",
+          "Use Messages for Memos, updates and Rooms.",
           "Use My Hub for your personal CEAC information and self-service actions.",
           "If you belong to more than one unit, use the unit switcher to change working context. Switching context does not create another account.",
         ],
@@ -138,7 +140,8 @@ export const CEAC_GUIDE_ARTICLES = Object.freeze([
   },
   {
     id: "work-and-review",
-    title: "Work, submissions and review",
+    title: "Submit work or review an outcome",
+    answer: "Open the work record to submit evidence or see who can review it next.",
     summary: "Understand assignments, evidence, review and outcomes without confusing activity with approval.",
     roles: ALL,
     routes: ["work"],
@@ -162,6 +165,10 @@ export const CEAC_GUIDE_ARTICLES = Object.freeze([
         ],
       },
       {
+        title: "Manager submissions",
+        body: ["Manager submissions normally route to the Group Pastor. Work assigned by Administration returns to its assigning Administration reviewer. HR can sign off eligible shared submissions in Work → For review. The Group Pastor can open the sign-off record, leave feedback or reopen the work with a reason."],
+      },
+      {
         title: "If something is blocked",
         body: [
           "Use the work item's blocker, clarification or follow-up path where available. A missing update should not be rewritten as a completed outcome.",
@@ -170,8 +177,38 @@ export const CEAC_GUIDE_ARTICLES = Object.freeze([
     ],
   },
   {
+    id: "start-work-location",
+    title: "Start work from home or off-site",
+    answer: "On Overview choose Start work, select Off-site and enter your place name. Linking work is optional.",
+    summary: "Record your work location and start a session.",
+    roles: ALL,
+    routes: ["home", "work"],
+    primaryRoute: "home",
+    keywords: ["start work from home", "start work", "office", "location only", "work without project", "record attendance"],
+    sections: [
+      { title:"Choose where you are working", steps:["From Overview, choose Start work.", "Choose CEAC location and select the venue, or choose Off-site and give the place a name.", "Allow location access when prompted and start the session when ready. Check Overview for the running session."] },
+      { title:"If you cannot start", body:["Check that the device allows location access and reload the start options. Off-site work can start without a linked responsibility."] },
+    ],
+  },
+  {
+    id: "hr-work-signoff",
+    title: "Sign off manager work or reopen it",
+    answer: "HR can sign off eligible submissions. The Group Pastor can review the record, leave feedback or reopen the work.",
+    summary: "Find an eligible submission and check the recorded decision.",
+    roles: ["admin", "executive"],
+    routes: ["work"],
+    primaryRoute: "work",
+    keywords: ["sign off", "approve manager work", "reopen approved work", "rebecca", "group pastor"],
+    sections: [
+      { title:"Sign off as HR", steps:["Open Work → For review and select an eligible shared manager submission.", "Read the outcome and evidence, then choose Sign off. Open the Sign-off record to check the name and date."] },
+      { title:"Review as Group Pastor", steps:["In Work oversight, open Signed off by HR and then the full work record.", "Use Give feedback or Reopen this work. Reopening asks for a reason and keeps the original sign-off."] },
+    ],
+  },
+  {
     id: "time-and-leave",
     title: "Time & Leave",
+    searchTitle: "Who approves my leave?",
+    answer: "Leave requests go directly to HR. Check Time & Leave for the decision.",
     summary: "Request leave, understand annual working-day balances and read attendance evidence without automatic punishment or Payroll assumptions.",
     roles: ["staff", "manager", "admin"],
     routes: ["attendance"],
@@ -190,8 +227,8 @@ export const CEAC_GUIDE_ARTICLES = Object.freeze([
         title: "How approval works",
         steps: [
           "The employee requests leave.",
-          "The relevant Manager reviews first.",
-          "Administration makes the final approval decision.",
+          "The request goes directly to HR for a decision.",
+          "Check Time & Leave for the current status.",
         ],
       },
       {
@@ -210,41 +247,67 @@ export const CEAC_GUIDE_ARTICLES = Object.freeze([
   },
   {
     id: "calendar-and-schedule",
-    title: "Calendar and working schedule",
+    title: "Plan my week with Calendar",
+    answer: "Open My calendar to see work and meetings and add your own private tasks, events and notes.",
     summary: "Use your calendar and effective schedule to understand expected work context, meetings and leave overlays.",
     roles: ["staff", "manager", "admin", "executive"],
     routes: ["staff-calendar", "calendar", "admin-calendar", "exec-calendar"],
-    keywords: ["calendar", "schedule", "week", "meeting", "working pattern", "hours", "day type"],
+    keywords: ["calendar", "schedule", "week", "meeting", "working pattern", "hours", "day type", "where did my calendar note go", "how do I plan my week"],
     sections: [
       {
-        title: "What it means",
-        body: [
-          "Calendar combines attributable schedule context with operational events that you are allowed to see.",
-          "A schedule is effective-dated. CEAC should use the schedule that applied on the date in question rather than rewriting history with today's pattern.",
+        title: "Plan your own week",
+        steps: [
+          "Open Calendar and choose My calendar if you have a shared view.",
+          "Use Week or Agenda. Select a date and open a dated assignment or meeting for the full record.",
+          "Use + Add to create a private event, task or note. Use Notes to find saved dated and standalone notes.",
         ],
       },
       {
-        title: "How to use it",
-        steps: [
-          "Check the day or week before planning work or leave.",
-          "Open the underlying meeting or work item for its authoritative detail.",
-          "If a schedule is wrong, use the authorised correction/configuration path rather than treating the visible mismatch as employee misconduct.",
-        ],
+        title: "Check what others can see",
+        body: ["Private planning stays in My calendar. Use Work for a team assignment and Meetings for an invitation."],
       },
     ],
   },
   {
+    id: "calendar-unit",
+    title: "Plan a unit or department activity",
+    answer: "Check the shared week for conflicts, then choose Plan activity on the date you want.",
+    summary: "Plan programmes and preparation work around project dates and team availability.",
+    roles: ["manager", "admin", "executive"],
+    routes: ["calendar", "admin-calendar", "exec-calendar", "projects", "admin-projects", "exec-projects"],
+    keywords: ["what is my unit doing this week", "how do I plan a department activity", "programme", "rehearsal", "outreach", "unit calendar", "work deadlines"],
+    sections: [
+      { title:"Check the selected week", steps:["Open the shared Calendar and switch to Week.", "Use Filter to compare Projects, Work, Meetings, Leave and Activities.", "Select a date and open a linked item for its full details."] },
+      { title:"Create a shared plan", steps:["Select the date and choose Plan activity.", "Enter the time and venue, check the audience and link a project where relevant.", "Save and check the activity in the day’s agenda. Use Work to assign preparation with an owner and due date."] },
+    ],
+  },
+  {
+    id: "calendar-meetings",
+    title: "Schedule a meeting and assign follow-up",
+    answer: "Select a date and open Schedule meeting. Use Recap to record decisions and assign follow-up.",
+    summary: "Connect the meeting date, agenda, decisions and accountable work.",
+    roles: ["manager", "admin", "executive"],
+    routes: ["calendar", "admin-calendar", "exec-calendar", "meetings"],
+    keywords: ["how do I schedule a project meeting", "invite attendees", "follow up", "agenda", "recap"],
+    sections: [
+      { title:"Schedule the meeting", steps:["Select a day on the shared Calendar and choose Schedule meeting.", "Check the audience, attendees and time. For a project meeting, choose the project in the scheduler or start from the project.", "Open the meeting’s Agenda to record what will be discussed."] },
+      { title:"After the meeting", steps:["Open Recap to record a shared decision.", "Use Assign follow-up to give the agreed work an owner and due date. Open the linked work for its current status."] },
+    ],
+  },
+  {
     id: "messages-and-announcements",
-    title: "Messages and announcements",
-    summary: "Know when to use a room, an announcement or a work item so operational communication stays attributable.",
+    title: "Send a Memo or find an update",
+    answer: "Open Messages → Memos for formal communication and Updates for alerts.",
+    summary: "Find Memos, Rooms, announcements and Work actions.",
     roles: ALL,
     routes: ["messages", "announcements"],
-    keywords: ["messages", "room", "announcement", "communication", "urgent", "update"],
+    keywords: ["messages", "memo", "send a memo", "room", "announcement", "communication", "urgent", "update"],
     primaryRoute: "messages",
     sections: [
       {
         title: "Choose the right surface",
         body: [
+          "In Messages, use Memos for formal communication with selected recipients. Use Updates for alerts.",
           "Use a room for operational conversation in an authorised unit, sub-team or project context.",
           "Use an announcement for information that should be published to a defined audience.",
           "Use Work when the communication creates an assignment, request, review or accountable deliverable.",
@@ -598,20 +661,21 @@ export function guideArticlesForContext(role, route) {
 
 export function searchGuideArticles(role, query) {
   const articles = guideArticlesForRole(role);
-  const term = String(query || "").trim().toLowerCase();
+  const normalize = (value) => String(value || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+  const term = normalize(query);
   if (!term) return articles;
-
-  return articles.filter((article) => {
-    const text = [
-      article.title,
-      article.summary,
-      ...(article.keywords || []),
-      ...(article.sections || []).flatMap((section) => [
-        section.title,
-        ...(section.body || []),
-        ...(section.steps || []),
-      ]),
-    ].join(" ").toLowerCase();
-    return text.includes(term);
-  });
+  const common = new Set(["a", "an", "the", "how", "do", "i", "my", "to", "can", "me", "what", "is", "on", "of"]);
+  const words = term.split(" ").filter((word) => !common.has(word));
+  return articles.map((article) => {
+    const title = normalize([article.title, article.searchTitle].filter(Boolean).join(" "));
+    const keywords = normalize((article.keywords || []).join(" "));
+    const text = normalize([article.answer, article.summary, ...(article.sections || []).flatMap((section) => [
+      section.title, ...(section.body || []), ...(section.steps || []),
+    ])].join(" "));
+    const matches = (value, word) => value.split(" ").some((token) => token.startsWith(word));
+    const wordScores = words.map((word) => matches(title, word) ? 5 : matches(keywords, word) ? 3 : matches(text, word) ? 1 : 0);
+    const score = title.includes(term) ? 100 : keywords.includes(term) ? 60 : words.length && wordScores.every(Boolean)
+      ? wordScores.reduce((sum, point) => sum + point, 0) : 0;
+    return { article, score };
+  }).filter(({ score }) => score > 0).sort((a, b) => b.score - a.score).map(({ article }) => article);
 }

@@ -1,3 +1,4 @@
+import PlanCalendarActivity from "../components/PlanCalendarActivity";
 import { useEditorPosition } from "../lib/useEditorPosition";
 import { useEffect, useRef, useState } from 'react';
 import { supabase } from '../lib/supabase';
@@ -12,10 +13,12 @@ import { calendarDay, calendarDate, calendarSpan, calendarWindow, calendarWorkSt
 
 const LAYERS=[{value:'meeting',label:'Meetings'},{value:'projects',label:'Projects'},{value:'work',label:'Work deadlines'},{value:'ministry',label:'Ministry'},{value:'leave',label:'Approved leave'}];
 const when=value=>new Date(value).toLocaleString('en-GB',{timeZone:'Africa/Accra',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
-export default function AdminCalendar({me,openItem,openMeeting,scheduleMeeting,roleMode='admin',openProject,initialDate,onFocusHandled}) {
+export default function AdminCalendar({me,openItem,openMeeting,scheduleMeeting,roleMode='admin',openProject,initialDate,onFocusHandled,onGuideTour}) {
   const [calendarScope,setCalendarScope]=useEditorPosition(me,'organisation-calendar-scope','organisation');
   const {cursor,setCursor,selectedDate,setSelectedDate}=useCalendarPosition(me,"organisation",initialDate);
   useEffect(()=>{if(initialDate)onFocusHandled?.();},[]);
+  const [activityDate,setActivityDate]=useState(null);
+  const [activityNotice,setActivityNotice]=useState("");
   const [events,setEvents]=useState([]);
   const [loading,setLoading]=useState(true);
   const [error,setError]=useState(null);
@@ -30,7 +33,7 @@ export default function AdminCalendar({me,openItem,openMeeting,scheduleMeeting,r
       const [meetings,projects,ministry,leave,work]=await Promise.all([
         supabase.from('meeting_sessions').select('id,title,starts_at,ends_at,status,scope,provider').or(`ends_at.gt.${range.fromAt},and(ends_at.is.null,starts_at.gte.${range.fromAt})`).lt('starts_at',range.toAt).neq('status','cancelled'),
         supabase.from('projects').select('id,name,starts_on,ends_on,status').eq('org_id',me.org_id).or(`and(starts_on.gte.${range.from},starts_on.lt.${range.to}),and(ends_on.gte.${range.from},ends_on.lt.${range.to})`),
-        supabase.from('ministry_events').select('id,title,starts_at,ends_at,all_day,location,notes,cancelled').or(`ends_at.gte.${range.fromAt},and(ends_at.is.null,starts_at.gte.${range.fromAt})`).lt('starts_at',range.toAt),
+        supabase.from('ministry_events').select('id,title,starts_at,ends_at,all_day,location,notes,cancelled,project_id').or(`ends_at.gte.${range.fromAt},and(ends_at.is.null,starts_at.gte.${range.fromAt})`).lt('starts_at',range.toAt),
         supabase.from('leave_requests').select('id,profile_id,start_date,end_date,status,profiles!leave_requests_profile_id_fkey(full_name)').eq('status','approved').gte('end_date',range.from).lt('start_date',range.to),
         supabase.from('work_items').select('id,ref,title,status,due_at').eq('org_id',me.org_id).neq('visibility','private').neq('kind','routine').gte('due_at',range.fromAt).lt('due_at',range.toAt),
       ]);
@@ -50,15 +53,19 @@ export default function AdminCalendar({me,openItem,openMeeting,scheduleMeeting,r
   }
   const sharedLabel=roleMode==='executive'?'Church calendar':'Organisation calendar';
   const scopeControl=<div className="phase6-calendar-scope" role="tablist" aria-label="Calendar scope">
-    <button type="button" role="tab" aria-selected={calendarScope==='my'} className={calendarScope==='my'?'is-selected':''} onClick={()=>setCalendarScope('my')}>My calendar</button>
-    <button type="button" role="tab" aria-selected={calendarScope==='organisation'} className={calendarScope==='organisation'?'is-selected':''} onClick={()=>{if(canLeaveCalendarJournal())setCalendarScope('organisation');}}>{sharedLabel}</button>
+    <button type="button" data-guide="calendar-personal" role="tab" aria-selected={calendarScope==='my'} className={calendarScope==='my'?'is-selected':''} onClick={()=>setCalendarScope('my')}>My calendar</button>
+    <button type="button" data-guide="calendar-shared" role="tab" aria-selected={calendarScope==='organisation'} className={calendarScope==='organisation'?'is-selected':''} onClick={()=>{if(canLeaveCalendarJournal())setCalendarScope('organisation');}}>{sharedLabel}</button>
   </div>;
-  if(calendarScope==='my')return <StaffCalendar me={me} openItem={openItem} openMeeting={openMeeting} scheduleMeeting={scheduleMeeting} statusLabel={roleMode==='executive'?'Group Pastor · My calendar':'Administration · My calendar'} scopeControl={scopeControl}/>;
+  if(calendarScope==='my')return <StaffCalendar onGuideTour={onGuideTour} me={me} openItem={openItem} openMeeting={openMeeting} scheduleMeeting={scheduleMeeting} statusLabel={roleMode==='executive'?'Group Pastor · My calendar':'Administration · My calendar'} scopeControl={scopeControl}/>;
   return <div className="body ev2cal-role-page ev2cal-admin-page">
-    <CalendarPageHeader eyebrow="Shared schedule" title="Calendar" description="Meetings, delivery dates and approved leave." action={<Button icon="meeting" onClick={()=>scheduleMeeting?.({scope:'organisation',organisation:true,startsAt:`${selectedDate}T09:00`})}>Schedule meeting</Button>}/>
+    <CalendarPageHeader eyebrow="Shared schedule" title="Calendar" description="Meetings, delivery dates and approved leave." action={<div className="ceac-calendar-plan-actions">{onGuideTour && <Button variant="quiet" onClick={() => onGuideTour("unit-week")}>Show me around</Button>}<Button data-guide="calendar-activity" variant="secondary" onClick={() => { setActivityNotice(""); setActivityDate(selectedDate); }}>Plan activity</Button><Button data-guide="calendar-meeting" icon="meeting" onClick={()=>scheduleMeeting?.({scope:'organisation',organisation:true,startsAt:`${selectedDate}T09:00`})}>Schedule meeting</Button></div>}/>
     {scopeControl}
+    {activityNotice && <ProductNotice tone="success">{activityNotice}</ProductNotice>}
+    {activityDate && <PlanCalendarActivity me={me} date={activityDate}
+      onClose={() => setActivityDate(null)}
+      onSaved={(title) => { setActivityDate(null); setActivityNotice(`${title} added to the calendar.`); void load(); }} />}
     {error&&<ProductNotice tone="error" title="Calendar could not load" action={<Button variant="secondary" onClick={load}>Try again</Button>}>{error}</ProductNotice>}
     {loading?<LoadingState label="Loading calendar…"/>:<CalendarExplorer me={me} scope="organisation" events={events} layers={LAYERS} defaultLayers={['meeting','projects','ministry','leave']} cursor={cursor} setCursor={setCursor} selectedDate={selectedDate} onSelectDate={setSelectedDate}/>}
-    {detail&&<Sheet onClose={()=>setDetail(null)}><div className="eyebrow">Ministry activity</div><h2>{detail.title}</h2><p>{when(detail.starts_at)}{detail.ends_at?` – ${when(detail.ends_at)}`:''}</p>{detail.location&&<p>{detail.location}</p>}{detail.notes&&<p>{detail.notes}</p>}<Button variant="secondary" onClick={()=>setDetail(null)}>Close</Button></Sheet>}
+    {detail&&<Sheet onClose={()=>setDetail(null)}><div className="eyebrow">Ministry activity</div><h2>{detail.title}</h2><p>{when(detail.starts_at)}{detail.ends_at?` – ${when(detail.ends_at)}`:''}</p>{detail.location&&<p>{detail.location}</p>}{detail.notes&&<p>{detail.notes}</p>}{detail.project_id && openProject && <Button variant="secondary" onClick={() => { const id = detail.project_id; setDetail(null); openProject(id); }}>Open project</Button>}<Button variant="secondary" onClick={()=>setDetail(null)}>Close</Button></Sheet>}
   </div>;
 }

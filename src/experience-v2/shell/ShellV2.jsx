@@ -203,6 +203,7 @@ export function AppTopBar({
   onOpenMeeting,
   onOpenRoom,
   onOpenAnnouncement,
+  onOpenGuideArticle,
   onGuide,
 }) {
   const [clock, setClock] = useState(() => new Date());
@@ -243,6 +244,8 @@ export function AppTopBar({
         onOpenMeeting={onOpenMeeting}
         onOpenRoom={onOpenRoom}
         onOpenAnnouncement={onOpenAnnouncement}
+        onOpenGuideArticle={onOpenGuideArticle}
+        isManager={isManager}
       />
 
       <div className="ev2s-topbar-context" aria-label="Current workspace">
@@ -332,6 +335,7 @@ export function MobileTopBar({
   onOpenMeeting,
   onOpenRoom,
   onOpenAnnouncement,
+  onOpenGuideArticle,
   onGuide,
 }) {
   const context = navigationContext({ me, isAdmin, isExec, isManager });
@@ -373,6 +377,8 @@ export function MobileTopBar({
             onOpenMeeting={onOpenMeeting}
             onOpenRoom={onOpenRoom}
             onOpenAnnouncement={onOpenAnnouncement}
+        onOpenGuideArticle={onOpenGuideArticle}
+        isManager={isManager}
           />
           {onGuide ? <button
             type="button"
