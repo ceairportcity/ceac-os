@@ -357,7 +357,7 @@ test("People attendance facts and invitation records have Accra-local timestamps
 
 test("People Access propagates failed roster refreshes after a successful mutation", () => {
   assert.match(people, /return false;/);
-  assert.match(people, /return true;/);
+  assert.match(people, /return rosterRows;/);
   assert.match(people, /onChanged=\{async \(\) => \{ if \(!\(await load\(\{ silent: true \}\)\)\) throw new Error/);
 });
 
