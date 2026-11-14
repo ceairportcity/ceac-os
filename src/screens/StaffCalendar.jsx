@@ -547,7 +547,12 @@ export default function StaffCalendar({me,openItem,openMeeting,statusLabel="Staf
         }else setEditingPrivateItem({...note,kind:"note"});
         setNotesLibraryOpen(false);
       }}/>}
-    {editingPrivateItem&&personalPlanningReady&&<PersonalPlanningEditor key={editingPrivateItem.id} me={me} item={editingPrivateItem} onClose={()=>setEditingPrivateItem(null)} onChanged={async()=>{await load();setNotesRevision(value=>value+1);}}/>}
+    {editingPrivateItem&&personalPlanningReady&&<PersonalPlanningEditor key={editingPrivateItem.id} me={me} item={editingPrivateItem} onClose={()=>setEditingPrivateItem(null)} onChanged={async (action) => {
+      const label = { note: "Note", task: "Private task", event: "Private event" }[editingPrivateItem.kind];
+      await load();
+      setNotesRevision((value) => value+1);
+      setNotice(`${label} ${action}.`);
+    }}/>}
     {composer&&personalPlanningReady&&<Sheet onClose={()=>!busy&&setComposer(null)}>
       {!composerRecovery.ready ? <LoadingState label="Checking for a saved draft…"/> : <div className="phase6-planning-composer">
         {composerRecovery.notice&&<p role="status">{composerRecovery.notice}</p>}

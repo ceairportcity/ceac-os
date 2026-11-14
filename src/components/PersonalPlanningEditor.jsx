@@ -39,10 +39,10 @@ export default function PersonalPlanningEditor({ me, item, onClose, onChanged })
     kind === "note" ? details.trim() : title.trim()
   ) && (kind !== "event" || (date && time && (!endTime || endTime >= time)))
     && (kind !== "note" || noteType !== "dated" || Boolean(date));
-  async function finish(result) {
+  async function finish(result, action) {
     if (result.error) throw result.error;
     void recovery.clear();
-    await onChanged?.();
+    await onChanged?.(action);
     onClose?.();
   }
   async function save() {
@@ -60,7 +60,7 @@ export default function PersonalPlanningEditor({ me, item, onClose, onChanged })
       } else values = { note_kind:noteType === "dated" ? "personal" : "general",
         note_date:null, dated_for:noteType === "dated" ? date : null, title:title.trim() || null, body:details.trim() };
       await finish(await supabase.from(table).update(values)
-        .eq("id",item.id).eq("profile_id",me.id).select("id").single());
+        .eq("id",item.id).eq("profile_id",me.id).select("id").single(), "updated");
     } catch {
       setError("This private change could not be confirmed. Refresh before retrying.");
     } finally { setBusy(false); }
@@ -78,7 +78,7 @@ export default function PersonalPlanningEditor({ me, item, onClose, onChanged })
       const operation = kind === "task" && item.series_id
         ? supabase.from(table).update({ dismissed_at:new Date().toISOString() })
         : supabase.from(table).delete();
-      await finish(await operation.eq("id",item.id).eq("profile_id",me.id));
+      await finish(await operation.eq("id",item.id).eq("profile_id",me.id).select("id").single(), "removed");
     } catch {
       setError("Deletion could not be confirmed. Refresh before retrying.");
     } finally { setBusy(false); }

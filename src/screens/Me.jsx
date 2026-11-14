@@ -202,7 +202,8 @@ export default function Me({ me, openSettings, openGoal, openRecord, openPerform
       });
       if (error) throw error;
       setSheet(null); setKind("annual"); setStartDate(""); setEndDate(""); setReason("");
-      await load();
+      const { errors } = await load();
+      setMessage(errors.leaveRequests ? "Saved. Your leave request was submitted. Refresh to see its status." : "Saved. Your leave request was sent to HR.");
     } catch (error) { setMessage(humanError(error, "CEAC could not save that change.")); }
     finally { setBusy(false); }
   }
@@ -217,6 +218,7 @@ export default function Me({ me, openSettings, openGoal, openRecord, openPerform
       });
       if (error) throw error;
       await load();
+      setMessage("Saved. Your leave request was cancelled.");
     } catch (error) { setMessage(humanError(error, "That leave request could not be cancelled.")); }
     finally { setBusy(false); }
   }
@@ -234,6 +236,7 @@ export default function Me({ me, openSettings, openGoal, openRecord, openPerform
       setSheet(null); setGoalTitle(""); setGoalDate("");
       await load();
       if (openGoal && data) openGoal(data.id);
+      else setMessage("Saved. Your goal was added to My Hub.");
     } catch (error) { setMessage(humanError(error, "CEAC could not save that change.")); }
     finally { setBusy(false); }
   }
@@ -250,7 +253,8 @@ export default function Me({ me, openSettings, openGoal, openRecord, openPerform
       });
       if (error) throw error;
       setSheet(null); setRemindTitle(""); setRemindAt("");
-      await load();
+      const { errors } = await load();
+      setMessage(errors.reminders ? "Saved. Refresh My Hub to see the reminder." : "Saved. Your private reminder is set.");
     } catch (error) { setMessage(humanError(error, "CEAC could not save that change.")); }
     finally { setBusy(false); }
   }
