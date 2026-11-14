@@ -25,7 +25,7 @@ function sumByCurrency(rows) {
   return totals;
 }
 
-export default function Units({ me, openItem, openPeopleAccess, openProject, initialUnitId, onInitialHandled }) {
+export default function Units({ me, openItem, openPeopleAccess, openProject, openHandoverHelp, initialUnitId, onInitialHandled }) {
   const [units, setUnits] = useState([]);
   const [search,setSearch] = useState("");
   const [openUnitId, setOpenUnitId] = useState(null);
@@ -275,6 +275,7 @@ export default function Units({ me, openItem, openPeopleAccess, openProject, ini
         <p className="screen-note">This takes effect immediately. Review reporting lines in People & Access and open assignments in Work after the change.</p>
         {openPeopleAccess && <button type="button" className="btn btn-ghost btn-sm" disabled={Boolean(savingHead)}
           onClick={() => openPeopleAccess({ unitId: openUnit.id, mode: "responsibility", returnToUnit: true })}>Add an existing person to this unit</button>}
+        {openHandoverHelp && <button type="button" className="btn btn-ghost btn-sm" disabled={Boolean(savingHead)} onClick={openHandoverHelp}>Help with this handover</button>}
         {error && <ProductNotice tone="error" title="Unit Head could not be confirmed">{error}</ProductNotice>}
       </ComposerDrawer>}
 

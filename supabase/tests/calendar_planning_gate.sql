@@ -24,6 +24,30 @@ do $gate$ begin
   raise exception 'Uninvited Admin accepted meeting';
  exception when insufficient_privilege then null;end;
 end $gate$;
+select set_config('request.jwt.claims','{"sub":"31000000-0000-4000-8000-000000000002","role":"authenticated","aal":"aal2"}',true);
+insert into public.ministry_events(id,org_id,unit_id,scope,title,starts_at,ends_at,created_by,is_unit_plan)
+values ('a7070000-0000-4000-8000-000000000002','10000000-0000-4000-8000-000000000010','20000000-0000-4000-8000-000000000011','unit','Synthetic rehearsal','2099-01-01 09:00Z','2099-01-01 10:00Z',auth.uid(),true);
+do $gate$ begin
+ if not exists(select 1 from public.ministry_events where id='a7070000-0000-4000-8000-000000000002') then raise exception 'Manager cannot verify saved unit plan'; end if;
+ begin
+  insert into public.ministry_events(org_id,unit_id,scope,title,starts_at,created_by,is_unit_plan)
+  values ('10000000-0000-4000-8000-000000000010','20000000-0000-4000-8000-000000000012','unit','Cross-unit plan','2099-01-01',auth.uid(),true);
+  raise exception 'Manager planned for an unmanaged unit';
+ exception when insufficient_privilege then null; end;
+end $gate$;
+select set_config('request.jwt.claims','{"sub":"31000000-0000-4000-8000-000000000001","role":"authenticated","aal":"aal2"}',true);
+do $gate$ begin
+ if not exists(select 1 from public.ministry_events where id='a7070000-0000-4000-8000-000000000002') then raise exception 'Unit member cannot see the shared plan'; end if;
+ begin
+  insert into public.ministry_events(org_id,unit_id,scope,title,starts_at,created_by,is_unit_plan)
+  values ('10000000-0000-4000-8000-000000000010','20000000-0000-4000-8000-000000000011','unit','Unauthorised staff plan','2099-01-01',auth.uid(),true);
+  raise exception 'Staff gained shared activity creation';
+ exception when insufficient_privilege then null; end;
+end $gate$;
+select set_config('request.jwt.claims','{"sub":"31000000-0000-4000-8000-000000000005","role":"authenticated","aal":"aal2"}',true);
+do $gate$ begin
+ if exists(select 1 from public.ministry_events where id='a7070000-0000-4000-8000-000000000002') then raise exception 'Unrelated unit can read another unit plan'; end if;
+end $gate$;
 reset role;
 do $gate$ begin
  if has_table_privilege('anon','public.meeting_responses','SELECT') or has_table_privilege('anon','public.meeting_responses','INSERT') then raise exception 'Anonymous response access';end if;

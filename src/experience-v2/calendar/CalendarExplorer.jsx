@@ -61,9 +61,9 @@ export default function CalendarExplorer({me,scope,events,layers,cursor,setCurso
   const agendaTotal=groups.reduce((sum,group)=>sum+group.events.length,0);
   const toggle=value=>setChosen(active.includes(value)?active.filter(v=>v!==value):[...active,value]);
   return <section className="ceac-calendar-explorer" aria-label="Calendar planner">
-    <div className="ceac-calendar-controls">
+    <div className="ceac-calendar-controls" data-guide="calendar-views">
       <CalendarViewTabs value={currentView} onChange={setView} items={[{value:'month',label:'Month'},{value:'week',label:'Week'},{value:'agenda',label:'Agenda'}]}/>
-      <div className="ceac-calendar-tools"><button type="button" className="btn btn-ghost btn-sm" aria-expanded={showFilters} onClick={()=>setShowFilters(!showFilters)}>Filter{active.length!==layers.length?` · ${active.length}`:''}</button>
+      <div className="ceac-calendar-tools"><button type="button" className="btn btn-ghost btn-sm" data-guide="calendar-filter" aria-expanded={showFilters} onClick={()=>setShowFilters(!showFilters)}>Filter{active.length!==layers.length?` · ${active.length}`:''}</button>
       {currentView==='month'&&<label>Month detail<select aria-label="Month detail" value={density} onChange={e=>setDensity(e.target.value)}><option value="auto">Automatic</option><option value="compact">Compact</option><option value="details">Details</option></select></label>}</div>
     </div>
     <ModalDialog open={showFilters} onClose={()=>setShowFilters(false)} title="Show on calendar" panelClassName="ceac-calendar-filter"><fieldset className="ceac-calendar-layers"><legend>Show together</legend>{layers.map(layer=><label key={layer.value}><input type="checkbox" checked={active.includes(layer.value)} onChange={()=>toggle(layer.value)}/>{layer.label}</label>)}<button type="button" className="btn btn-ghost btn-sm" onClick={()=>setChosen(layers.map(l=>l.value))}>Show all</button><input type="search" aria-label="Search this calendar" placeholder="Search this calendar" value={query} onChange={e=>setQuery(e.target.value)}/></fieldset><button type="button" className="btn" onClick={()=>setShowFilters(false)}>Done</button></ModalDialog>

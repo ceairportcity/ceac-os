@@ -48,7 +48,7 @@ test("desktop Guide sits above the profile and supports role-aware search", asyn
   expect(order.guideBottom).toBeLessThanOrEqual(order.profileTop + 1);
 
   await guide.click();
-  await expect(page.getByRole("heading", { name: "Help that matches your work" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "What do you want to do?" })).toBeVisible();
   await expect(page.getByText("CEAC Guide · Staff", { exact: true })).toBeVisible();
 
   const search = page.getByPlaceholder("Search the CEAC Guide…");
@@ -58,6 +58,37 @@ test("desktop Guide sits above the profile and supports role-aware search", asyn
 
   await search.fill("People & Access");
   await expect(page.getByText("No guide topic matches that search.", { exact: false })).toBeVisible();
+});
+
+test("main Search opens the policy answer and the Calendar tour resumes", async ({ page }) => {
+  await page.setViewportSize({ width:1366, height:850 });
+  await signIn(page, "staff@ceac.local.test");
+  await page.getByPlaceholder("Search CEAC…").fill("who approves my leave?");
+  const answers = page.getByRole("region", { name:"Guide answers" });
+  await answers.getByRole("button", { name:/Who approves my leave/ }).click();
+  await expect(page.getByText("Leave requests go directly to HR. Check Time & Leave for the decision.", { exact:true })).toBeVisible();
+  await page.getByRole("button", { name:"Plan my week", exact:true }).click();
+  let tour = page.getByRole("complementary", { name:"Plan my week", exact:true });
+  await expect(tour.getByRole("heading", { name:"Open your personal calendar" })).toBeVisible();
+  await tour.getByRole("button", { name:"Next", exact:true }).click();
+  await expect(tour.getByRole("heading", { name:"Choose Week or Agenda" })).toBeVisible();
+  await tour.getByRole("button", { name:"Pause", exact:true }).click();
+  await page.getByRole("button", { name:"Resume Plan my week", exact:true }).click();
+  await expect(tour.getByRole("heading", { name:"Choose Week or Agenda" })).toBeVisible();
+});
+
+test("manager saves a shared activity from the unit calendar", async ({ page }) => {
+  await page.setViewportSize({ width:1366, height:850 });
+  await signIn(page, "manager@ceac.local.test");
+  await page.locator(".ev2s-sidebar").getByRole("button", { name:"Calendar", exact:true }).click();
+  await page.getByRole("button", { name:"Plan activity", exact:true }).click();
+  const form = page.getByRole("dialog", { name:"Plan activity", exact:true });
+  const name = `Calendar rehearsal ${Date.now()}`;
+  await form.getByLabel("Activity name").fill(name);
+  await form.getByText("All day", { exact:true }).click();
+  await form.getByRole("button", { name:"Save activity", exact:true }).click();
+  await expect(page.getByText(`${name} added to Unit calendar.`, { exact:true })).toBeVisible();
+  await expect(page.getByRole("button", { name:new RegExp(name) }).first()).toBeVisible();
 });
 
 test("contextual help prioritises the page the user came from", async ({ page }) => {
@@ -91,7 +122,7 @@ test("mobile Guide is available under More without widening the viewport", async
   await expect(drawer.getByRole("button", { name: "CEAC Guide", exact: true })).toBeVisible();
   await drawer.getByRole("button", { name: "CEAC Guide", exact: true }).click();
 
-  await expect(page.getByRole("heading", { name: "Help that matches your work" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "What do you want to do?" })).toBeVisible();
   const overflow = await page.evaluate(() => ({
     document: document.documentElement.scrollWidth - document.documentElement.clientWidth,
     body: document.body.scrollWidth - document.body.clientWidth,

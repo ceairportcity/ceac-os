@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { CeacIcon } from "../experience-v2/icons";
-import { getRoleKey, getRoleName } from "../experience-v2/shell/navigation";
+import { getRoleName } from "../experience-v2/shell/navigation";
 import {
   CEAC_GUIDE_GETTING_STARTED,
   CEAC_GUIDE_ROUTE_LABELS,
@@ -9,6 +9,7 @@ import {
   guideArticlesForRole,
   searchGuideArticles,
 } from "../guide/guideContent";
+import { calendarRoute, guideRole, guideTours } from "../guide/guideTours";
 import "../guide/guide.css";
 
 
@@ -69,28 +70,33 @@ function writeGuideProgress(me, role, progress) {
 function contextFor(me) {
   const isAdmin = Boolean(me?.is_admin);
   const isExec = Boolean(me?.is_exec);
-  const isManager = !isAdmin && !isExec && me?.role === "manager";
+  const isManager = guideRole(me) === "manager";
   return { me, isAdmin, isExec, isManager };
 }
 
-export default function Guide({ me, contextTab = null, go }) {
+export default function Guide({ me, contextTab = null, initialArticle, go, onTour, activeTour, onResume }) {
   const roleContext = useMemo(() => contextFor(me), [me]);
-  const role = getRoleKey(roleContext);
+  const role = guideRole(me);
+  const tours = guideTours(role);
   const roleName = getRoleName(roleContext);
   const contextArticles = useMemo(
     () => guideArticlesForContext(role, contextTab),
     [role, contextTab]
   );
-  const defaultId = contextArticles[0]?.id || "getting-started";
+  const defaultId = initialArticle || contextArticles[0]?.id || "getting-started";
   const [query, setQuery] = useState("");
   const [selectedId, setSelectedId] = useState(defaultId);
+  const [reading, setReading] = useState(Boolean(initialArticle || contextTab));
+  const articleHeading = useRef(null);
+  const topicButton = useRef(null);
   const checklist = CEAC_GUIDE_GETTING_STARTED[role] || [];
   const [progress, setProgress] = useState(() => readGuideProgress(me, role));
 
   useEffect(() => {
-    setSelectedId(contextArticles[0]?.id || "getting-started");
+    setSelectedId(defaultId);
     setQuery("");
-  }, [contextTab, role]);
+    setReading(Boolean(initialArticle || contextTab));
+  }, [defaultId, initialArticle, contextTab, role]);
 
   useEffect(() => {
     setProgress(readGuideProgress(me, role));
@@ -129,7 +135,6 @@ export default function Guide({ me, contextTab = null, go }) {
 
   const allRoleArticles = useMemo(() => guideArticlesForRole(role), [role]);
   const selected = results.find((article) => article.id === selectedId)
-    || allRoleArticles.find((article) => article.id === selectedId)
     || results[0]
     || allRoleArticles[0];
 
@@ -139,21 +144,46 @@ export default function Guide({ me, contextTab = null, go }) {
     }
   }, [results, selectedId]);
 
+  const calendarArticle = selected?.id?.startsWith("calendar-");
+  const openRoute = calendarArticle ? calendarRoute(role) : selected?.primaryRoute;
+  const selectedTour = tours.find((tour) => tour.article === selected?.id || selected?.id === "start-work-location" && tour.id === "start-work");
   const contextLabel = contextTab ? CEAC_GUIDE_ROUTE_LABELS[contextTab] : null;
 
   return <div className="ceac-guide">
     <header className="ceac-guide-header">
       <div>
         <div className="ceac-guide-eyebrow">CEAC Guide · {roleName}</div>
-        <h1>Help that matches your work</h1>
-        <p>Find what a feature means, how to use it, who can act, what happens next and what to do when something does not work.</p>
+        <h1>What do you want to do?</h1>
+        <p>Find an answer, open a task, or follow a walkthrough in CEAC.</p>
       </div>
-      <div className="ceac-guide-version">Guide {CEAC_GUIDE_VERSION}</div>
     </header>
 
     {contextLabel ? <div className="ceac-guide-context" role="status">
       <strong>Help for {contextLabel}.</strong> The most relevant guidance for the page you came from is shown first.
     </div> : null}
+
+    <label className="ceac-guide-search">
+      <CeacIcon name="search" size="row" decorative />
+      <span className="ev2s-visually-hidden">Search the CEAC Guide</span>
+      <input
+        value={query}
+        onChange={(event) => { setQuery(event.target.value); setReading(false); }}
+        placeholder="Search the CEAC Guide…"
+        autoComplete="off"
+      />
+    </label>
+
+
+    {!query.trim() && onTour && <section className="ceac-guide-tours" aria-label="Guided tours">
+      <div className="ceac-guide-tour-heading"><h2>Plan with Calendar</h2><p>Find what’s coming up, plan your week and keep project work connected.</p></div>
+      {activeTour && <button className="btn btn-sm" type="button" onClick={onResume}>Resume {activeTour.title}</button>}
+      <div className="ceac-guide-tour-list">
+        {tours.map((tour) => <button type="button" key={tour.id} onClick={() => onTour(tour)}>
+          <CeacIcon name={tour.id.includes("week") || tour.id === "project-meeting" ? "calendar" : "help"} size="row" decorative />
+          <strong>{tour.title}</strong><CeacIcon name="chevronRight" size="meta" decorative />
+        </button>)}
+      </div>
+    </section>}
 
     {!contextTab && !query.trim() ? (progress.dismissed
       ? <div className="ceac-guide-checklist-collapsed">
@@ -191,44 +221,37 @@ export default function Guide({ me, contextTab = null, go }) {
         </section>)
       : null}
 
-    <label className="ceac-guide-search">
-      <CeacIcon name="search" size="row" decorative />
-      <span className="ev2s-visually-hidden">Search the CEAC Guide</span>
-      <input
-        value={query}
-        onChange={(event) => setQuery(event.target.value)}
-        placeholder="Search the CEAC Guide…"
-        autoComplete="off"
-      />
-    </label>
 
-    <div className="ceac-guide-layout">
+    <div className={`ceac-guide-layout${reading ? " is-reading" : ""}`}>
       <nav className="ceac-guide-index" aria-label="Guide topics">
         {results.length ? results.map((article) => <button
           key={article.id}
           type="button"
           className={selected?.id === article.id ? "is-active" : ""}
           aria-current={selected?.id === article.id ? "page" : undefined}
-          onClick={() => setSelectedId(article.id)}
+          onClick={(event) => { topicButton.current = event.currentTarget; setSelectedId(article.id); setReading(true); requestAnimationFrame(() => articleHeading.current?.focus()); }}
         >
           <strong>{article.title}</strong>
           <small>{article.summary}</small>
         </button>) : <div className="ceac-guide-empty">No guide topic matches that search. Try the feature name or the action you need to complete.</div>}
       </nav>
 
-      {selected ? <article className="ceac-guide-article">
+      {selected && results.length ? <article className="ceac-guide-article">
+        <button type="button" className="ceac-guide-back btn btn-ghost btn-sm" onClick={() => { setReading(false); requestAnimationFrame(() => topicButton.current?.focus()); }}>← Guide topics</button>
         <div className="ceac-guide-article-header">
           <div>
-            <h2>{selected.title}</h2>
+            <h2 ref={articleHeading} tabIndex={-1}>{selected.title}</h2>
             <p>{selected.summary}</p>
           </div>
-          {selected.primaryRoute && selected.primaryRoute !== "guide" ? <button
+          {openRoute && openRoute !== "guide" ? <button
             type="button"
             className="ceac-guide-open"
-            onClick={() => go?.(selected.primaryRoute)}
-          >Open feature</button> : null}
+            onClick={() => go?.(openRoute)}
+          >Open {calendarArticle ? "Calendar" : CEAC_GUIDE_ROUTE_LABELS[openRoute] || "feature"}</button> : null}
         </div>
 
+        {selected.answer && <p className="ceac-guide-answer">{selected.answer}</p>}
+        {selectedTour && onTour && <button type="button" className="btn btn-sm" onClick={() => onTour(selectedTour)}>Show me</button>}
         {selected.sections.map((section) => <section key={section.title} className="ceac-guide-section">
           <h3>{section.title}</h3>
           {(section.body || []).map((paragraph) => <p key={paragraph}>{paragraph}</p>)}

@@ -265,3 +265,28 @@
   .ceac-guide-article-header{display:grid}
   .ceac-guide-open{justify-self:start}
 }
+
+.ceac-guide-tours{margin:0 0 1rem;padding:1.15rem;border:1px solid var(--ev2-line);border-radius:var(--ev2-radius-card);background:var(--ev2-surface)}
+.ceac-guide-tour-heading h2{margin:0;font-size:1.2rem;color:var(--ev2-text)}
+.ceac-guide-tour-heading p{margin:.3rem 0 1rem;color:var(--ev2-text-secondary)}
+.ceac-guide-tour-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,14rem),1fr));gap:.5rem}
+.ceac-guide-tour-list button{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:.65rem;align-items:center;padding:.8rem;text-align:left;background:var(--ev2-action-soft);border:1px solid var(--ev2-line);border-radius:var(--ev2-radius-control);color:var(--ev2-text)}
+.ceac-guide-answer{background:var(--ev2-action-soft);padding:.85rem 1rem;border-radius:var(--ev2-radius-control);color:var(--ev2-text);line-height:1.5}
+.ceac-guide-back{display:none}
+.ceac-tour{position:fixed;z-index:80;bottom:max(5rem,env(safe-area-inset-bottom));right:clamp(.75rem,3vw,2rem);width:min(23rem,calc(100% - 1.5rem));padding:1rem;background:var(--ev2-surface);border:1px solid var(--ev2-line);border-radius:var(--ev2-radius-card);box-shadow:var(--ev2-shadow-2);color:var(--ev2-text)}
+.ceac-tour h2{font-size:1.15rem;margin:.25rem 0}
+.ceac-tour p{margin:.4rem 0;line-height:1.45}
+.ceac-tour-progress{font-size:.8rem;color:var(--ev2-text-secondary)}
+.ceac-tour-actions{display:flex;justify-content:flex-end;gap:.4rem;margin-top:.7rem}
+.ceac-tour-highlight{outline:2px solid var(--ev2-action);outline-offset:3px}
+@media(max-width:700px){
+  .ceac-guide-layout:not(.is-reading) .ceac-guide-article,.ceac-guide-layout.is-reading .ceac-guide-index{display:none}
+  .ceac-guide-layout .ceac-guide-index{display:grid;max-height:none;overflow:visible}
+  .ceac-guide-layout.is-reading .ceac-guide-index{display:none}
+  .ceac-guide-back{display:inline-flex;margin-bottom:.7rem}
+}
+
+.ceac-calendar-plan-actions{display:flex;flex-wrap:wrap;gap:.5rem;justify-content:flex-end}
+.ceac-activity-fields{display:grid;gap:.85rem;border:0;padding:0;min-width:0;margin:0 0 .8rem}
+.ceac-activity-fields p{margin:0}
+.ceac-activity-times{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.75rem}

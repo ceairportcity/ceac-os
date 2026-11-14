@@ -154,7 +154,7 @@ for (const width of [390,1440]) {
   test(`Executive secondary destinations use the replacement family at ${width}px`,async ({page},testInfo)=>{
     await page.setViewportSize({width,height:960});
     await signIn(page);
-    for (const [tab,heading] of [['work','Work'],['strategy','Church goals'],['exec-projects','Projects'],['messages','Messages'],['me','My Hub'],['announcements','Announcements'],['payroll','Payroll'],['technical-help','Get technical help'],['guide','Help that matches your work']]) {
+    for (const [tab,heading] of [['work','Work'],['strategy','Church goals'],['exec-projects','Projects'],['messages','Messages'],['me','My Hub'],['announcements','Announcements'],['payroll','Payroll'],['technical-help','Get technical help'],['guide','What do you want to do?']]) {
       await page.goto(`/?tab=${tab}`);
       const title=page.getByRole('heading',{name:heading,exact:true}).first();
       await expect(title).toBeVisible();

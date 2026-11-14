@@ -1,3 +1,5 @@
+import { searchGuideArticles } from "../../guide/guideContent";
+import { guideRole } from "../../guide/guideTours";
 import { useEffect, useRef, useState } from "react";
 import { Drawer } from "../components";
 import { CeacIcon } from "../icons";
@@ -47,6 +49,8 @@ export default function GlobalSearch({
   me,
   isAdmin = false,
   isExec = false,
+  isManager = false,
+  onOpenGuideArticle,
   navigation = [],
   quickItems = [],
   onNavigate,
@@ -146,6 +150,7 @@ export default function GlobalSearch({
     try {
       if (item.kind === "action") item.onSelect?.();
       else if (item.kind === "destination") onNavigate?.(item.destination);
+      else if (item.kind === "guide") onOpenGuideArticle?.(item.id);
       else if (item.kind === "work") onOpenWork?.(item.id);
       else if (item.kind === "project") onOpenProject?.(item.id);
       else if (item.kind === "person") onOpenPerson?.(item);
@@ -163,7 +168,12 @@ export default function GlobalSearch({
     }
   }
 
-  const groups = [...staticGroups, ...recordGroups];
+  const help = onOpenGuideArticle && query.trim().length >= 2
+    ? searchGuideArticles(guideRole(me, isManager), query).slice(0, 3).map((article) => ({
+        kind:"guide", id:article.id, title:article.searchTitle || article.title, meta:article.answer || article.summary, icon:"search",
+      }))
+    : [];
+  const groups = [...staticGroups, ...(help.length ? [{ key:"guide", label:"Guide answers", items:help }] : []), ...recordGroups];
   const results = <SearchGroups groups={groups} loading={loading} error={error} query={query} onSelect={selectResult} />;
 
   if (mobile) {

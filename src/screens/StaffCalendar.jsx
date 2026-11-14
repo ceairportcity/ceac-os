@@ -37,11 +37,12 @@ const FILTER_ITEMS = [
   { value:"leave", label:"Leave", icon:"time" },
 ];
 
-export default function StaffCalendar({me,openItem,openMeeting,statusLabel="Staff / Volunteer",scopeControl=null,initialDate=null,onFocusHandled,scheduleMeeting}){
+export default function StaffCalendar({me,openItem,openMeeting,statusLabel="Staff / Volunteer",scopeControl=null,initialDate=null,onFocusHandled,scheduleMeeting,onGuideTour}){
   const today=new Date();
   const {cursor,setCursor,selectedDate,setSelectedDate}=useCalendarPosition(me,"personal",initialDate);
   useEffect(()=>{if(initialDate)onFocusHandled?.();},[]);
   const [events,setEvents]=useState([]);
+  const [sharedActivity,setSharedActivity]=useState(null);
   const focusedEvent=new URLSearchParams(window.location.search).get("event");
   useEffect(()=>{if(!focusedEvent || !/^[0-9a-f-]{36}$/i.test(focusedEvent))return;
     document.querySelector('[data-calendar-event="'+focusedEvent+'"]')?.scrollIntoView({block:"nearest"});
@@ -187,7 +188,7 @@ export default function StaffCalendar({me,openItem,openMeeting,statusLabel="Staf
       const [work,meetings,ministry,leave]=await Promise.all([
         supabase.from("work_items").select("id,ref,title,kind,status,due_at,project_id,projects(id,name)").eq("assignee_id",me.id).neq("visibility","private").gte("due_at",from).lt("due_at",to),
         supabase.from("meeting_sessions").select("id,title,scope,unit_id,project_id,starts_at,ends_at,status,provider,projects(name),units(name)").or(`ends_at.gte.${from},and(ends_at.is.null,starts_at.gte.${from})`).lt("starts_at",to).order("starts_at"),
-        supabase.from("ministry_events").select("id,title,kind,scope,unit_id,starts_at,ends_at,all_day,location,cancelled").or(`ends_at.gte.${from},and(ends_at.is.null,starts_at.gte.${from})`).lt("starts_at",to).order("starts_at"),
+        supabase.from("ministry_events").select("id,title,kind,scope,unit_id,starts_at,ends_at,all_day,location,notes,cancelled").or(`ends_at.gte.${from},and(ends_at.is.null,starts_at.gte.${from})`).lt("starts_at",to).order("starts_at"),
         supabase.from("leave_requests").select("id,kind,start_date,end_date,status").eq("profile_id",me.id).eq("status","approved").gte("end_date",fromDay).lt("start_date",toDay).order("start_date"),
       ]);
       if(request!==requestVersion.current)return;
@@ -249,7 +250,7 @@ export default function StaffCalendar({me,openItem,openMeeting,statusLabel="Staf
       const rows=[];
       (work.data||[]).filter(item=>item.due_at&&item.kind!=="routine").forEach(item=>rows.push({id:`work-${item.id}`,kind:"work",date:accraDay(item.due_at),title:item.title,meta:`${item.ref}${item.projects?.name?` · ${item.projects.name}`:""}`,workStatus:item.status,itemId:item.id,sortAt:item.due_at,time:new Date(item.due_at).toLocaleTimeString("en-GB",{timeZone:"Africa/Accra",hour:"2-digit",minute:"2-digit"})}));
       meetingRows.forEach(row=>calendarSpan(accraDay(row.starts_at),accraDay(row.ends_at?new Date(new Date(row.ends_at).getTime()-1):row.starts_at),fromDay,toDay).forEach(day=>rows.push({id:`meeting-${row.id}-${day}`,kind:"meeting",date:day,title:row.title,meta:`${new Date(row.starts_at).toLocaleTimeString("en-GB",{timeZone:"Africa/Accra",hour:"2-digit",minute:"2-digit"})}${row.ends_at?`–${new Date(row.ends_at).toLocaleTimeString("en-GB",{timeZone:"Africa/Accra",hour:"2-digit",minute:"2-digit"})}`:""}`,meetingId:row.id,startsAt:row.starts_at,endsAt:row.ends_at,sortAt:row.starts_at,time:new Date(row.starts_at).toLocaleTimeString("en-GB",{timeZone:"Africa/Accra",hour:"2-digit",minute:"2-digit"})})));
-      (ministry.data||[]).filter(row=>row.scope==="church"||row.unit_id===me.unit_id).forEach(row=>calendarSpan(accraDay(row.starts_at),accraDay(row.ends_at?new Date(new Date(row.ends_at).getTime()-1):row.starts_at),fromDay,toDay).forEach(day=>rows.push({id:`ministry-${row.id}-${day}`,kind:"ministry",date:day,title:`${row.cancelled?"Cancelled · ":""}${row.title}`,meta:`${row.all_day?"All day":new Date(row.starts_at).toLocaleTimeString("en-GB",{timeZone:"Africa/Accra",hour:"2-digit",minute:"2-digit"})}${row.location?` · ${row.location}`:""}`,startsAt:row.starts_at,endsAt:row.ends_at,allDay:row.all_day,cancelled:row.cancelled,sortAt:row.starts_at,time:row.all_day?"All day":new Date(row.starts_at).toLocaleTimeString("en-GB",{timeZone:"Africa/Accra",hour:"2-digit",minute:"2-digit"})})));
+      (ministry.data||[]).filter(row=>row.scope==="church"||row.unit_id===me.unit_id).forEach(row=>calendarSpan(accraDay(row.starts_at),accraDay(row.ends_at?new Date(new Date(row.ends_at).getTime()-1):row.starts_at),fromDay,toDay).forEach(day=>rows.push({id:`ministry-${row.id}-${day}`,kind:"ministry",activity:row,date:day,title:`${row.cancelled?"Cancelled · ":""}${row.title}`,meta:`${row.all_day?"All day":new Date(row.starts_at).toLocaleTimeString("en-GB",{timeZone:"Africa/Accra",hour:"2-digit",minute:"2-digit"})}${row.location?` · ${row.location}`:""}`,startsAt:row.starts_at,endsAt:row.ends_at,allDay:row.all_day,cancelled:row.cancelled,sortAt:row.starts_at,time:row.all_day?"All day":new Date(row.starts_at).toLocaleTimeString("en-GB",{timeZone:"Africa/Accra",hour:"2-digit",minute:"2-digit"})})));
       (leave.data||[]).forEach(row=>calendarSpan(row.start_date,row.end_date,fromDay,toDay).forEach(day=>rows.push({id:`leave-${row.id}-${day}`,kind:"leave",date:day,title:`${row.kind} leave`,meta:"All day · Approved",time:"All day",allDay:true})));
       privateTasks.filter(task=>task.plan_date).forEach(task=>rows.push({id:`personal-task-${task.id}`,kind:"personal",personalType:"task",date:task.plan_date,title:task.title,meta:task.planned_time?timeLabel(task.planned_time):"Private task",taskId:task.id,raw:task,completed:Boolean(task.completed_at)}));
       (privateEvents.data||[]).forEach(event=>calendarSpan(accraDay(event.starts_at),accraDay(event.ends_at?new Date(new Date(event.ends_at).getTime()-1):event.starts_at),fromDay,toDay).forEach(day=>rows.push({id:`personal-event-${event.id}-${day}`,kind:"personal",personalType:"event",date:day,title:event.title,meta:`${new Date(event.starts_at).toLocaleTimeString("en-GB",{timeZone:"Africa/Accra",hour:"2-digit",minute:"2-digit"})}${event.ends_at?`–${new Date(event.ends_at).toLocaleTimeString("en-GB",{timeZone:"Africa/Accra",hour:"2-digit",minute:"2-digit"})}`:""}${event.location?` · ${event.location}`:""}`,privateEventId:event.id,raw:event,startsAt:event.starts_at,endsAt:event.ends_at,sortAt:event.starts_at,time:new Date(event.starts_at).toLocaleTimeString("en-GB",{timeZone:"Africa/Accra",hour:"2-digit",minute:"2-digit"})})));
@@ -420,7 +421,7 @@ export default function StaffCalendar({me,openItem,openMeeting,statusLabel="Staf
     meta:`${includeDate?new Date(`${event.date}T12:00:00`).toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"})+" · ":""}${event.meta||""}`,
     status:event.cancelled?"Cancelled":event.routineState?routineCalendarStatus(event.routineState):event.kind==="leave"?"Approved":event.kind==="meeting"?"Meeting":event.kind==="work"?calendarWorkStatus(event.workStatus):event.kind==="personal"?(event.completed?"Done":"Private"):"Ministry",
     statusTone:event.kind==="leave"?"success":event.kind==="meeting"?"action":event.kind==="work"&&["completed","self_certified"].includes(event.workStatus)?"success":event.kind==="work"&&event.workStatus==="returned"?"warning":event.kind==="personal"&&event.completed?"success":"neutral",
-    onClick:event.noteId?()=>{if(selectCalendarDate(event.date)!==false)setDayTab("notes");}:event.itemId||event.meetingId||event.privateEventId||event.taskId?()=>{if(selectCalendarDate(event.date)===false)return;setDayTab(event.kind==="work"?"tasks":"schedule");open(event);}:undefined,
+    onClick:event.noteId?()=>{if(selectCalendarDate(event.date)!==false)setDayTab("notes");}:event.itemId||event.meetingId||event.privateEventId||event.taskId||event.activity?()=>{if(selectCalendarDate(event.date)===false)return;setDayTab(event.kind==="work"?"tasks":"schedule");if(event.activity)setSharedActivity(event.activity);else open(event);}:undefined,
   }),[open,selectCalendarDate]);
   const displayEvents=useMemo(()=>calendarEvents.map(event=>displayEvent(event)),[calendarEvents,displayEvent]);
 
@@ -519,10 +520,17 @@ export default function StaffCalendar({me,openItem,openMeeting,statusLabel="Staf
       title="Calendar"
       description="Your meetings, work and personal plans."
       statusTone="action"
-      action={<><Button variant="secondary" disabled={!personalPlanningReady || loading} onClick={()=>setNotesLibraryOpen(true)}>Notes</Button><Button disabled={!personalPlanningReady || loading} onClick={()=>openComposer("event")}>+ Add</Button></>}
+      action={<div className="ceac-calendar-plan-actions">{onGuideTour && <Button variant="quiet" onClick={() => onGuideTour("personal-week")}>Show me around</Button>}<Button variant="secondary" disabled={!personalPlanningReady || loading} onClick={()=>setNotesLibraryOpen(true)}>Notes</Button><Button data-guide="calendar-add" disabled={!personalPlanningReady || loading} onClick={()=>openComposer("event")}>+ Add</Button></div>}
     />
 
     {scopeControl}
+    {sharedActivity && <Sheet ariaLabel="Shared activity" onClose={() => setSharedActivity(null)}>
+      <h2>{sharedActivity.title}</h2>
+      <p>{sharedActivity.all_day ? "All day" : timeLabel(sharedActivity.starts_at.slice(11, 16))}</p>
+      {sharedActivity.location && <p>{sharedActivity.location}</p>}
+      {sharedActivity.notes && <p>{sharedActivity.notes}</p>}
+      <Button variant="secondary" onClick={() => setSharedActivity(null)}>Close</Button>
+    </Sheet>}
     {!personalPlanningReady&&<ProductNotice tone="attention" title="Private planning is unavailable">Your shared calendar is available. Please contact support to enable private events, tasks and notes.</ProductNotice>}
     {error&&<ProductNotice tone="error" title="Could not load Calendar">{error}</ProductNotice>}
     {routineCalendar.loading&&<p className="screen-note" role="status">Loading routine dates…</p>}

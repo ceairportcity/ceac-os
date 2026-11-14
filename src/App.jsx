@@ -1,3 +1,4 @@
+import { guideRole, guideTours } from "./guide/guideTours";
 import "./experience-v2/ApprovedWorkspace.css";
 import { clearEditorPositions, useEditorPosition } from "./lib/useEditorPosition";
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
@@ -88,6 +89,7 @@ const Meeting = lazy(() => import("./screens/Meeting"));
 const Meetings = lazy(() => import("./screens/Meetings"));
 const DesignPrimitives = lazy(() => import("./screens/DesignPrimitives"));
 const Settings = lazy(() => import("./screens/Settings"));
+const GuideTour = lazy(() => import("./guide/GuideTour"));
 const Guide = lazy(() => import("./screens/Guide"));
 const TechnicalHelp = lazy(() => import("./screens/TechnicalHelp"));
 const TechnicalSupport = lazy(() => import("./screens/TechnicalSupport"));
@@ -157,6 +159,9 @@ export default function App() {
   const [meetingDraft, setMeetingDraft] = useState(null);
   const [createIntent, setCreateIntent] = useState(null);
   const [guideContextTab, setGuideContextTab] = useState(null);
+  const [guideArticle, setGuideArticle] = useState(null);
+  const [tourPosition, setTourPosition] = useState(null);
+  const [tourOpen, setTourOpen] = useState(false);
   const [achievementsReturnTab, setAchievementsReturnTab] = useState("me");
   const [peopleFocusId, setPeopleFocusId] = useState(null);
   const [unitFocusId, setUnitFocusId] = useState(null);
@@ -355,9 +360,10 @@ export default function App() {
     }
     const query = params.toString();
     const url = window.location.pathname + (query ? `?${query}` : "");
-    if ((next.tab !== tab || next.tab === "personal-calendar") && !canLeaveCalendarJournal()) return;
+    if ((next.tab !== tab || next.tab === "personal-calendar") && !canLeaveCalendarJournal()) return false;
     window.history[replace ? "replaceState" : "pushState"]({ ceacRoute: true }, "", url);
     applyRoute(next);
+    return true;
   }
 
   function closeUrlOverlay() {
@@ -368,7 +374,7 @@ export default function App() {
   function go(t, options = {}) {
     if (t !== "guide") setGuideContextTab(null);
     setAuthorityFocusProfileId(null);
-    navigate({ tab: t, setting: options.setting, directory: options.directory, leaveRequestId: options.leaveRequestId, workforceSection: options.workforceSection });
+    return navigate({ tab: t, setting: options.setting, directory: options.directory, leaveRequestId: options.leaveRequestId, workforceSection: options.workforceSection });
   }
 
   function openAchievements(from = "me") {
@@ -376,10 +382,24 @@ export default function App() {
     go("achievements");
   }
 
-  function openGuide(contextual = false) {
+  function openGuide(contextual = false, article = null) {
+    if (!navigate({ tab: "guide" })) return;
+    setGuideArticle(article);
     setGuideContextTab(contextual && tab !== "guide" ? tab : null);
-    navigate({ tab: "guide" });
+    setTourOpen(false);
   }
+  function moveGuideTour(tour, step) {
+    const route = tour.steps.slice(0, step + 1).reverse().find((item) => item.route)?.route;
+    if (route && tab !== route && !go(route)) return;
+    setTourPosition({ id:tour.id, step, userId:me.id, orgId:me.org_id });
+    setTourOpen(true);
+  }
+  function openCalendarGuide(id = "personal-week") {
+    const role = guideRole(me);
+    const tour = guideTours(role).find((item) => item.id === id);
+    if (tour) moveGuideTour(tour, 0);
+  }
+
   function openLifecycle(profileId = null, type = "offboarding") {
     navigate({ tab: "lifecycle" });
     setLifecycleIntent(profileId ? { profileId, type } : null);
@@ -535,6 +555,9 @@ export default function App() {
     setCreateIntent(intent);
   }
 
+  const tours = guideTours(guideRole(me, isUnitManager));
+  const currentTour = tourPosition?.userId === me.id && tourPosition?.orgId === me.org_id && tours.find((tour) => tour.id === tourPosition.id);
+
   const assignMeetingWork = isAdmin || isExec || (isUnitManager && me.role === "manager") ? startAssignment : undefined;
 
   function pageForTab() {
@@ -547,7 +570,9 @@ export default function App() {
     // All Work roles remount on actor/tenant/unit changes. This invalidates
     // previous-role drafts and pending state before any new request completes.
     const managerScopeKey = `${me.org_id}:${me.id}:${me.unit_id || "none"}`;
-    if (tab === "guide") return <Guide me={me} contextTab={guideContextTab} go={go} />;
+    if (tab === "guide") return <Guide me={me} contextTab={guideContextTab} initialArticle={guideArticle} go={go}
+      onTour={(tour) => moveGuideTour(tour, 0)} activeTour={currentTour}
+      onResume={() => currentTour && moveGuideTour(currentTour, tourPosition.step)} />;
     if (tab === "account") return <Settings key={`${me.org_id}:${me.id}`} me={me} notificationCounts={notificationCounts} go={go} />;
     if (tab === "achievements") return <PersonalAchievements me={me} back={() => go(achievementsReturnTab)} openItem={openItem} />;
     if (tab === "technical-help") return <TechnicalHelp key={`${me.org_id}:${me.id}`} me={me} />;
@@ -571,8 +596,8 @@ export default function App() {
       if (isUnitManager) return <ManagerWork key={managerScopeKey} me={me} openItem={openItem} goAssign={startAssignment} />;
       return <Work key={managerScopeKey} me={me} isManager={false} openItem={openItem} />;
     }
-    if (tab === "personal-calendar") return <StaffCalendar statusLabel="My calendar" key={window.location.search} me={me} openItem={openItem} openMeeting={openMeeting} initialDate={new URLSearchParams(window.location.search).get("date")} />;
-    if (tab === "staff-calendar" && isStaff) return <StaffCalendar me={me} openItem={openItem} openMeeting={openMeeting} initialDate={calendarFocusDate} onFocusHandled={()=>setCalendarFocusDate(null)} />;
+    if (tab === "personal-calendar") return <StaffCalendar onGuideTour={openCalendarGuide} statusLabel="My calendar" key={window.location.search} me={me} openItem={openItem} openMeeting={openMeeting} initialDate={new URLSearchParams(window.location.search).get("date")} />;
+    if (tab === "staff-calendar" && isStaff) return <StaffCalendar onGuideTour={openCalendarGuide} me={me} openItem={openItem} openMeeting={openMeeting} initialDate={calendarFocusDate} onFocusHandled={()=>setCalendarFocusDate(null)} />;
     if (tab === "messages") return <Inbox
       key={`${me.org_id}:${me.id}`}
       me={me}
@@ -589,7 +614,7 @@ export default function App() {
       onInitialViewHandled={() => {setCreateIntent(null);setOpenUpdatesIntent(false);}}
     />;
     if (tab === "projects" && isUnitManager) return <ManagerProjects key={managerScopeKey} me={me} openItem={openItem} goAssign={startAssignment} openMeeting={openMeeting} scheduleMeeting={startMeeting} openRoom={(projectId, reference) => openRoom({ kind: "project", projectId, reference })} />;
-    if (tab === "calendar" && isUnitManager) return <ManagerCalendar key={managerScopeKey} initialDate={calendarFocusDate} onFocusHandled={()=>setCalendarFocusDate(null)} me={me} openItem={openItem} openProject={openProject} openMeeting={openMeeting} scheduleMeeting={startMeeting} openPerson={(id, focus) => setPerson({ id, focus })} />;
+    if (tab === "calendar" && isUnitManager) return <ManagerCalendar key={managerScopeKey} onGuideTour={openCalendarGuide} initialDate={calendarFocusDate} onFocusHandled={()=>setCalendarFocusDate(null)} me={me} openItem={openItem} openProject={openProject} openMeeting={openMeeting} scheduleMeeting={startMeeting} openPerson={(id, focus) => setPerson({ id, focus })} />;
     if (tab === "manager-finance" && isUnitManager) return <ManagerFinance key={managerScopeKey} me={me} openProject={openProject} />;
     if (tab === "manager-reports" && isUnitManager) return <ManagerReports key={managerScopeKey} me={me} openItem={openItem} openProject={openProject} onOpenAchievements={() => openAchievements("manager-reports")} />;
     if (tab === "exec-projects" && isExec) return <ExecutiveProjectsWorkspace key={`${me.org_id}:${me.id}:executive-projects`} me={me} initialProjectId={projectId} openProject={id=>navigate({tab:"exec-projects",projectId:id})} scheduleMeeting={startMeeting} openItem={openItem} goAssign={startAssignment} openRoom={(id,reference)=>openRoom({kind:"project",projectId:id,reference})} />;
@@ -644,10 +669,10 @@ export default function App() {
     if (tab === "lifecycle" && canManagePeople) return <AdminLifecycle me={me} initialProfileId={lifecycleIntent?.profileId || null} initialType={lifecycleIntent?.type || null} onInitialHandled={() => setLifecycleIntent(null)} />;
     if (tab === "protected-hr" && canAccessProtectedHR) return <AdminProtectedHR key={`${me.org_id}:${me.id}`} me={me} />;
     if (tab === "payroll" && canUsePayroll) return <AdminPayroll key={`${me.org_id}:${me.id}`} me={me} />;
-    if (tab === "units" && isAdmin) return <Units me={me} initialUnitId={unitFocusId} onInitialHandled={() => setUnitFocusId(null)} openItem={openItem} openPeopleAccess={openPeopleAccess} openProject={(id) => navigate({tab:"admin-projects",projectId:id})} />;
+    if (tab === "units" && isAdmin) return <Units me={me} openHandoverHelp={() => openGuide(true, "people-and-access")} initialUnitId={unitFocusId} onInitialHandled={() => setUnitFocusId(null)} openItem={openItem} openPeopleAccess={openPeopleAccess} openProject={(id) => navigate({tab:"admin-projects",projectId:id})} />;
     if (tab === "admin-projects" && isAdmin) return <AdminProjects key={`${me.org_id}:${me.id}`} me={me} initialProjectId={projectId} openProject={openProject} scheduleMeeting={startMeeting} openItem={openItem} goAssign={startAssignment} openRoom={(id, reference) => openRoom({kind:"project",projectId:id,reference})} />;
-    if (tab === "admin-calendar" && isAdmin) return <AdminCalendar initialDate={calendarFocusDate} onFocusHandled={()=>setCalendarFocusDate(null)} me={me} openItem={openItem} openMeeting={openMeeting} scheduleMeeting={startMeeting} roleMode="admin" openProject={(id) => navigate({tab:"admin-projects",projectId:id})} />;
-    if (tab === "exec-calendar" && isExec) return <AdminCalendar initialDate={calendarFocusDate} onFocusHandled={()=>setCalendarFocusDate(null)} me={me} openItem={openItem} openMeeting={openMeeting} scheduleMeeting={startMeeting} roleMode="executive" openProject={(id) => navigate({tab:"exec-projects",projectId:id})} />;
+    if (tab === "admin-calendar" && isAdmin) return <AdminCalendar onGuideTour={openCalendarGuide} initialDate={calendarFocusDate} onFocusHandled={()=>setCalendarFocusDate(null)} me={me} openItem={openItem} openMeeting={openMeeting} scheduleMeeting={startMeeting} roleMode="admin" openProject={(id) => navigate({tab:"admin-projects",projectId:id})} />;
+    if (tab === "exec-calendar" && isExec) return <AdminCalendar onGuideTour={openCalendarGuide} initialDate={calendarFocusDate} onFocusHandled={()=>setCalendarFocusDate(null)} me={me} openItem={openItem} openMeeting={openMeeting} scheduleMeeting={startMeeting} roleMode="executive" openProject={(id) => navigate({tab:"exec-projects",projectId:id})} />;
     if (tab === "audit" && canViewAudit) return <AdminAudit me={me} />;
     if (tab === "events" && canViewAudit) return <AdminEvents me={me} />;
     if (tab === "workflows" && canUseWorkflows) return <AdminWorkflows me={me} />;
@@ -728,6 +753,7 @@ export default function App() {
           onOpenMeeting={openMeeting}
           onOpenRoom={openRoom}
           onOpenAnnouncement={openSearchAnnouncement}
+          onOpenGuideArticle={(article) => openGuide(false, article)}
           onGuide={() => openGuide(true)}
         />
         <AppTopBar
@@ -754,6 +780,7 @@ export default function App() {
           onOpenMeeting={openMeeting}
           onOpenRoom={openRoom}
           onOpenAnnouncement={openSearchAnnouncement}
+          onOpenGuideArticle={(article) => openGuide(false, article)}
           onGuide={() => openGuide(true)}
         />
         <main className={"app-content ev2s-content" + (isExec && (tab !== "home" || overlay) ? " exec-v2" : "")}>
@@ -794,6 +821,10 @@ export default function App() {
           </Suspense>
           </RouteTransition>
         </main>
+        {currentTour && tourOpen && <Suspense fallback={null}><GuideTour tour={currentTour} step={tourPosition.step}
+          onStep={(step) => moveGuideTour(currentTour, step)}
+          onPause={() => { setTourOpen(false); openGuide(false, currentTour.article); }}
+          onFinish={() => { setTourOpen(false); setTourPosition(null); }} /></Suspense>}
         {!overlay && <Tabs tab={tab} setTab={go} isManager={isUnitManager} isExec={isExec} isAdmin={isAdmin} me={me} onGuide={() => openGuide(false)} />}
       </div>
     </div>
