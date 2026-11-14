@@ -172,9 +172,9 @@ do $administration$
 begin
   if not public.app_can_review_item('27000000-0000-4000-8000-000000000403')
      or not public.app_can_review_item('27000000-0000-4000-8000-000000000407')
-     or public.app_can_review_item('27000000-0000-4000-8000-000000000404')
-     or public.app_can_review_item('27000000-0000-4000-8000-000000000408') then
-    raise exception 'Administration must review its assigned manager work, not Executive-owned manager work';
+     or not public.app_can_review_item('27000000-0000-4000-8000-000000000404')
+     or not public.app_can_review_item('27000000-0000-4000-8000-000000000408') then
+    raise exception 'Administration cannot sign off an eligible manager submission';
   end if;
   if public.app_responsible_reviewer_id('27000000-0000-4000-8000-000000000407') is distinct from auth.uid() then
     raise exception 'Admin-assigned manager work lost the assigning Admin review route';
@@ -183,11 +183,45 @@ begin
     '27000000-0000-4000-8000-000000000403','27000000-0000-4000-8000-000000000404',
     '27000000-0000-4000-8000-000000000405','27000000-0000-4000-8000-000000000406',
     '27000000-0000-4000-8000-000000000407','27000000-0000-4000-8000-000000000408'
-  ))<>4 then
-    raise exception 'Administration review queue does not match the Admin-assignment exception';
+  ))<>6 then
+    raise exception 'Administration review queue is missing eligible manager work';
   end if;
 end
 $administration$;
+
+-- Sign off only once. The original Executive can reopen without erasing the HR decision.
+select public.approve_work_submission('28000000-0000-4000-8000-000000000408','Verified by HR');
+do $hr_signoff$
+begin
+  if not exists (select 1 from public.reviews
+      where submission_id='28000000-0000-4000-8000-000000000408'
+        and reviewer_id=auth.uid() and reviewer_role='administration') then
+    raise exception 'HR sign-off attribution was lost';
+  end if;
+  if exists(select 1 from public.my_work_attention_queue()
+      where action_kind='review_required' and work_item_id='27000000-0000-4000-8000-000000000408') then
+    raise exception 'Signed-off work remains in the HR action queue';
+  end if;
+end
+$hr_signoff$;
+select set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000004',true);
+do $executive_followup$
+begin
+  if not exists (select 1 from jsonb_array_elements(public.work_oversight_queue()->'rows') row
+    where row->>'id'='27000000-0000-4000-8000-000000000408' and row->>'status'='completed') then
+    raise exception 'HR sign-off is missing in Executive oversight';
+  end if;
+  perform public.add_work_oversight_entry('27000000-0000-4000-8000-000000000408',
+    'feedback','Executive feedback after HR sign-off',gen_random_uuid());
+  perform public.reopen_approved_work('27000000-0000-4000-8000-000000000408','Clarify the outcome');
+  if not exists (select 1 from public.work_items
+    where id='27000000-0000-4000-8000-000000000408' and status='in_progress')
+  or not exists (select 1 from public.reviews
+    where submission_id='28000000-0000-4000-8000-000000000408' and reviewer_role='administration') then
+    raise exception 'Reopening failed or erased HR sign-off';
+  end if;
+end
+$executive_followup$;
 
 reset role;
 rollback;

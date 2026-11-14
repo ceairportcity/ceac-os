@@ -106,7 +106,11 @@ export default function AdminLifecycle({ me, initialProfileId = null, initialTyp
     mutationBusy.current=false;
     if(e||data?.id!==readyStep.id||data?.state!=="completed"||data?.completed_by!==me.id){ setError(humanError(e||new Error("The step was not confirmed as completed. Refresh the case before trying again."),"The lifecycle step could not be completed.")); return; }
     setNote("");
-    setNotice("Lifecycle step completed.");
+    const completionMessages = {
+      "complete-onboarding": "Onboarding complete.",
+      "complete-offboarding": "Offboarding complete. CEAC access is inactive.",
+    };
+    setNotice(completionMessages[readyStep.step_key] || `“${readyStep.label}” marked complete.`);
     await load();
   }
 

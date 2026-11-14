@@ -762,7 +762,7 @@ export default function App() {
           <RouteTransition routeKey={routeTransitionKey}>
           <Suspense fallback={<RouteFallback />}>
           <SettingsBack tab={tab} enabled={isAdmin && !overlay} go={go} returnTo={settingsReturn}>
-          {itemId ? <Item id={itemId} me={me} reviewOnly={isExec && tab === "exec-organisation"} session={session} isManager={isUnitManager} initialRoutineDate={itemRoutineDate} openRoom={openRoom} onOpenCalendar={dueAt=>{setCalendarFocusDate(dueAt||null);navigate({tab:isExec?"exec-calendar":isAdmin?"admin-calendar":isUnitManager?"calendar":"staff-calendar"});}} onOpenMemo={work=>{setMemoWorkContext({id:work.id,ref:work.ref,title:work.title});navigate({tab:"messages"});}} back={closeUrlOverlay} />
+          {itemId ? <Item id={itemId} me={me} reviewOnly={isExec && tab === "exec-organisation"} openFullWork={() => openSearchWork(itemId)} session={session} isManager={isUnitManager} initialRoutineDate={itemRoutineDate} openRoom={openRoom} onOpenCalendar={dueAt=>{setCalendarFocusDate(dueAt||null);navigate({tab:isExec?"exec-calendar":isAdmin?"admin-calendar":isUnitManager?"calendar":"staff-calendar"});}} onOpenMemo={work=>{setMemoWorkContext({id:work.id,ref:work.ref,title:work.title});navigate({tab:"messages"});}} back={closeUrlOverlay} />
             : assigning && (isExec || isAdmin) ? <ExecutiveAssign key={`${me.org_id}:${me.id}`} me={me} context={assigning} resuming={assignmentContext?.actor !== assignmentActor} back={() => { setAssignmentContext(null); setAssignmentPosition(null); }} />
             : assigning ? <Assign me={me}
                 initialProjectId={assigning.projectId}

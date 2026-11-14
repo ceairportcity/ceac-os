@@ -194,10 +194,10 @@ test('release HR uploads private bytes and links existing identities without cre
   await link.getByLabel('HR reason, evidence and identity verification method').fill('Synthetic proof independently reviewed against the confirmed existing login and matching unit.');
   await link.getByRole('checkbox').check();
   await link.getByRole('button',{name:'Confirm verified existing identity'}).click();
-  await expect(employee).toHaveCount(0);
+  await expect(page.getByText("Login link saved. The updated login is shown under Access.", {exact:true})).toBeVisible();
+  await expect(employee.getByRole("tab",{name:"Access",exact:true})).toHaveAttribute("aria-selected","true");
   const linkedRow=page.locator('.fpg-people-roster-row').filter({has:page.getByText('Synthetic Link Acceptance Employee',{exact:true})});
   await expect(linkedRow).not.toContainText('No account linked');
-  await linkedRow.click();
   await expect(page.locator('.ev2-admin-person-workspace').getByRole('button',{name:'Account & permissions',exact:true})).toBeVisible();
   await expect.poll(async()=>ok(await admin.from('employee_roster').select('id,profile_id').eq('id',employeeId).single()).profile_id).toBe(personId);
   const after=ok(await service.auth.admin.getUserById(personId));

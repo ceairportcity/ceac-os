@@ -247,13 +247,14 @@ test("canonical S3 migration and fifteen reviewed security migrations have uniqu
     "20261113174500_hybrid_employment_type.sql",
     "20261113212000_correct_roster_account_link.sql",
     "20261113223252_audited_unstarted_task_reassignment.sql",
+    "20261114101109_hr_manager_work_signoff.sql",
   ];
   for (const migration of stagedIntegratedSecurity) {
     assert.ok(migrations.includes(migration), "Missing single-candidate Stage 2 migration: " + migration);
   }
   assert.equal(migrations.filter((file) => !stagedIntegratedSecurity.includes(file)).length, 153,
     "Stage 1's 153 reviewed migrations remain identical; all Stage 2 additions are explicitly inventoried");
-  assert.equal(migrations.length, 243, "expected 153 reviewed Stage 1 plus 90 explicitly inventoried Stage 2 migrations");
+  assert.equal(migrations.length, 244, "expected 153 reviewed Stage 1 plus 91 explicitly inventoried Stage 2 migrations");
   assert.ok(migrations.includes("20261016090159_148_support_invoker_projection.sql"), "forward-only support view repair is missing");
   assert.ok(migrations.includes("20261015090000_147_private_personal_task_recurrence.sql"), "owner-private recurrence migration missing");
   const s3 = "20261007083250_118_capability_delegation_expiry.sql";

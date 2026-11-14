@@ -43,7 +43,7 @@ export default function TaskReassignment({ item, onSaved }) {
     setPeople(null);
     setPerson("");
     setReason("");
-    await onSaved();
+    await onSaved(people.find(profile => profile.id === person));
   }
 
   return <section aria-label="Task assignment">

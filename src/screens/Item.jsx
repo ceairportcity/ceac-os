@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import AssistiveTextarea from "../components/AssistiveTextarea";
 import { supabase } from "../lib/supabase";
 import { dueLabel } from "../lib/time";
-import { Sheet } from "../components/bits";
+import { ProductNotice, Sheet } from "../components/bits";
 import "./premium-work-detail.css";
 import "../experience-v2/cohesive-refresh.css";
 import WorkActivityDiary from "../components/WorkActivityDiary";
@@ -40,7 +40,7 @@ const BRAND_BOOK_TASK_CSS = `.fpg-brandbook-task-card{margin-top:var(--ev2-space
  * The existing authoritative RPC/RLS write checks remain unchanged.
  */
 export default function Item(props) {
-  if (props.reviewOnly && props.me?.is_exec) return <ExecutiveWorkReview key={`${props.me.org_id}:${props.me.id}:${props.id}`} id={props.id} me={props.me} back={props.back} openRoom={props.openRoom} />;
+  if (props.reviewOnly && props.me?.is_exec) return <ExecutiveWorkReview key={`${props.me.org_id}:${props.me.id}:${props.id}`} id={props.id} me={props.me} back={props.back} openRoom={props.openRoom} openFullWork={props.openFullWork} />;
   const scope = [props.me?.org_id, props.me?.id, props.me?.unit_id, props.id, props.initialRoutineDate || ""].join(":");
   return <ItemDetail key={scope} {...props} />;
 }
@@ -91,6 +91,7 @@ function ItemDetail({ id, me, session, isManager = false, initialRoutineDate=nul
   const [partyUnit, setPartyUnit] = useState(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState(null);
+  const [saveResult, setSaveResult] = useState("");
 
   useEffect(() => { load(); }, [id, me.id, me.unit_id]);
 
@@ -218,8 +219,8 @@ function ItemDetail({ id, me, session, isManager = false, initialRoutineDate=nul
     if (blockerError) { setErr(blockerError.message); return; }
     setBlocker(b);
     const { data: subs, error: submissionError } = await supabase.from("submissions")
-      .select("id, profile_id, note, submitted_at, profiles!submissions_profile_id_fkey(full_name), submission_files(url), reviews(id, decision, comment, review_checklist_items(checklist_item_id))")
-      .eq("work_item_id", id).order("submitted_at", { ascending: false }).limit(1);
+      .select("id, profile_id, note, submitted_at, profiles!submissions_profile_id_fkey(full_name), submission_files(url), reviews(id, decision, comment, reviewer_role, reviewed_at, profiles!reviews_reviewer_id_fkey(full_name), review_checklist_items(checklist_item_id))")
+      .eq("work_item_id", id).order("submitted_at", { ascending: false }).order("id", { ascending: false }).limit(1);
     if (submissionError) { setErr(submissionError.message); return; }
     const last = subs && subs[0];
     setLatestSubmission(last || null);
@@ -227,6 +228,7 @@ function ItemDetail({ id, me, session, isManager = false, initialRoutineDate=nul
     const { data: u, error: unitError } = await supabase.from("units").select("id,name").order("name");
     if (unitError) { setErr(unitError.message); return; }
     setUnits(u || []);
+    return w;
   }
 
   const done = checks.filter((c) => ticks[c.id]).length;
@@ -327,6 +329,7 @@ function ItemDetail({ id, me, session, isManager = false, initialRoutineDate=nul
         p_link: link.trim() || null,
       });
       if (submissionError) throw submissionError;
+      setSaveResult(responsibleReviewer?.full_name ? `Submitted for review to ${responsibleReviewer.full_name}.` : "Submitted for review.");
       setSheet(null); setNote(""); setLink(""); await load();
     } catch (e) { setErr(e.message || "The work could not be submitted."); }
     finally { setBusy(false); }
@@ -339,9 +342,10 @@ function ItemDetail({ id, me, session, isManager = false, initialRoutineDate=nul
   }
 
   async function decideManagerReview(decision) {
-    if (!canReview || !latestSubmission || item?.status !== "in_review") return;
+    if (busy || !canReview || !latestSubmission || item?.status !== "in_review") return;
     setBusy(true);
     setErr(null);
+    setSaveResult("");
     try {
       if (decision === "returned") {
         if (!reviewComment.trim()) throw new Error("Add a comment explaining what needs changing.");
@@ -358,6 +362,7 @@ function ItemDetail({ id, me, session, isManager = false, initialRoutineDate=nul
         });
         if (error) throw error;
       }
+      setSaveResult(decision === "returned" ? "Returned for correction." : me.is_admin ? "Signed off by " + me.full_name + "." : "Work approved.");
       setSheet(null);
       setReviewComment("");
       setReviewChecklist([]);
@@ -487,15 +492,17 @@ function ItemDetail({ id, me, session, isManager = false, initialRoutineDate=nul
   }
 
   async function reopenFinishedWork() {
-    if (!note.trim()) return;
+    if (busy || !note.trim()) return;
     setBusy(true);
     setErr(null);
+    setSaveResult("");
     try {
       const { error } = await supabase.rpc("reopen_approved_work", {
         p_work_item_id: id,
         p_reason: note.trim(),
       });
       if (error) throw error;
+      setSaveResult("Work reopened. The original sign-off is kept in the record.");
       setSheet(null); setNote(""); await load();
     } catch (e) { setErr(e.message || "The work could not be reopened."); }
     finally { setBusy(false); }
@@ -551,7 +558,12 @@ function ItemDetail({ id, me, session, isManager = false, initialRoutineDate=nul
       <WorkDetailsEditor key={`${me.id}:${item.id}:${item.last_movement_at}`} me={me} item={item} onSaved={load} />
       {me.is_admin && item.assignee_id && item.kind === "task" && item.origin === "assigned"
         && item.status === "not_started" && item.visibility === "unit" && !item.confidential
-        && <TaskReassignment key={item.assignee_id} item={item} onSaved={load} />}
+        && <TaskReassignment key={item.assignee_id} item={item} onSaved={async (assignee) => {
+          const saved = await load();
+          setSaveResult(saved?.assignee_id === assignee.id
+            ? `Task reassigned to ${assignee.full_name}.`
+            : "Reassignment saved. Refresh this work to confirm the current assignee.");
+        }} />}
 
       {openRoom && (item.project_id || item.sub_team_id || item.unit_id) && <button className="work-room-entry" onClick={() => openRoom({
         ...(item.project_id
@@ -570,6 +582,13 @@ function ItemDetail({ id, me, session, isManager = false, initialRoutineDate=nul
 
       {err && <div className="flag flag-brick" style={{ marginTop: 14 }}>{err}</div>}
 
+      {saveResult && <ProductNotice tone="success">{saveResult}</ProductNotice>}
+      {review?.decision === "completed" && <WorkDetailSection title="Sign-off record">
+        <strong>{review.reviewer_role === "administration" ? "Signed off by HR" : "Approved"}</strong>
+        <p>{review.profiles?.full_name || "Reviewer"} · {new Date(review.reviewed_at).toLocaleDateString("en-GB", { timeZone:"Africa/Accra" })}</p>
+        {review.comment && <p>{review.comment}</p>}
+        {item.status === "in_progress" && <p>Work reopened after this sign-off.</p>}
+      </WorkDetailSection>}
       {review && review.decision === "returned" && (
         <WorkReturnedNotice
           comment={review.comment}
@@ -608,7 +627,7 @@ function ItemDetail({ id, me, session, isManager = false, initialRoutineDate=nul
         <WorkDetailCopy>{item.instructions}</WorkDetailCopy>
       </WorkDetailSection>}
 
-      <WorkOversightConversation me={me} item={item} />
+      <WorkOversightConversation me={me} item={{...item,hrSignedOff:review?.decision === "completed" && review.reviewer_role === "administration"}} />
       <WorkActivityDiary key={`${me.id}:${item.id}`} me={me} item={item} routineOccurrences={routineOccurrences}
         prefillDate={routineEvidenceDate} prefillRequest={routineEvidenceRequest} />
 
@@ -772,7 +791,7 @@ function ItemDetail({ id, me, session, isManager = false, initialRoutineDate=nul
               Return for correction
             </button>
             <button type="button" className="btn" onClick={() => { setReviewComment(""); setReviewChecklist([]); setSheet("manager-review-approve"); }}>
-              Approve
+              {me.is_admin ? "Sign off" : "Approve"}
             </button>
           </div>
         </div>
@@ -812,7 +831,9 @@ function ItemDetail({ id, me, session, isManager = false, initialRoutineDate=nul
       {!canReview && !selfCertifiableWork && item.status === "in_review" &&
         <div className="flag flag-amber" style={{ marginTop: 20 }}><h4>Sent in</h4>Waiting on {responsibleReviewer?.full_name || "the responsible reviewer"} to check it.</div>}
 
-      {isManager && ["task", "meeting_outcome", "deliverable"].includes(item.kind) && ["completed", "self_certified"].includes(item.status) &&
+      {["task", "meeting_outcome", "deliverable"].includes(item.kind)
+        && (item.status === "completed" && canReview
+          || item.status === "self_certified" && (me.is_admin || (me.is_exec || isManager) && item.assignee_id === me.id)) &&
         <button className="btn btn-ghost" style={{ marginTop: 20 }} onClick={() => { setNote(""); setSheet("reopen"); }}>
           Reopen this work
         </button>}
@@ -842,11 +863,11 @@ function ItemDetail({ id, me, session, isManager = false, initialRoutineDate=nul
 
       {sheet === "manager-review-approve" && latestSubmission && (
         <Sheet onClose={() => !busy && setSheet(null)}>
-          <div className="h2">Approve submitted work</div>
+          <div className="h2">{me.is_admin ? "Sign off submitted work" : "Approve submitted work"}</div>
           <p className="screen-note">This records your approval against the submitted evidence and current work record.</p>
           <AssistiveTextarea className="field" rows={3} placeholder="Approval note (optional)" value={reviewComment} onChange={(event) => setReviewComment(event.target.value)} />
           <button className="btn" style={{ marginTop: 14 }} disabled={busy} onClick={() => decideManagerReview("completed")}>
-            {busy ? "Saving..." : "Confirm approval"}
+            {busy ? "Saving..." : me.is_admin ? "Confirm sign-off" : "Confirm approval"}
           </button>
         </Sheet>)}
 

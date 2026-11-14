@@ -189,8 +189,8 @@ test("Executive and Administration action queues reflect their server authority"
   {
     const { context, page } = await openAs(browser, "admin@ceac.local.test", { width: 390, height: 844 });
     await expect(page.getByText("P4-UI-REVIEW-413 · Phase 4 Manager review required", { exact: true })).toBeVisible();
-    // Only the Executive reviews Executive-assigned manager work; HR/Admin no longer overrides it.
-    await expect(page.getByText("P4-UI-UPWARD-414 · Phase 4 Executive review required", { exact: true })).toHaveCount(0);
+    // The Executive keeps the routing while HR can also review eligible manager submissions.
+    await expect(page.getByText("P4-UI-UPWARD-414 · Phase 4 Executive review required", { exact: true })).toBeVisible();
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(overflow).toBeLessThanOrEqual(1);
     await page.screenshot({ path: "test-artifacts/phase4-notification-work-state-mobile.png", fullPage: true });

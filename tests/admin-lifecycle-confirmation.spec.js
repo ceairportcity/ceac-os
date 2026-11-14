@@ -21,10 +21,10 @@ for(const width of [390,1440])test(`Admin lifecycle confirms a recorded step and
  await page.getByLabel('Lifecycle completion note',{exact:true}).fill('Verified induction context');
  await page.getByRole('button',{name:'Complete current step',exact:true}).click();
  await expect(page.getByText('The step was not confirmed as completed. Refresh the case before trying again.',{exact:true})).toBeVisible();
- await expect(page.getByText('Lifecycle step completed.',{exact:true})).toHaveCount(0);
+ await expect(page.getByText('“Confirm induction” marked complete.',{exact:true})).toHaveCount(0);
  await expect(page.getByLabel('Lifecycle completion note',{exact:true})).toHaveValue('Verified induction context');
  await page.getByRole('button',{name:'Complete current step',exact:true}).click();
- await expect(page.getByText('Lifecycle step completed.',{exact:true})).toBeVisible();
+ await expect(page.getByText('“Confirm induction” marked complete.',{exact:true})).toBeVisible();
  await expect(page.getByRole('button',{name:'Complete current step',exact:true})).toHaveCount(0);
  expect(writes).toHaveLength(2);expect(writes[1]).toMatchObject({state:'completed',completed_by:'synthetic-admin',note:'Verified induction context'});
  await page.getByRole('button',{name:'Start lifecycle case',exact:true}).click();

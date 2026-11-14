@@ -239,6 +239,7 @@ function MeetingDetail({ me, meetingId, back, goAssign, openItem, openProject, e
       if (result.error) throw result.error;
       void decisionRecovery.clear({decision:""});
       setDecision("");
+      setNotice("Decision recorded in this meeting.");
       await load();
     } catch (err) {
       setError(humanError(err, "The shared decision could not be saved."));
@@ -255,6 +256,7 @@ function MeetingDetail({ me, meetingId, back, goAssign, openItem, openProject, e
       if (result.error) throw result.error;
       void agendaRecovery.clear({agendaEdit:null});
       await load();setAgendaDraft(null);
+      setNotice("Agenda saved for this meeting.");
     } catch (err) {
       setError(humanError(err, "The agenda could not be saved."));
     } finally {
