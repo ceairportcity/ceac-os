@@ -28,6 +28,11 @@ export default defineConfig({
       output: {
         codeSplitting: {
           groups: [
+            {
+              name: "guide-content",
+              test: /src[\\/]guide[\\/](?:guideContent|guideTours)\.js$/,
+              priority: 11,
+            },
             // Keep existing Workforce interactions intact while splitting its
             // schedule/evidence components below the fixed 100KiB route cap.
             {
