@@ -555,7 +555,7 @@ export default function People({ me, openItem, go, openLifecycle, openUnit, open
     setError(null);
     let recorded = false;
     try {
-      const { error: saveError } = await supabase.rpc("hr_employee_protected_record", {
+      const { data: savedId, error: saveError } = await supabase.rpc("hr_employee_protected_record", {
         p_employee_id: employeeId,
         p_record_type: form.recordType,
         p_payload: form.payload,
@@ -570,7 +570,13 @@ export default function People({ me, openItem, go, openLifecycle, openUnit, open
       });
       if (refreshError) throw refreshError;
       if (generation !== personGeneration.current) return;
+      const collection = { compensation: "compensation", payment_detail: "payment_details", identifier: "identifiers" }[form.recordType];
       setProtectedHr(data || null);
+      if (!savedId || !data?.[collection]?.some((record) => record.id === savedId)) {
+        setProtectedEditor(null);
+        setError("Protected HR save could not be verified in the updated record. Reopen Protected HR to check it.");
+        return;
+      }
       setProtectedEditor(null);
       setRecordSaveMessage("Protected HR record saved. The updated record is shown below.");
     } catch (failure) {

@@ -167,7 +167,7 @@ export default function Finance({ me, openExpenses }) {
       setIncome((rows) => [...rows.filter((row) => row.id !== saved.id), saved]);
       setReceipt(`${money(saved.amount_minor, saved.currency)} recorded for ${saved.description}.`);
       setSheet(null); setIDesc(""); setIAmount(""); setISource("");
-    } catch (e) { setMsg(e.message); } finally { mutationBusy.current = false; setBusy(false); }
+    } catch (e) { setMsg(e.message || "The save could not be confirmed. Check the ledger before trying again."); } finally { mutationBusy.current = false; setBusy(false); }
   }
 
   async function saveTransfer() {
@@ -190,7 +190,7 @@ export default function Finance({ me, openExpenses }) {
       setTransfers((rows) => [...rows.filter((row) => row.id !== saved.id), saved]);
       setReceipt(`${money(saved.amount_minor, saved.currency)} recorded as sent to ${nameOf(saved.to_unit_id)}. Waiting for the receiving department to confirm.`);
       setSheet(null); setTAmount(""); setTPurpose("");
-    } catch (e) { setMsg(e.message); } finally { mutationBusy.current = false; setBusy(false); }
+    } catch (e) { setMsg(e.message || "The save could not be confirmed. Check the ledger before trying again."); } finally { mutationBusy.current = false; setBusy(false); }
   }
 
   async function respond(t, state, note) {

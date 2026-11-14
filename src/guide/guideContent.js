@@ -332,6 +332,10 @@ export const CEAC_GUIDE_ARTICLES = Object.freeze([
     primaryRoute: "people",
     sections: [
       {
+        title: "One person, one account",
+        body: ["Use the existing employee record when adding a responsibility or resolving a sign-in issue."],
+      },
+      {
         title: "Add an employee",
         steps: [
           "Open People & Access and choose Add employee. Record their employment and department.",
