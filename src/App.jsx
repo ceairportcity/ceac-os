@@ -159,6 +159,7 @@ export default function App() {
   const [guideContextTab, setGuideContextTab] = useState(null);
   const [achievementsReturnTab, setAchievementsReturnTab] = useState("me");
   const [peopleFocusId, setPeopleFocusId] = useState(null);
+  const [unitFocusId, setUnitFocusId] = useState(null);
   const [authorityFocusProfileId,setAuthorityFocusProfileId] = useState(null);
   const [peopleAccessIntent, setPeopleAccessIntent] = useState(null);
   const [lifecycleIntent, setLifecycleIntent] = useState(null);
@@ -632,6 +633,8 @@ export default function App() {
       openItem={openItem}
       go={go}
       openLifecycle={openLifecycle}
+      openHelp={() => openGuide(true)}
+      openUnit={isAdmin ? (id) => { setUnitFocusId(id); go("units"); } : null}
       accessIntent={peopleAccessIntent}
       onAccessIntentHandled={() => setPeopleAccessIntent(null)}
       initialEmployeeId={peopleFocusId}
@@ -641,7 +644,7 @@ export default function App() {
     if (tab === "lifecycle" && canManagePeople) return <AdminLifecycle me={me} initialProfileId={lifecycleIntent?.profileId || null} initialType={lifecycleIntent?.type || null} onInitialHandled={() => setLifecycleIntent(null)} />;
     if (tab === "protected-hr" && canAccessProtectedHR) return <AdminProtectedHR key={`${me.org_id}:${me.id}`} me={me} />;
     if (tab === "payroll" && canUsePayroll) return <AdminPayroll key={`${me.org_id}:${me.id}`} me={me} />;
-    if (tab === "units" && isAdmin) return <Units me={me} openItem={openItem} openPeopleAccess={openPeopleAccess} openProject={(id) => navigate({tab:"admin-projects",projectId:id})} />;
+    if (tab === "units" && isAdmin) return <Units me={me} initialUnitId={unitFocusId} onInitialHandled={() => setUnitFocusId(null)} openItem={openItem} openPeopleAccess={openPeopleAccess} openProject={(id) => navigate({tab:"admin-projects",projectId:id})} />;
     if (tab === "admin-projects" && isAdmin) return <AdminProjects key={`${me.org_id}:${me.id}`} me={me} initialProjectId={projectId} openProject={openProject} scheduleMeeting={startMeeting} openItem={openItem} goAssign={startAssignment} openRoom={(id, reference) => openRoom({kind:"project",projectId:id,reference})} />;
     if (tab === "admin-calendar" && isAdmin) return <AdminCalendar initialDate={calendarFocusDate} onFocusHandled={()=>setCalendarFocusDate(null)} me={me} openItem={openItem} openMeeting={openMeeting} scheduleMeeting={startMeeting} roleMode="admin" openProject={(id) => navigate({tab:"admin-projects",projectId:id})} />;
     if (tab === "exec-calendar" && isExec) return <AdminCalendar initialDate={calendarFocusDate} onFocusHandled={()=>setCalendarFocusDate(null)} me={me} openItem={openItem} openMeeting={openMeeting} scheduleMeeting={startMeeting} roleMode="executive" openProject={(id) => navigate({tab:"exec-projects",projectId:id})} />;

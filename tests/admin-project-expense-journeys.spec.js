@@ -75,6 +75,7 @@ for(const width of [390,1440])test(`expense amount, draft and recorded currency 
  await page.screenshot({path:`test-artifacts/admin-expense-composer-${width}.png`,fullPage:true});
  await dialog.getByRole('button',{name:'Save this batch',exact:true}).click();
  await expect.poll(()=>writes.length).toBe(1);
+ await expect(page.getByRole('status').filter({hasText:'1 expense recorded for Operations.'})).toBeVisible();
  expect(writes[0]).toMatchObject({name:'spend_lines',body:[{amount_minor:2550,currency:'USD',description:'Test stationery',unit_id:'unit-a'}]});
  expect(reads.some(url=>url.pathname.endsWith('/spend_lines')&&url.searchParams.getAll('spent_on').some(value=>value===`gte.${new Date().getFullYear()}-01-01`))).toBe(true);
 });
@@ -105,6 +106,8 @@ for(const width of [390,1440])test(`Finance year, reversals, chart table and saf
  await dialog.getByLabel('Sending department',{exact:true}).selectOption('');await dialog.getByLabel('Transfer currency',{exact:true}).selectOption('USD');
  await page.screenshot({path:`test-artifacts/admin-finance-transfer-${width}.png`,fullPage:true});
  await dialog.getByRole('button',{name:'Record transfer',exact:true}).click();await expect.poll(()=>writes.length).toBe(1);
+ await expect(page.getByRole('status').filter({hasText:'USD 25.50 recorded as sent to Operations.'})).toBeVisible();
+ await expect(page.getByText('Central church funds → Operations',{exact:true})).toBeVisible();
  expect(writes[0]).toMatchObject({name:'internal_transfers',body:{amount_minor:2550,currency:'USD',from_unit_id:null,to_unit_id:'unit-a'}});
 });
 

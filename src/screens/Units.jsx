@@ -25,12 +25,13 @@ function sumByCurrency(rows) {
   return totals;
 }
 
-export default function Units({ me, openItem, openPeopleAccess, openProject }) {
+export default function Units({ me, openItem, openPeopleAccess, openProject, initialUnitId, onInitialHandled }) {
   const [units, setUnits] = useState([]);
   const [search,setSearch] = useState("");
   const [openUnitId, setOpenUnitId] = useState(null);
   const [area, setArea] = useState("overview");
-  const [headChoice, setHeadChoice] = useState({});
+  const [headChoice, setHeadChoice] = useState("");
+  const [headEditor, setHeadEditor] = useState(false);
   const [savingHead, setSavingHead] = useState(null);
   const [unitSheet, setUnitSheet] = useState(null);
   const [unitForm, setUnitForm] = useState({ name:"", code:"", parent_id:"", handles_finance:false, owns_calendar:false });
@@ -168,15 +169,16 @@ export default function Units({ me, openItem, openPeopleAccess, openProject }) {
   }
 
   async function assignHead(unit) {
-    const profileId = headChoice[unit.id];
-    if (!profileId) return;
+    const profileId = headChoice;
+    if (!profileId || savingHead) return;
     setSavingHead(unit.id);
     setError(null);
     setNotice("");
     try {
       const result = await supabase.rpc("assign_unit_head", { p_unit_id: unit.id, p_profile_id: profileId });
       if (result.error) throw result.error;
-      setHeadChoice((current) => ({ ...current, [unit.id]: "" }));
+      setHeadEditor(false);
+      setHeadChoice("");
       const refreshed = await load({ quiet: true });
       const head = refreshed?.find(entry => entry.id === unit.id)?.head;
       setNotice(head?.profile_id === profileId
@@ -201,6 +203,21 @@ export default function Units({ me, openItem, openPeopleAccess, openProject }) {
   useEffect(() => {
     if (openUnitId) sessionStorage.setItem(`ceac-admin-unit-area:${openUnitId}`, area);
   }, [openUnitId, area]);
+
+  useEffect(() => {
+    if (!initialUnitId || loading || !units.some((unit) => unit.id === initialUnitId)) return;
+    setOpenUnitId(initialUnitId);
+    setHeadChoice("");
+    setHeadEditor(true);
+    onInitialHandled?.();
+  }, [initialUnitId, loading, units, onInitialHandled]);
+
+  function openHeadEditor() {
+    setHeadChoice("");
+    setError(null);
+    setNotice("");
+    setHeadEditor(true);
+  }
 
   const unitComposer = unitSheet && <ComposerDrawer open title={unitSheet.id ? "Edit unit" : "Add unit"}
       onClose={() => { if (!savingUnit) setUnitSheet(null); }}
@@ -236,8 +253,30 @@ export default function Units({ me, openItem, openPeopleAccess, openProject }) {
         actionIcon="edit" actionLabel="Edit setup" onAction={()=>openUnitSetup(openUnit)} />
 
       {notice && <ProductNotice tone="success">{notice}</ProductNotice>}
-      {error && !unitSheet && <ProductNotice tone="error" title="Unit update needs attention">{error}</ProductNotice>}
-      {!openUnit.head && <ProductNotice tone="attention" title="Unit Head not assigned">Administration should assign an existing member as Unit Head after their account is active.</ProductNotice>}
+      {error && !unitSheet && !headEditor && <ProductNotice tone="error" title="Unit update needs attention">{error}</ProductNotice>}
+      <ProductNotice tone={openUnit.head ? "info" : "attention"} title={openUnit.head ? "Unit Head" : "Unit Head not assigned"}
+        action={<button type="button" className="btn btn-ghost btn-sm" onClick={openHeadEditor}>{openUnit.head ? "Change Unit Head" : "Assign Unit Head"}</button>}>
+        {openUnit.head?.profiles?.full_name || "Choose an active member of this unit."}
+      </ProductNotice>
+      {headEditor && <ComposerDrawer open title={openUnit.head ? "Change Unit Head" : "Assign Unit Head"}
+        description={openUnit.name} onClose={() => !savingHead && setHeadEditor(false)}
+        footer={<>
+          <button type="button" className="btn btn-ghost" disabled={Boolean(savingHead)} onClick={() => setHeadEditor(false)}>Cancel</button>
+          <button type="button" className="btn" disabled={!headChoice || Boolean(savingHead)} onClick={() => assignHead(openUnit)}>{savingHead ? "Saving…" : "Confirm Unit Head"}</button>
+        </>}>
+        <p>Current Unit Head <strong>{openUnit.head?.profiles?.full_name || "None"}</strong></p>
+        <FieldGroup label="New Unit Head">
+          <select className="field" value={headChoice} disabled={Boolean(savingHead)} onChange={(event) => setHeadChoice(event.target.value)}>
+            <option value="">Choose an active unit member</option>
+            {openUnit.people.filter((member) => member.profiles?.active && member.profile_id !== openUnit.head?.profile_id)
+              .map((member) => <option key={member.profile_id} value={member.profile_id}>{member.profiles?.full_name || member.profile_id}</option>)}
+          </select>
+        </FieldGroup>
+        <p className="screen-note">This takes effect immediately. Review reporting lines in People & Access and open assignments in Work after the change.</p>
+        {openPeopleAccess && <button type="button" className="btn btn-ghost btn-sm" disabled={Boolean(savingHead)}
+          onClick={() => openPeopleAccess({ unitId: openUnit.id, mode: "responsibility", returnToUnit: true })}>Add an existing person to this unit</button>}
+        {error && <ProductNotice tone="error" title="Unit Head could not be confirmed">{error}</ProductNotice>}
+      </ComposerDrawer>}
 
       <nav aria-label="Unit workspace"><SegmentedControl ariaLabel="Unit sections" value={area} onChange={setArea} items={[
         ["overview","Overview"],["people","People"],["work","Work"],["objectives","Objectives"],["projects","Projects"],["reporting","Reporting"],["attendance","Attendance"],["cost","Cost"],
@@ -297,19 +336,12 @@ export default function Units({ me, openItem, openPeopleAccess, openProject }) {
           <div><strong>{member.profiles?.full_name || "—"}</strong><span>{member.role === "manager" ? "Unit Head" : member.role === "sub_team_lead" ? "Sub-team lead" : "Staff"}{member.profiles?.job_title ? ` · ${member.profiles.job_title}` : ""}</span></div>
           {!member.profiles?.active && <span className="pill p-grey">Inactive</span>}
         </div>)}
-        {openUnit.people.some(member => member.profiles?.active && member.profile_id !== openUnit.head?.profile_id) && <div className="admin-head-assignment">
-          <label className="field-label" htmlFor={`head-${openUnit.id}`}>{openUnit.head ? "Replace Unit Head" : "Assign Unit Head"}</label>
-          <select id={`head-${openUnit.id}`} className="field" value={headChoice[openUnit.id] || ""} onChange={(event) => setHeadChoice((current) => ({ ...current, [openUnit.id]: event.target.value }))}>
-            <option value="">Choose an existing unit member</option>
-            {openUnit.people.filter(member => member.profiles?.active && member.profile_id !== openUnit.head?.profile_id).map((member) => <option key={member.profile_id} value={member.profile_id}>{member.profiles?.full_name || member.profile_id}</option>)}
-          </select>
-          <button className="btn btn-sm" disabled={!headChoice[openUnit.id] || savingHead === openUnit.id} onClick={() => assignHead(openUnit)}>{savingHead === openUnit.id ? "Assigning…" : openUnit.head ? "Replace Unit Head" : "Make Unit Head"}</button>
-        </div>}
+
       </section>}
 
       {area === "work" && <section className="admin-workspace-area">
         <SectionHeader eyebrow="Evidence" title="Work" count={openUnit.work.length} />
-        <p className="screen-note">Administration can inspect the record but does not enter the Manager’s review queue.</p>
+        <p className="screen-note">Open a work record to review its current assignee, progress and available actions.</p>
         {openUnit.work.map((item) => <button key={item.id} className="admin-evidence-row admin-action-button" onClick={() => openItem(item.id)}>
           <div><strong>{item.title}</strong><span>{item.ref} · {item.completed_at ? `finished ${dateOnly(item.completed_at)}` : dueLabel(item.due_at)}</span></div>
           {statusPill(item.status)}

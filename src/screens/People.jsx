@@ -62,12 +62,14 @@ function avgStartLabel(minutes) {
   return String(Math.floor(value / 60)).padStart(2, "0") + ":" + String(value % 60).padStart(2, "0");
 }
 
-export default function People({ me, openItem, go, openLifecycle, onManagePermissions=null, accessIntent = null, onAccessIntentHandled, initialEmployeeId = null, onInitialHandled }) {
+export default function People({ me, openItem, go, openLifecycle, openUnit, openHelp, onManagePermissions=null, accessIntent = null, onAccessIntentHandled, initialEmployeeId = null, onInitialHandled }) {
   const [rows, setRows] = useState([]);
   const [creatingEmployee,setCreatingEmployee] = useState(false);
   const [accountForEmployee,setAccountForEmployee]=useState(null);
   const [employeeCreationMessage,setEmployeeCreationMessage]=useState("");
   const [recordSaveMessage, setRecordSaveMessage] = useState("");
+  const [returnToUnit, setReturnToUnit] = useState(null);
+  const [invitationFocusEmail, setInvitationFocusEmail] = useState(null);
   const [operationalDirectory, setOperationalDirectory] = useState([]);
   const [filter, setFilter] = useState("all");
   const [viewMode, setViewMode] = useState("directory");
@@ -145,6 +147,8 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
     setProtectedHr(null);
     setDetailLoading(false);
     setProtectedHrLoading(false);
+    setInvitationFocusEmail(null);
+    setReturnToUnit(accessIntent.returnToUnit ? accessIntent.unitId : null);
     setAccessFocusProfileId(accessIntent.profileId || null);
     setAccessFocusUnitId(accessIntent.unitId || null);
     setAccessFocusMode(accessIntent.mode || null);
@@ -472,7 +476,9 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
     }
   }
 
-  function openAccessAdministration(profileId = null, inviteRoster = null) {
+  function openAccessAdministration(profileId = null, inviteRoster = null, mode = profileId ? "responsibility" : "invite", invitationEmail = null) {
+    setInvitationFocusEmail(invitationEmail);
+    setReturnToUnit(null);
     personGeneration.current += 1;
     employeeFileWriteBusy.current = false;
     setEmployeeFileBusy(false);
@@ -481,7 +487,7 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
     setProtectedHrLoading(false);
     setAccessFocusProfileId(profileId);
     setAccessFocusUnitId(null);
-    setAccessFocusMode(profileId ? "responsibility" : "invite");
+    setAccessFocusMode(mode);
     setAccessInviteRoster(profileId ? null : inviteRoster);
     setPerson(null);
     setDrill(null);
@@ -508,7 +514,9 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
     const generation = personGeneration.current;
     employeeFileWriteBusy.current = true;
     setEmployeeFileBusy(true);
+    setRecordSaveMessage("");
     setError(null);
+    let uploaded = false;
     try {
       await uploadOperationalFile({
         file,
@@ -516,9 +524,15 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
         contextId: person.id,
         relation: kind === "photo" ? "employee_photo" : "employee_document",
       });
+      uploaded = true;
       await refreshEmployeeFiles(person.id, generation);
+      if (generation === personGeneration.current) setRecordSaveMessage(kind === "photo" ? "Employee photo updated." : "Document added to this employee’s record.");
     } catch (fileError) {
       if (generation === personGeneration.current) {
+        if (uploaded) {
+          setRecordSaveMessage("File saved. Reopen the employee record to see the latest files.");
+          return;
+        }
         setError(humanError(fileError, kind === "photo"
           ? "The employee photo could not be confirmed. Review the record before trying again."
           : "The employee document could not be confirmed. Review the record before trying again."));
@@ -537,6 +551,7 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
     const generation = personGeneration.current;
     protectedWriteBusy.current = true;
     setSavingProtected(true);
+    setRecordSaveMessage("");
     setError(null);
     let recorded = false;
     try {
@@ -557,6 +572,7 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
       if (generation !== personGeneration.current) return;
       setProtectedHr(data || null);
       setProtectedEditor(null);
+      setRecordSaveMessage("Protected HR record saved. The updated record is shown below.");
     } catch (failure) {
       if (generation === personGeneration.current) {
         setError(recorded
@@ -755,6 +771,7 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
     employeeFileWriteBusy.current = false;
     setEmployeeFileBusy(false);
     clearEditorsForNavigation();
+    setRecordSaveMessage("");
     setPerson(null); setDrill(null); setDetailLoading(false);
     setProtectedHr(null); setProtectedHrLoading(false);
   }
@@ -762,7 +779,7 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
   function renderPeoplePage(content) {
     const directory = viewMode === "directory";
     return <div className="body ev2-people-page ev2-people-admin pp-split-page">
-      <PeoplePageHeader title="People & Access" description="Employee records and account access"
+      <PeoplePageHeader title="People & Access" description="Find employees, manage sign-in and responsibilities, and review changes."
         actionLabel="Add employee" onAction={()=>{setAccountForEmployee(null);setCreatingEmployee(true);}} />
       {recordSaveMessage && <ProductNotice tone="success" title="Employee record updated" action={<button type="button" className="btn btn-ghost btn-sm" onClick={() => setRecordSaveMessage("")}>Dismiss</button>}>{recordSaveMessage}</ProductNotice>}
       {employeeCreationMessage&&<ProductNotice tone="info" title="Employee saved">{employeeCreationMessage}<button type="button" className="btn btn-ghost btn-sm" onClick={()=>setEmployeeCreationMessage("")}>Dismiss</button></ProductNotice>}
@@ -791,6 +808,10 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
       }}
     />}
 
+      <div className="pp-page-actions">
+        {openLifecycle && <button type="button" className="btn btn-ghost btn-sm" onClick={() => openLifecycle()}>Onboarding & offboarding</button>}
+        {openHelp && <button type="button" className="btn btn-ghost btn-sm" onClick={openHelp}>People & Access guide</button>}
+      </div>
       <div className="ev2p-filter-tabs pp-page-tabs" role="tablist" aria-label="People views">
         {PEOPLE_VIEWS.map(([key,label])=><button key={key} type="button" role="tab"
           aria-selected={viewMode===key} className={viewMode===key?"ev2p-filter-tab is-selected":"ev2p-filter-tab"}
@@ -928,7 +949,8 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
         </div>
         <div className="pp-record-status" aria-label="Employment and account status">
           <span>Employment: <strong>{employmentState}</strong></span>
-          <span>Account: <strong>{hasLinkedProfile ? "Linked" : "Not linked"}</strong></span>
+          <span>Sign-in: <strong>{hasLinkedProfile ? "Account linked" : "No account linked"}</strong></span>
+          <span>Responsibilities: <strong>{hasLinkedProfile ? positionLabel : "Roster only"}</strong></span>
         </div>
       </header>
       <details className="pp-photo-editor"><summary>Change employee photo</summary>
@@ -971,6 +993,13 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
           <button type="button" className="btn btn-ghost" onClick={()=>editSelectedEmployment("transferred")}>Assign / transfer department</button>
           <button type="button" className="btn btn-ghost" onClick={()=>setPersonTab("time")}>Work schedule</button>
           <button type="button" className="btn btn-ghost" onClick={()=>setPersonTab("documents")}>Documents</button>
+          {hasLinkedProfile && openLifecycle && <details className="pp-record-lifecycle">
+            <summary>Employment lifecycle</summary>
+            <div>
+              <Button variant="quiet" size="compact" onClick={() => openLifecycle(person.profile_id, "onboarding")}>Start onboarding</Button>
+              <Button variant="quiet" size="compact" onClick={() => openLifecycle(person.profile_id, "offboarding")}>Start offboarding</Button>
+            </div>
+          </details>}
           {!hasLinkedProfile&&<button type="button" className="btn btn-ghost" onClick={()=>openAccessAdministration(null,{
             employeeId:person.employee_id,
             requestedBy:me.id,
@@ -1051,7 +1080,7 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
             <strong>{accessInvitation.email}</strong>
             <span>Invited {new Date(accessInvitation.invited_at).toLocaleString("en-GB", { timeZone: "Africa/Accra" })} · {invitationState}</span>
           </div>
-          <Button variant="quiet" size="compact" onClick={() => openAccessAdministration(person.profile_id || null)}>Review invitation</Button>
+          <Button variant="quiet" size="compact" onClick={() => openAccessAdministration(person.profile_id || null, null, "invitations", accessInvitation.email)}>Review invitation</Button>
         </div> : null}
         <RosterAccountLink
           key={`${me.org_id}:${me.id}:${person.employee_id}:${person.profile_id || ""}`}
@@ -1431,13 +1460,16 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
   }
 
   return renderPeoplePage(<>
-    {viewMode === "access" && <PeopleAccess
+    {viewMode === "access" && <>
+      {returnToUnit && openUnit && <button type="button" className="btn btn-ghost btn-sm" onClick={() => openUnit(returnToUnit)}>Back to Unit Head change</button>}
+      <PeopleAccess
       me={me}
       go={go}
       embedded
       initialProfileId={accessFocusProfileId}
       initialUnitId={accessFocusUnitId}
       initialMode={accessFocusMode}
+      initialInvitationEmail={invitationFocusEmail}
       initialInviteRoster={accessInviteRoster?.requestedBy===me.id && accessInviteRoster?.orgId===me.org_id ? accessInviteRoster : null}
       onChanged={async () => { if (!(await load({ silent: true }))) throw new Error("People records could not be refreshed."); }}
       onLifecycle={(profileId, type) => openLifecycle?.(profileId, type)}
@@ -1445,7 +1477,7 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
         const match = rows.find((entry) => entry.profile_id === profileId);
         if (match) openPerson(match);
       }}
-    />}
+    /></>}
 
     {viewMode === "directory" && <PeopleEmpty title="Select an employee" description="Choose a person from the list to open their record." />}
 
@@ -1523,7 +1555,10 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
           statusTone="warning"
           primaryFact={attentionReasons(entry)[0]}
           secondaryFact={attentionReasons(entry).slice(1).join(" · ")}
-          onClick={() => openPerson(entry)}
+          onClick={async () => {
+            const section = entry.identity_state === "needs_review" ? "access" : "employment";
+            await openPerson(entry, section);
+          }}
         />)}
         </div>
         {!attentionRoster.length && <PeopleEmpty title="No employee record gaps are waiting" description="Roster-only employees remain valid employee records and are not treated as errors." />}
@@ -1535,7 +1570,7 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
         description="These units have no active account assigned as Unit Head. A job title alone does not grant that responsibility. Review the unit before changing its head."
       >
         <div role="region" aria-label="Units without a recorded head" tabIndex={0} style={{maxHeight:360,overflow:"auto",overscrollBehavior:"contain"}}>
-        {unitsWithoutHead.map((unit) => <PeopleFactRow key={unit.id} icon="people" title={unit.name} subtitle="No active recorded Unit Head" meta="Review Units" tone="warning" />)}
+        {unitsWithoutHead.map((unit) => <PeopleFactRow key={unit.id} icon="people" title={unit.name} subtitle="No active recorded Unit Head" meta={openUnit ? <Button size="compact" variant="quiet" onClick={() => openUnit(unit.id)}>Review unit</Button> : null} tone="warning" />)}
         </div>
         {!unitsWithoutHead.length && <PeopleEmpty title="No Unit Head gap recorded" description="Every active unit has a recorded Unit Head." />}
       </PeopleSection>
