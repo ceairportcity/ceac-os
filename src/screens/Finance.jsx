@@ -58,6 +58,7 @@ export default function Finance({ me, openExpenses }) {
   const [loadError, setLoadError] = useState(null);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState(null);
+  const [receipt, setReceipt] = useState(null);
   const mutationBusy = useRef(false);
   const [movementView,setMovementView] = useState("chart");
   const year = new Date().getFullYear();
@@ -151,48 +152,71 @@ export default function Finance({ me, openExpenses }) {
   async function saveIncome() {
     if (mutationBusy.current || busy || loading || loadError || !canEnter) return;
     mutationBusy.current = true;
-    setBusy(true); setMsg(null);
+    setBusy(true); setMsg(null); setReceipt(null);
     try {
       if (!iDesc.trim()) throw new Error("Say what this money was.");
       const amount = toMinor(iAmount);
       if (amount === null || amount <= 0) throw new Error("Enter a positive amount with at most two decimal places.");
-      const { error } = await supabase.from("income_lines").insert({
+      const { data: saved, error } = await supabase.from("income_lines").insert({
         org_id: me.org_id, received_on: iDate || new Date().toISOString().slice(0, 10),
         source_kind: iKind, description: iDesc.trim(), amount_minor: amount,
-        source_note: iSource.trim() || null, currency: iCur, entered_by: me.id });
+        source_note: iSource.trim() || null, currency: iCur, entered_by: me.id })
+        .select("id,received_on,source_kind,description,amount_minor,source_note,reverses_id,entered_at,currency").single();
       if (error) throw error;
-      setSheet(null); setIDesc(""); setIAmount(""); setISource(""); await load();
-    } catch (e) { setMsg(e.message); } finally { mutationBusy.current = false; setBusy(false); }
+      if (!saved?.id) throw new Error("The income save could not be confirmed. Check the ledger before trying again.");
+      setIncome((rows) => [...rows.filter((row) => row.id !== saved.id), saved]);
+      setReceipt(`${money(saved.amount_minor, saved.currency)} recorded for ${saved.description}.`);
+      setSheet(null); setIDesc(""); setIAmount(""); setISource("");
+    } catch (e) { setMsg(e.message || "The save could not be confirmed. Check the ledger before trying again."); } finally { mutationBusy.current = false; setBusy(false); }
   }
 
   async function saveTransfer() {
     if (mutationBusy.current || busy || loading || loadError || !(canEnter || myUnits.length)) return;
     mutationBusy.current = true;
-    setBusy(true); setMsg(null);
+    setBusy(true); setMsg(null); setReceipt(null);
     try {
       if (!tTo) throw new Error("Choose which department is receiving.");
       if (tFrom && tFrom === tTo) throw new Error("A department cannot send money to itself.");
       const amount = toMinor(tAmount);
       if (amount === null || amount <= 0) throw new Error("Enter a positive amount with at most two decimal places.");
       if (!tPurpose.trim()) throw new Error("Say what the money is for.");
-      const { error } = await supabase.from("internal_transfers").insert({
+      const { data: saved, error } = await supabase.from("internal_transfers").insert({
         org_id: me.org_id, from_unit_id: tFrom || null, to_unit_id: tTo,
         amount_minor: amount, sent_on: tDate || new Date().toISOString().slice(0, 10),
-        purpose: tPurpose.trim(), currency: tCur, sent_by: me.id });
+        purpose: tPurpose.trim(), currency: tCur, sent_by: me.id })
+        .select("id,from_unit_id,to_unit_id,amount_minor,sent_on,purpose,state,response_note,sent_at,currency").single();
       if (error) throw error;
-      setSheet(null); setTAmount(""); setTPurpose(""); await load();
-    } catch (e) { setMsg(e.message); } finally { mutationBusy.current = false; setBusy(false); }
+      if (!saved?.id) throw new Error("The transfer save could not be confirmed. Check the ledger before trying again.");
+      setTransfers((rows) => [...rows.filter((row) => row.id !== saved.id), saved]);
+      setReceipt(`${money(saved.amount_minor, saved.currency)} recorded as sent to ${nameOf(saved.to_unit_id)}. Waiting for the receiving department to confirm.`);
+      setSheet(null); setTAmount(""); setTPurpose("");
+    } catch (e) { setMsg(e.message || "The save could not be confirmed. Check the ledger before trying again."); } finally { mutationBusy.current = false; setBusy(false); }
   }
 
   async function respond(t, state, note) {
-    const { error } = await supabase.from("internal_transfers").update({
-      state, responded_by: me.id, responded_at: new Date().toISOString(),
-      response_note: note || null }).eq("id", t.id);
-    if (error) {
+    if (mutationBusy.current || loadError) return;
+    mutationBusy.current = true;
+    setBusy(true); setMsg(null); setReceipt(null);
+    try {
+      const { data: saved, error } = await supabase.from("internal_transfers").update({
+        state, responded_by: me.id, responded_at: new Date().toISOString(),
+        response_note: note || null,
+      }).eq("id", t.id).eq("state", "sent")
+        .select("id,from_unit_id,to_unit_id,amount_minor,sent_on,purpose,state,response_note,sent_at,currency").maybeSingle();
+      if (error) throw error;
+      if (!saved) {
+        await load({ quiet: true });
+        setMsg("This transfer decision could not be confirmed. Check the current transfer record before trying again.");
+        return;
+      }
+      setTransfers((rows) => rows.map((row) => row.id === saved.id ? saved : row));
+      setReceipt(`Transfer to ${nameOf(saved.to_unit_id)} ${saved.state === "confirmed" ? "confirmed" : "marked as disputed"}.`);
+    } catch (error) {
       setMsg(error.message || "The transfer decision could not be saved.");
-      return;
+    } finally {
+      mutationBusy.current = false;
+      setBusy(false);
     }
-    await load();
   }
 
   if (loading) return (
@@ -244,6 +268,7 @@ export default function Finance({ me, openExpenses }) {
         statusTone="neutral"
       />
       <FinanceTabs items={TABS} value={tab} onChange={setTab} label="Administration finance sections" />
+      {receipt && <ProductNotice tone="success" action={<button type="button" className="btn btn-ghost btn-sm" onClick={() => setReceipt(null)}>Dismiss</button>}>{receipt}</ProductNotice>}
       {msg&&!sheet&&<ProductNotice tone="error" title="Finance action could not be confirmed">{msg}</ProductNotice>}
       {me.is_admin && <AdminFinanceRequests key={`${me.org_id}:${me.id}`} me={me} units={units.filter(unit=>myUnits.includes(unit.id))} />}
       {me.is_admin && <Button variant="secondary" onClick={() => setSheet("demo")}>Review demo finance records</Button>}
@@ -394,7 +419,7 @@ export default function Finance({ me, openExpenses }) {
         <ProductNotice tone="success" title="Two-sided transfer confirmation">The sending department records the transfer. Only the receiving department can confirm it. Until both sides agree it remains unconfirmed and both records stay visible.</ProductNotice>
         <FinanceSection eyebrow="Transfers" title="Between departments" meta={transfers.length+" records"} description="Sent, confirmed and disputed states stay explicit; unconfirmed transfers are not counted as confirmed money in.">
           <div className="ev2fin-list">
-          {transfers.sort((a, b) => b.sent_on.localeCompare(a.sent_on)).map((t) => {
+          {[...transfers].sort((a, b) => b.sent_on.localeCompare(a.sent_on)).map((t) => {
             const mineToConfirm = t.state === "sent" && (me.is_admin || myUnits.includes(t.to_unit_id));
             return <FinanceRecordRow
               key={t.id}
@@ -406,8 +431,8 @@ export default function Finance({ me, openExpenses }) {
               statusTone={t.state === "confirmed" ? "success" : t.state === "disputed" ? "danger" : "warning"}
             >
               {mineToConfirm && <>
-                <Button variant="quiet" onClick={() => { const n = prompt("What is different? Both accounts stay visible."); if (n) respond(t, "disputed", n); }}>That is not right</Button>
-                <Button onClick={() => respond(t, "confirmed")}>We received this</Button>
+                <Button variant="quiet" disabled={busy} onClick={() => { const n = prompt("What is different? Both accounts stay visible."); if (n) respond(t, "disputed", n); }}>That is not right</Button>
+                <Button disabled={busy} onClick={() => respond(t, "confirmed")}>We received this</Button>
               </>}
             </FinanceRecordRow>;
           })}
@@ -433,7 +458,7 @@ export default function Finance({ me, openExpenses }) {
             </select>
           </div>
           <input className="field" aria-label="Income source record" placeholder="Which book or record this came from" value={iSource} onChange={(e) => setISource(e.target.value)} />
-          {msg && <div className="flag flag-brick" style={{ marginTop: 12 }}>{msg}</div>}
+          {msg && <ProductNotice tone="error">{msg}</ProductNotice>}
         </ComposerDrawer>)}
 
       {sheet === "demo" && me.is_admin && <Sheet onClose={() => setSheet(null)}><FinanceDemoRecords onChanged={async () => { await load({ quiet: true }); setDemoRevision((value) => value + 1); }} /></Sheet>}
@@ -456,7 +481,7 @@ export default function Finance({ me, openExpenses }) {
               {CURRENCIES.map(([c]) => <option key={c} value={c}>{c}</option>)}
             </select>
           </div>
-          {msg && <div className="flag flag-brick" style={{ marginTop: 12 }}>{msg}</div>}
+          {msg && <ProductNotice tone="error">{msg}</ProductNotice>}
         </ComposerDrawer>)}
     </div>);
 }

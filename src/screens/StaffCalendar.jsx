@@ -304,7 +304,13 @@ export default function StaffCalendar({me,openItem,openMeeting,statusLabel="Staf
         const checklist=composeChecklist.split("\n").map(value=>value.trim()).filter(Boolean);
         if(checklist.length){
           const {error:checkError}=await supabase.from("personal_day_task_checklist").insert(checklist.map((title,index)=>({org_id:me.org_id,profile_id:me.id,task_id:task.id,title,position:index})));
-          if(checkError){void composerRecovery.clear();setComposer(null);throw checkError;}
+          if (checkError) {
+            void composerRecovery.clear();
+            setComposer(null);
+            await load();
+            setError("The task was saved. Its checklist could not be confirmed. Open the existing task to check or add the missing checklist items.");
+            return;
+          }
         }
         setNotice(composeUnscheduled?"Private task kept unscheduled.":"Private task added.");
       }else{
@@ -541,7 +547,12 @@ export default function StaffCalendar({me,openItem,openMeeting,statusLabel="Staf
         }else setEditingPrivateItem({...note,kind:"note"});
         setNotesLibraryOpen(false);
       }}/>}
-    {editingPrivateItem&&personalPlanningReady&&<PersonalPlanningEditor key={editingPrivateItem.id} me={me} item={editingPrivateItem} onClose={()=>setEditingPrivateItem(null)} onChanged={async()=>{await load();setNotesRevision(value=>value+1);}}/>}
+    {editingPrivateItem&&personalPlanningReady&&<PersonalPlanningEditor key={editingPrivateItem.id} me={me} item={editingPrivateItem} onClose={()=>setEditingPrivateItem(null)} onChanged={async (action) => {
+      const label = { note: "Note", task: "Private task", event: "Private event" }[editingPrivateItem.kind];
+      await load();
+      setNotesRevision((value) => value+1);
+      setNotice(`${label} ${action}.`);
+    }}/>}
     {composer&&personalPlanningReady&&<Sheet onClose={()=>!busy&&setComposer(null)}>
       {!composerRecovery.ready ? <LoadingState label="Checking for a saved draft…"/> : <div className="phase6-planning-composer">
         {composerRecovery.notice&&<p role="status">{composerRecovery.notice}</p>}

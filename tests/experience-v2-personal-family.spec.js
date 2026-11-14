@@ -642,7 +642,7 @@ test("Stage 10 Family H4 keeps Units evidence-backed and Administration-owned", 
   expect(units).toContain('supabase.rpc("assign_unit_head"');
   expect(units).toContain("Session and leave facts are context only. They do not measure output.");
   expect(units).toContain("Currencies remain separate; CEAC OS does not invent exchange rates.");
-  expect(units).toContain("Administration can inspect the record but does not enter the Manager’s review queue.");
+  expect(units).toContain("Open a work record to review its current assignee, progress and available actions.");
   expect(units).toContain("Unit Head not assigned");
   expect(units).toContain("Table");
   expect(units).toContain('aria-label="Organisation units register"');

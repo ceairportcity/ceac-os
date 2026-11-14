@@ -21,11 +21,12 @@ function invitationTone(state, revokedAt) {
   return "action";
 }
 
-export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenPerson, onChanged, onLifecycle, initialProfileId = null, initialUnitId = null, initialMode = null, initialInviteRoster = null }) {
+export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenPerson, onChanged, onLifecycle, initialProfileId = null, initialUnitId = null, initialMode = null, initialInvitationEmail = null, initialInviteRoster = null }) {
   const [snapshot, setSnapshot] = useState(null);
   const [snapshotScope, setSnapshotScope] = useState(null);
   const [mode, setMode] = useState("invite");
   const [invitationFilter,setInvitationFilter]=useState("all");
+  const [invitationEmailFilter, setInvitationEmailFilter] = useState("");
   const [form, setForm] = useState({ name: "", email: "", person: "", unit: "", role: "staff", reason: "", lane: "" });
   const inviteDraft = useRef(form);
   inviteDraft.current = form;
@@ -71,6 +72,10 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
     if (initialMode === "invite" || initialMode === "responsibility" || initialMode === "invitations") setMode(initialMode);
     else if (initialProfileId) setMode("responsibility");
   }, [initialProfileId, initialUnitId, initialMode]);
+
+  useEffect(() => {
+    setInvitationEmailFilter(initialInvitationEmail || "");
+  }, [initialInvitationEmail]);
 
   useEffect(() => {
     // Selected roster context is not proof of a verified account; prefill,
@@ -263,7 +268,9 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
   ).length || 0;
   const visibleInvitations=(snapshot?.invitations||[]).filter(invitation=>{
     const state=invitation.revoked_at?"cancelled":invitation.activation_state==="verified"?"verified":invitation.activation_state==="expired"?"expired":"pending";
-    return invitationFilter==="all"||state===invitationFilter;
+    const query = invitationEmailFilter.trim().toLowerCase();
+    const matchesPerson = !query || [invitation.email, invitation.full_name].some((value) => value?.toLowerCase().includes(query));
+    return matchesPerson && (invitationFilter === "all" || state === invitationFilter);
   });
   // The roster is not proof that every account is activated, but an identical
   // email must not be invited blindly a second time.
@@ -472,8 +479,9 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
           <FieldGroup label="Invitation status"><select className="field" aria-label="Invitation status" style={{maxWidth:280}} value={invitationFilter} onChange={e=>setInvitationFilter(e.target.value)}>
             <option value="all">All invitations</option><option value="pending">Awaiting activation</option><option value="expired">Expired</option><option value="verified">Activated</option><option value="cancelled">Cancelled</option>
           </select></FieldGroup>
+          <FieldGroup label="Find an invitation"><input type="search" className="field" value={invitationEmailFilter} onChange={(event) => setInvitationEmailFilter(event.target.value)} /></FieldGroup>
           <p className="screen-note">{visibleInvitations.length} of {snapshot.invitations.length} invitations</p>
-          {!visibleInvitations.length ? <div className="phase5-access-empty">{snapshot.invitations.length?"No invitations match this status.":"No invitations are recorded."}</div> : <div className="phase5-invitation-list">
+          {!visibleInvitations.length ? <div className="phase5-access-empty">{snapshot.invitations.length?"No invitations match these filters.":"No invitations are recorded."}</div> : <div className="phase5-invitation-list">
             {visibleInvitations.map((invitation) => {
               const unit = snapshot.units.find((entry) => entry.id === invitation.unit_id);
               const cancellable = !invitation.revoked_at && invitation.activation_state !== "verified";

@@ -58,6 +58,7 @@ export default function Cost({ me }) {
   const [lines, setLines] = useState([{ spent_on: "", description: "", amount: "" }]);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState(null);
+  const [receipt, setReceipt] = useState(null);
 
   // budget state
   const [gUnit, setGUnit] = useState(null);
@@ -92,7 +93,7 @@ export default function Cost({ me }) {
   async function saveBudget() {
     if (mutationBusy.current || busy || loading || loadError || !me.is_admin || !gUnit) return;
     mutationBusy.current = true;
-    setBusy(true); setMsg(null);
+    setBusy(true); setMsg(null); setReceipt(null);
     try {
       const amount = toMinor(gAmount);
       if (amount === null) throw new Error("Enter a non-negative amount with at most two decimal places, for example 2500.50.");
@@ -106,6 +107,7 @@ export default function Cost({ me }) {
       }
       if (saved.error) throw saved.error;
       if (!saved.data?.id || Number(saved.data.amount_minor) !== amount || saved.data.currency !== gCur) throw new Error("The saved budget could not be verified. Review the recorded budget before retrying.");
+      setReceipt(`Budget saved for ${gUnit.name}: ${money(amount, gCur)}.`);
       setSheet(null); setGAmount(""); setGUnit(null); await load();
     } catch (e) { setMsg(e.message); }
     finally { mutationBusy.current = false; setBusy(false); }
@@ -114,7 +116,7 @@ export default function Cost({ me }) {
   async function saveBatch() {
     if (mutationBusy.current || busy || loading || loadError || !canEnter) return;
     mutationBusy.current = true;
-    setBusy(true); setMsg(null);
+    setBusy(true); setMsg(null); setReceipt(null);
     try {
       const entered = lines.filter(l => l.description.trim() || String(l.amount).trim() || l.spent_on);
       if (entered.some(l => !l.description.trim() || !String(l.amount).trim())) throw new Error("Each entered expense needs both a description and an amount.");
@@ -133,13 +135,17 @@ export default function Cost({ me }) {
       const expected = clean.map(row=>JSON.stringify([row.unit_id,row.amount_minor,row.currency])).sort();
       const recorded = (data || []).filter(row=>row.id).map(row=>JSON.stringify([row.unit_id,Number(row.amount_minor),row.currency])).sort();
       if (JSON.stringify(expected) !== JSON.stringify(recorded)) throw new Error("The saved batch could not be verified. Inspect the recorded expenses before retrying.");
+      const unit = units.find((entry) => entry.id === bUnit)?.name || "the selected unit";
+      setReceipt(`${recorded.length} ${recorded.length === 1 ? "expense" : "expenses"} recorded for ${unit}.`);
       setSheet(null); setLines([{ spent_on: "", description: "", amount: "" }]); setBSource(""); await load();
     } catch (e) { setMsg(e.message); }
     finally { mutationBusy.current = false; setBusy(false); }
   }
 
-  if (loading) return <div className="body"><LoadingState label="Loading expenses…" /></div>;
-  if (loadError) return <div className="body"><ProductNotice tone="error" title="Expenses unavailable" action={<button className="btn btn-ghost" onClick={load}>Try again</button>}>{loadError}</ProductNotice></div>;
+  const saveNotice = receipt && <ProductNotice tone="success" action={<button type="button" className="btn btn-ghost btn-sm" onClick={() => setReceipt(null)}>Dismiss</button>}>{receipt}</ProductNotice>;
+
+  if (loading && !receipt) return <div className="body"><LoadingState label="Loading expenses…" /></div>;
+  if (loadError) return <div className="body">{saveNotice}<ProductNotice tone="error" title="Expenses unavailable" action={<button className="btn btn-ghost" onClick={load}>Try again</button>}>{loadError}</ProductNotice></div>;
 
   const receiptPanel=receiptExpense&&<ComposerDrawer open title="Expense receipts" description={`${receiptExpense.description} · ${money(receiptExpense.amount_minor,receiptExpense.currency)}. Receipts are optional and do not change the recorded amount.`} onClose={()=>setReceiptExpense(null)}>
     <OperationalFileList key={`${me.org_id}:${me.id}:${receiptExpense.id}`} contextType="spend_line" contextId={receiptExpense.id} relation="expense_receipt" canUpload={me.is_admin||financeUnits.includes(receiptExpense.unit_id)} title="Receipts" emptyText="No receipt attached."/>
@@ -173,6 +179,7 @@ export default function Cost({ me }) {
   return (
     <div className="body">
       <WorkPageHeader eyebrow="Finance · actual spend" title="Expenses" description="Record departmental spending with its source record. Budgets are plans, not bank balances." />
+      {saveNotice}
 
       {canEnter && (
         <button className="btn wide-auto" style={{ marginTop: 16 }}

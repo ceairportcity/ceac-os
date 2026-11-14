@@ -555,7 +555,10 @@ function ItemDetail({ id, me, session, isManager = false, initialRoutineDate=nul
       />
       <div className="ceac-work-quick-actions" aria-label="Work tools">
       <WorkProjectLink key={`${me.id}:${item.id}:${item.project_id || "unlinked"}`} me={me} item={item} onLinked={load} />
-      <WorkDetailsEditor key={`${me.id}:${item.id}:${item.last_movement_at}`} me={me} item={item} onSaved={load} />
+      <WorkDetailsEditor key={`${me.id}:${item.id}:${item.last_movement_at}`} me={me} item={item} onSaved={async () => {
+        setSaveResult("Work details saved.");
+        if (!(await load())) setSaveResult("Work details saved. Refresh this work to see the latest details.");
+      }} />
       {me.is_admin && item.assignee_id && item.kind === "task" && item.origin === "assigned"
         && item.status === "not_started" && item.visibility === "unit" && !item.confidential
         && <TaskReassignment key={item.assignee_id} item={item} onSaved={async (assignee) => {

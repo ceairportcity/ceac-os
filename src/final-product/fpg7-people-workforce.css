@@ -80,6 +80,9 @@
 .pp-split-page .ev2p-filter-tab{min-height:44px;padding:10px 2px;border:0;border-bottom:2px solid transparent;border-radius:0;background:transparent;color:var(--ev2-text-secondary);box-shadow:none;white-space:normal;font-size:13px}
 .pp-split-page .ev2p-filter-tab.is-selected{border-bottom-color:var(--ev2-action);color:var(--appearance-ev2-action);background:transparent}
 .pp-page-tabs{margin:0}
+.pp-page-actions,.pp-record-lifecycle > div{display:flex;flex-wrap:wrap;gap:8px}
+.pp-record-lifecycle summary{cursor:pointer;font-size:var(--ev2-text-sm,13px);padding:8px}
+.pp-record-lifecycle > div{padding:4px 8px}
 .pp-split-workspace{display:grid;grid-template-columns:290px minmax(0,1fr);min-height:660px;border-bottom:1px solid var(--ev2-line)}
 .pp-directory-rail{min-width:0;border-right:1px solid var(--ev2-line);align-self:start;position:sticky;top:64px;max-height:calc(100dvh - 80px);display:flex;flex-direction:column}
 .pp-directory-controls{padding:18px 16px 14px;display:grid;gap:10px}

@@ -325,31 +325,44 @@ export const CEAC_GUIDE_ARTICLES = Object.freeze([
   {
     id: "people-and-access",
     title: "People & Access",
-    summary: "Invite, assign and manage organisational access without creating duplicate identities or using job titles as permissions.",
+    summary: "Add employees, manage sign-in, transfer people and hand over a unit.",
     roles: ["admin"],
-    routes: ["people", "settings"],
-    keywords: ["people", "access", "invite", "activation", "unit", "manager", "responsibility", "offboarding"],
+    routes: ["people", "units", "lifecycle", "settings"],
+    keywords: ["people", "access", "invite", "activation", "unit", "manager", "responsibility", "offboarding", "handover", "transfer", "save"],
     primaryRoute: "people",
     sections: [
       {
         title: "One person, one account",
-        body: [
-          "A person may hold multiple unit memberships and responsibilities under one CEAC identity. Adding a responsibility is not the same as inviting a new person.",
-        ],
+        body: ["Use the existing employee record when adding a responsibility or resolving a sign-in issue."],
       },
       {
-        title: "How to onboard",
+        title: "Add an employee",
         steps: [
-          "Invite the person through the authorised People & Access flow.",
-          "Assign the correct organisational placement and Manager relationship.",
-          "The person verifies activation and creates their own password.",
-          "Use additive responsibility when an existing person needs another unit responsibility instead of creating another account.",
+          "Open People & Access and choose Add employee. Record their employment and department.",
+          "If the employee needs to sign in, send an invitation from their record. Check Invitations for activation or expiry. The employee record can exist without a login.",
+          "Once the account is active, use Access to review sign-in and assign any additional unit or team responsibilities. Job titles are recorded under Employment.",
         ],
       },
       {
-        title: "Authority rule",
+        title: "Transfer an employee or change a Unit Head",
+        steps: [
+          "Open the employee record and choose Assign / transfer department. Review the department, reporting manager, effective date and reason before saving. Check History for the recorded change.",
+          "To hand over a unit, open the unit and choose Change Unit Head. If the incoming head is missing, add their existing account to the unit from the same screen, then return and select them.",
+          "Confirm the new head. Check the name shown in the unit, then review reporting lines and open work to see what still needs updating.",
+        ],
+      },
+      {
+        title: "Onboard or offboard someone",
+        steps: [
+          "Open Employment lifecycle on the employee’s record, or use Onboarding & offboarding for the full case list.",
+          "Review the effective date and complete each recorded step. Close an offboarding case only after reviewing the work handover and access steps. The final step disables CEAC access.",
+        ],
+      },
+      {
+        title: "Check a save",
         body: [
-          "Administration remains the ultimate People & Access authority. Access is capability-based; a selected unit, job title or visible role label must not silently create organisation-wide permission.",
+          "Look for a confirmation and check the updated record. If CEAC says the save could not be confirmed, open the record or History before trying again.",
+          "Use Needs attention to open incomplete employee records, reconcile existing logins, or fix a unit without a head.",
         ],
       },
     ],
