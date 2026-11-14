@@ -102,6 +102,7 @@ export default function Room({
   const contactApplied = useRef("");
   const activeRoomIdRef = useRef(null);
   const messageLoadSerial = useRef(0);
+  const messageRemovalVersion = useRef(0);
   const PAGE_SIZE = 60;
 
   const canCoordinate = Boolean(me.is_admin || me.is_exec || me.role === "manager");
@@ -420,6 +421,7 @@ export default function Room({
   async function loadMessages(roomId, showLoading = false) {
     if (!roomId || activeRoomIdRef.current !== roomId) return false;
     const requestSerial = ++messageLoadSerial.current;
+    const removalVersion = messageRemovalVersion.current;
     if (showLoading) setLoading(true);
     try {
       const result = await supabase.from("room_messages")
@@ -431,6 +433,7 @@ export default function Room({
       if (result.error) throw result.error;
       const hydrated = await hydrateMessageMedia(result.data || []);
       if (requestSerial !== messageLoadSerial.current || activeRoomIdRef.current !== roomId) return false;
+      if (removalVersion !== messageRemovalVersion.current) return false;
       setMessages([...hydrated].reverse());
       setHasOlder((result.data || []).length === PAGE_SIZE);
       return true;
@@ -448,6 +451,7 @@ export default function Room({
     setLoadingOlder(true); setError(null);
     const selectedRoomId = room.id;
     const openSerial = roomOpenSerial.current;
+    const removalVersion = messageRemovalVersion.current;
     const feed = feedRef.current;
     const previousHeight = feed?.scrollHeight || 0;
     try {
@@ -462,6 +466,7 @@ export default function Room({
       if (result.error) throw result.error;
       const hydrated = await hydrateMessageMedia(result.data || []);
       if (openSerial !== roomOpenSerial.current || activeRoomIdRef.current !== selectedRoomId) return;
+      if (removalVersion !== messageRemovalVersion.current) return;
       const older = [...hydrated].reverse();
       setMessages((current) => [...older, ...current]);
       setHasOlder((result.data || []).length === PAGE_SIZE);
@@ -598,6 +603,7 @@ export default function Room({
       const result = await supabase.rpc("remove_own_room_message", { p_message_id: message.id });
       if (result.error) throw result.error;
       if (activeRoomIdRef.current === targetRoom) {
+        messageRemovalVersion.current += 1;
         setMessages(current => current.filter(row => row.id !== message.id));
         if (replyTo?.id === message.id) setReplyTo(null);
         onMessagesChanged?.();

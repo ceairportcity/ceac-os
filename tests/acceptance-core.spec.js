@@ -2226,10 +2226,16 @@ test("Administration surfaces use policy-safe HR states and real employee record
   await lifecycleDialog.getByLabel("Lifecycle reason").fill("Acceptance onboarding lifecycle");
   await lifecycleDialog.getByRole("button", { name: "Start lifecycle case", exact: true }).click();
   await expect(page.getByText("Employee lifecycle case started.", { exact: true })).toBeVisible();
-  for (let step = 1; step <= 4; step += 1) {
-    await page.getByLabel("Lifecycle completion note").fill("Acceptance lifecycle step " + step);
+  const lifecycleReceipts = [
+    "“Confirm employment record” marked complete.",
+    "“Confirm unit & manager” marked complete.",
+    "“Confirm system readiness” marked complete.",
+    "Onboarding complete.",
+  ];
+  for (const [index, receipt] of lifecycleReceipts.entries()) {
+    await page.getByLabel("Lifecycle completion note").fill("Acceptance lifecycle step " + (index + 1));
     await page.getByRole("button", { name: "Complete current step", exact: true }).click();
-    await expect(page.getByText("Lifecycle step completed.", { exact: true })).toBeVisible();
+    await expect(page.getByText(receipt, { exact: true })).toBeVisible();
   }
   await page.reload();
   await expect(page.getByText(/Same Unit Fixture · Onboarding/).first()).toBeVisible();

@@ -37,11 +37,12 @@ export default function Units({ me, openItem, openPeopleAccess, openProject }) {
   const [savingUnit, setSavingUnit] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [notice, setNotice] = useState("");
 
   useEffect(() => { load(); }, [me.id]);
 
-  async function load() {
-    setLoading(true);
+  async function load({ quiet = false } = {}) {
+    if (!quiet) setLoading(true);
     setError(null);
     try {
       const year = new Date().getFullYear();
@@ -113,6 +114,7 @@ export default function Units({ me, openItem, openPeopleAccess, openProject }) {
         };
       });
       setUnits(built);
+      return built;
     } catch (e) {
       setError(humanError(e, "The Units workspace could not load."));
     } finally {
@@ -135,6 +137,7 @@ export default function Units({ me, openItem, openPeopleAccess, openProject }) {
   async function saveUnitSetup() {
     setSavingUnit(true);
     setError(null);
+    setNotice("");
     try {
       const name = unitForm.name.trim();
       const code = unitForm.code.trim().toUpperCase();
@@ -155,7 +158,8 @@ export default function Units({ me, openItem, openPeopleAccess, openProject }) {
           || Object.entries(payload).some(([key,value]) => result.data[key] !== value))
         throw new Error("The unit setup could not be confirmed. Review the current organisation structure before trying again.");
       setUnitSheet(null);
-      await load();
+      const refreshed = await load({ quiet: true });
+      setNotice(refreshed ? `Saved ${name}.` : "Unit saved. Reload to see the latest setup.");
     } catch (e) {
       setError(humanError(e, "The unit setup could not be saved."));
     } finally {
@@ -168,11 +172,17 @@ export default function Units({ me, openItem, openPeopleAccess, openProject }) {
     if (!profileId) return;
     setSavingHead(unit.id);
     setError(null);
+    setNotice("");
     try {
       const result = await supabase.rpc("assign_unit_head", { p_unit_id: unit.id, p_profile_id: profileId });
       if (result.error) throw result.error;
       setHeadChoice((current) => ({ ...current, [unit.id]: "" }));
-      await load();
+      const refreshed = await load({ quiet: true });
+      const head = refreshed?.find(entry => entry.id === unit.id)?.head;
+      setNotice(head?.profile_id === profileId
+        ? `${head.profiles?.full_name || "The selected person"} is now Unit Head for ${unit.name}.`
+        : "Unit Head change saved. Reload to confirm the current head.");
+
     } catch (e) {
       setError(humanError(e, "The Unit Head could not be assigned."));
     } finally {
@@ -220,11 +230,13 @@ export default function Units({ me, openItem, openPeopleAccess, openProject }) {
       : openUnit.report ? "Draft" : "Missing";
 
     return <div className="body admin-unit-detail">
-      <button className="back" onClick={() => setOpenUnitId(null)}>← All units</button>
+      <button className="back" onClick={() => { setOpenUnitId(null); setNotice(""); setError(null); }}>← All units</button>
       <WorkPageHeader eyebrow={`Organisation · ${openUnit.code || "Unit"}`} title={openUnit.name}
         description={`${openUnit.head ? `Led by ${openUnit.head.profiles?.full_name || "Unit Head"}` : "Unit Head not assigned"} · ${openUnit.people.length} ${openUnit.people.length === 1 ? "person" : "people"}`}
         actionIcon="edit" actionLabel="Edit setup" onAction={()=>openUnitSetup(openUnit)} />
 
+      {notice && <ProductNotice tone="success">{notice}</ProductNotice>}
+      {error && !unitSheet && <ProductNotice tone="error" title="Unit update needs attention">{error}</ProductNotice>}
       {!openUnit.head && <ProductNotice tone="attention" title="Unit Head not assigned">Administration should assign an existing member as Unit Head after their account is active.</ProductNotice>}
 
       <nav aria-label="Unit workspace"><SegmentedControl ariaLabel="Unit sections" value={area} onChange={setArea} items={[
@@ -362,6 +374,7 @@ export default function Units({ me, openItem, openPeopleAccess, openProject }) {
       </div>
       <button className="btn btn-sm" onClick={() => openUnitSetup(null)}>Add unit</button>
     </div>
+    {notice && <ProductNotice tone="success">{notice}</ProductNotice>}
     {error && <ProductNotice tone="error" title="Units need attention" action={<button className="btn btn-ghost btn-sm" onClick={load}>Try again</button>}>{error}</ProductNotice>}
     <section className="card" aria-label="Unit directory">
       <div className="admin-unit-title-row"><h2>Organisation units <small>{units.length}</small></h2>

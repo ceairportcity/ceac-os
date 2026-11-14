@@ -9,7 +9,7 @@ import {humanError} from "../lib/productLanguage";
  * the owner's diary, checklist, progress recorder or assignment editor.
  * Existing database RLS remains the authority for each read and shared room.
  */
-export default function ExecutiveWorkReview({id, me, back, openRoom}) {
+export default function ExecutiveWorkReview({id, me, back, openRoom, openFullWork}) {
   const [item,setItem]=useState(null),[loading,setLoading]=useState(true),[error,setError]=useState("");
   const [opened,setOpened]=useState(false),[submission,setSubmission]=useState(null),[reading,setReading]=useState(false),[submissionError,setSubmissionError]=useState("");
   const [reload,setReload]=useState(0);
@@ -50,6 +50,7 @@ export default function ExecutiveWorkReview({id, me, back, openRoom}) {
     <p className="screen-note">Review only · Private working activity and completion checklists are not shown here.</p>
     {item.expected_outcome&&<WorkDetailSection title="Expected outcome"><WorkDetailCopy>{item.expected_outcome}</WorkDetailCopy></WorkDetailSection>}
     <WorkDetailSection title="Submitted outcome">
+      {openFullWork&&<button type="button" className="btn btn-ghost" onClick={openFullWork}>Open full work record</button>}
       {!opened&&<button type="button" className="btn" onClick={openSubmission}>View submitted outcome</button>}
       {reading?<LoadingState label="Opening submitted outcome…"/>:submissionError?<ProductNotice tone="error" title="Submitted outcome unavailable" action={<button type="button" className="btn" onClick={openSubmission}>Try again</button>}>{submissionError}</ProductNotice>:opened&&<>
         {submission?<>

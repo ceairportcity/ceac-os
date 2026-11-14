@@ -67,6 +67,7 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
   const [creatingEmployee,setCreatingEmployee] = useState(false);
   const [accountForEmployee,setAccountForEmployee]=useState(null);
   const [employeeCreationMessage,setEmployeeCreationMessage]=useState("");
+  const [recordSaveMessage, setRecordSaveMessage] = useState("");
   const [operationalDirectory, setOperationalDirectory] = useState([]);
   const [filter, setFilter] = useState("all");
   const [viewMode, setViewMode] = useState("directory");
@@ -299,7 +300,7 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
         // The photo is simply unavailable; no public Storage URL is substituted.
       }
     })();
-    return true;
+    return rosterRows;
     } catch (failure) {
       if (generation === rosterGeneration.current) {
         setVerifiedRosterScope(null);
@@ -310,7 +311,8 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
     }
   }
 
-  async function openPerson(summary) {
+  async function openPerson(summary, section = "overview") {
+    setRecordSaveMessage("");
     setViewMode("directory");
     const generation = ++personGeneration.current;
     employeeFileWriteBusy.current = false;
@@ -324,7 +326,7 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
     setDetailLoading(true);
     setError(null);
     setDrill(null);
-    setPersonTab("overview");
+    setPersonTab(section);
 
     try {
     const [rosterDetailResult,hrContactResult] = await Promise.all([
@@ -669,7 +671,11 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
       }) : value);
       setEmploymentEditor(false);
       setEmploymentForm(null);
-      await load();
+      const refreshed = await load({ silent: true });
+      if (generation === personGeneration.current) setRecordSaveMessage(refreshed
+        ? "Employment change saved. View the effective date and reason in History."
+        : "Employment change saved. Refresh the directory to see the latest record.");
+
     } catch (failure) {
       if (generation === personGeneration.current) {
         setError(humanError(failure, "The employment change could not be confirmed. Check current employment history before retrying."));
@@ -758,6 +764,7 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
     return <div className="body ev2-people-page ev2-people-admin pp-split-page">
       <PeoplePageHeader title="People & Access" description="Employee records and account access"
         actionLabel="Add employee" onAction={()=>{setAccountForEmployee(null);setCreatingEmployee(true);}} />
+      {recordSaveMessage && <ProductNotice tone="success" title="Employee record updated" action={<button type="button" className="btn btn-ghost btn-sm" onClick={() => setRecordSaveMessage("")}>Dismiss</button>}>{recordSaveMessage}</ProductNotice>}
       {employeeCreationMessage&&<ProductNotice tone="info" title="Employee saved">{employeeCreationMessage}<button type="button" className="btn btn-ghost btn-sm" onClick={()=>setEmployeeCreationMessage("")}>Dismiss</button></ProductNotice>}
     {creatingEmployee && <HRCreateRosterEmployee
       me={me} units={units} employees={rows} accounts={operationalDirectory}
@@ -1049,7 +1056,20 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
         <RosterAccountLink
           key={`${me.org_id}:${me.id}:${person.employee_id}:${person.profile_id || ""}`}
           me={me} employee={person} documents={employeeFiles.documents}
-          onLinked={()=>{personGeneration.current+=1;setPerson(null);setDrill(null);void load();}}
+          onLinked={async (profileId) => {
+            const generation = personGeneration.current;
+            const refreshed = await load({ silent: true });
+            if (generation !== personGeneration.current) return;
+            const linked = refreshed && refreshed.find(entry => entry.id === person.employee_id && entry.profile_id === profileId);
+            if (!linked) {
+              setRecordSaveMessage("Login link saved. Refresh People & Access to see the updated record.");
+              return;
+            }
+            const opening = openPerson(linked, "access");
+            const reopeningGeneration = personGeneration.current;
+            await opening;
+            if (reopeningGeneration === personGeneration.current) setRecordSaveMessage("Login link saved. The updated login is shown under Access.");
+          }}
         />
         <p className="phase5-person-access-note">
           Job title never grants application authority. Additional unit or team responsibility is recorded against the existing identity; access deactivation and offboarding use the controlled lifecycle workflow.
