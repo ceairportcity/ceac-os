@@ -214,6 +214,7 @@ test("Stage 10 Family B3 Manager Team evidence opens the existing unit-scoped pe
 
 async function openManagerPerson(browser, viewport) {
   const { context, page } = await openManagerTeam(browser, viewport);
+  await page.getByRole("button", { name: "Unit people", exact: true }).click();
   const person = page.locator(".ev2p-evidence-person").filter({ hasText: "Staff Fixture" }).first();
   await expect(person).toBeVisible();
   await person.locator(".ev2p-evidence-person-main").click();

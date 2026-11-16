@@ -405,7 +405,7 @@ function UnitPeople({ me, openPerson }) {
         {msg && <div className="flag flag-amber" style={{ marginTop: 12 }}>{msg}</div>}
         <button className="btn" style={{ marginTop: 14 }} onClick={invite} disabled={busy || !email.trim() || !fullName.trim()}>{busy ? "Sending..." : "Send Staff invitation"}</button>
       </Sheet>}
-      {sheet === "volunteer" && <Sheet onClose={() => { if (!busy) { setSheet(null); setMsg(null); } }}>
+      {sheet === "volunteer" && <Sheet ariaLabel="Add volunteer" onClose={() => { if (!busy) { setSheet(null); setMsg(null); } }}>
         <div className="phase6-volunteer-sheet">
           <div>
             <span className="eyebrow">People & volunteers</span>

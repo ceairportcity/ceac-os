@@ -57,14 +57,15 @@ for (const viewport of [
     await page.screenshot({ path: `test-artifacts/phase6-reference-05-people-volunteers-${viewport.name}.png`, fullPage: true });
 
     await page.getByRole("button", { name: "Add volunteer", exact: true }).click();
-    await expect(page.getByText("Add volunteer", { exact: true }).first()).toBeVisible();
+    const form = page.getByRole("dialog", { name: "Add volunteer" });
+    await expect(form).toBeVisible();
     for (const label of ["No attendance tracking","Event-based","Specific days","Custom schedule"]) {
-      await expect(page.getByText(label, { exact: true }).first()).toBeVisible();
+      await expect(form.getByText(label, { exact: true })).toBeVisible();
     }
     await page.screenshot({ path: `test-artifacts/phase6-reference-06-add-volunteer-${viewport.name}.png`, fullPage: true });
-    await page.getByText("Specific days", { exact: true }).first().click();
+    await form.getByText("Specific days", { exact: true }).click();
     await page.screenshot({ path: `test-artifacts/phase6-reference-07-working-pattern-${viewport.name}.png`, fullPage: true });
-    await page.getByRole("button", { name: "Cancel", exact: true }).click();
+    await form.getByRole("button", { name: "Cancel", exact: true }).click();
 
     const volunteer = page.locator(".ev2p-evidence-person").filter({ hasText: "Same Unit Fixture" }).first();
     await expect(volunteer).toBeVisible();
