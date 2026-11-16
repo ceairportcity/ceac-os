@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { LoadingState, ProductNotice } from "./bits";
 import ExecutiveProjectDepartments from "./ExecutiveProjectDepartments";
+import ExecutiveProjectPerson from "./ExecutiveProjectPerson";
 import Stage2ProjectOverview from "./Stage2ProjectOverview";
 import { ProjectTabs, ProjectWorkspaceHeader } from "../experience-v2/project-family/ProjectFamilyV2";
 
@@ -11,7 +12,7 @@ import { ProjectTabs, ProjectWorkspaceHeader } from "../experience-v2/project-fa
  * PostgREST and database RLS determine visible records. This never upgrades
  * access, estimates unavailable cross-unit numbers, or shows private work.
  */
-export default function Stage2ProjectReader({ projectId, openItem, onBack, me, goAssign }) {
+export default function Stage2ProjectReader({ projectId, openItem, onBack, me, goAssign, onAssignmentChanged }) {
   const [reload, setReload] = useState(0);
   const [view, setView] = useState("overview");
   const [project, setProject] = useState(null);
@@ -26,7 +27,7 @@ export default function Stage2ProjectReader({ projectId, openItem, onBack, me, g
     (async () => {
       try {
         const projectResult = await supabase.from("projects")
-          .select("id,org_id,kind,name,purpose,status,starts_on,ends_on,lead_unit_id,created_by,created_at,creator:profiles!projects_created_by_fkey(full_name),units!projects_lead_unit_id_fkey(name)")
+          .select("id,org_id,kind,name,purpose,status,starts_on,ends_on,lead_unit_id,archived_at,assigned_person_id,assignee:profiles!projects_assigned_person_id_fkey(full_name),created_by,created_at,creator:profiles!projects_created_by_fkey(full_name),units!projects_lead_unit_id_fkey(name)")
           .eq("id", projectId).single();
         if (projectResult.error) throw projectResult.error;
         const [participation, phases, work, milestones, objectives] = await Promise.all([
@@ -73,9 +74,16 @@ export default function Stage2ProjectReader({ projectId, openItem, onBack, me, g
     {error && <ProductNotice tone="error" title="Project details unavailable">{error}</ProductNotice>}
     {project && <>
       <ProjectWorkspaceHeader kind={project.kind} title={project.name} purpose={project.purpose}
-        status={project.status} context={project.units?.name || "Lead unit not recorded"} onBack={onBack} />
+        status={project.status} context={project.assignee?.full_name || (project.assigned_person_id === me?.id ? me.full_name : null) || project.units?.name || "Lead unit not recorded"} onBack={onBack} />
       <p className="screen-note">This page shows the project updates available to you. Private employee information stays private.</p>
-      {me?.is_exec && ["planned","active"].includes(project.status) && <div className="s2-project-quick-actions" aria-label="Project actions"><button type="button" className="btn btn-sm" onClick={() => goAssign?.({projectId:project.id})}>Assign project work</button><ExecutiveProjectDepartments me={me} project={project} onSaved={() => setReload(n => n+1)} /></div>}
+      {me?.is_exec && ["planned","active"].includes(project.status) && !project.archived_at && <div className="s2-project-quick-actions" aria-label="Project actions">
+        <button type="button" className="btn btn-sm" onClick={() => goAssign?.({projectId:project.id})}>Assign project work</button>
+        <ExecutiveProjectPerson me={me} project={project} onSaved={() => {
+          if (onAssignmentChanged) void onAssignmentChanged();
+          else setReload(n => n+1);
+        }} />
+        <ExecutiveProjectDepartments me={me} project={project} onSaved={() => setReload(n => n+1)} />
+      </div>}
       <ProjectTabs ariaLabel="Executive project details" items={[
         ["overview", "Progress"],
         ["people", "People & departments", project.participants.length],

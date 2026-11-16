@@ -34,7 +34,7 @@ export default function AdminProjects({ me, scheduleMeeting, openItem, initialPr
     setLoading(true); setError(null); setProjects([]);
     try{
       const [projectResult,unitResult,objectiveResult,projectUnitResult]=await Promise.all([
-        supabase.from("projects").select("id,name,status,archived_at,lead_unit_id,starts_on,ends_on,purpose,created_by,created_at,creator:profiles!projects_created_by_fkey(full_name)").eq("org_id",me.org_id).order("ends_on",{ascending:true,nullsFirst:false}),
+        supabase.from("projects").select("id,name,status,archived_at,lead_unit_id,assigned_person_id,assignee:profiles!projects_assigned_person_id_fkey(full_name),starts_on,ends_on,purpose,created_by,created_at,creator:profiles!projects_created_by_fkey(full_name)").eq("org_id",me.org_id).order("ends_on",{ascending:true,nullsFirst:false}),
         supabase.from("units").select("id,name,active").eq("org_id",me.org_id),
         supabase.from("objectives").select("id,project_id,status").eq("org_id",me.org_id),
         supabase.from("project_units").select("project_id,unit_id"),
@@ -46,7 +46,8 @@ export default function AdminProjects({ me, scheduleMeeting, openItem, initialPr
       setProjects((projectResult.data||[]).map((project)=>{
         const objectives=(objectiveResult.data||[]).filter((row)=>row.project_id===project.id);
         const participating=(projectUnitResult.data||[]).filter((row)=>row.project_id===project.id).map((row)=>unitById[row.unit_id]).filter(Boolean);
-        return {...project,leadUnit:unitById[project.lead_unit_id]||"No lead unit",participating,objectives};
+        return {...project,leadUnit:unitById[project.lead_unit_id]||"No lead unit",
+          responsiblePerson:project.assigned_person_id?(project.assignee?.full_name||"Assigned individual"):null,participating,objectives};
       }));
     }catch(err){setError(humanError(err,"Projects could not be loaded."));}
     finally{setLoading(false);}
@@ -58,13 +59,13 @@ export default function AdminProjects({ me, scheduleMeeting, openItem, initialPr
 
   const selected = projects.find(project => project.id === selectedProjectId);
   if (selectedProjectId && !selected) return <div className="body admin-projects"><button className="back" onClick={()=>openProject?.(null)}>← Projects</button><ProductNotice tone="error" title="Project unavailable">This project could not be verified in your organisation.</ProductNotice></div>;
-  if (selected && me.is_exec) return <div className="body admin-projects ev2-project-page executive-project-layout">
+  if (selected && (me.is_exec || selected.assigned_person_id && !selected.lead_unit_id)) return <div className="body admin-projects ev2-project-page executive-project-layout">
     <aside className="meeting-register ceac-project-register" aria-label="Projects">
       <header><h2>Projects</h2></header>
       {projects.filter(project => Boolean(project.archived_at) === Boolean(selected.archived_at)).map(project =>
         <button key={project.id} type="button" className="meeting-list-row"
           aria-current={project.id === selected.id ? "true" : undefined} onClick={() => openProject?.(project.id)}>
-          <span><strong>{project.name}</strong><small>{project.leadUnit}</small></span>
+          <span><strong>{project.name}</strong><small>{project.responsiblePerson||project.leadUnit}</small></span>
         </button>)}
     </aside>
     <div className="executive-project-content">
@@ -73,7 +74,7 @@ export default function AdminProjects({ me, scheduleMeeting, openItem, initialPr
       await load();
     }}/>
     <Stage2ProjectReader key={`${me.org_id}:${me.id}:${selected.id}`}
-      projectId={selected.id} me={me} openItem={openItem} onBack={()=>openProject?.(null)} goAssign={goAssign} />
+      projectId={selected.id} me={me} openItem={openItem} onBack={()=>openProject?.(null)} goAssign={goAssign} onAssignmentChanged={load} />
     </div>
   </div>;
   if (selected) return <ManagerProjects key={`${me.org_id}:${me.id}:${selected.id}`} me={me} projectUnitId={selected.lead_unit_id}
@@ -87,7 +88,7 @@ export default function AdminProjects({ me, scheduleMeeting, openItem, initialPr
   const attention=normalProjects.filter((project)=>project.objectives.some((row)=>["at_risk","not_met"].includes(row.status)));
   const statusMatches=filter==="archived"?archivedProjects:filter==="active"?active:filter==="planned"?planned:filter==="attention"?attention:normalProjects;
   const query=search.trim().toLocaleLowerCase();
-  const visible=statusMatches.filter(project=>!query||[project.name,project.purpose,project.leadUnit,projectCreatorLabel(project,me),...project.participating].some(value=>String(value||"").toLocaleLowerCase().includes(query)));
+  const visible=statusMatches.filter(project=>!query||[project.name,project.purpose,project.leadUnit,project.responsiblePerson,projectCreatorLabel(project,me),...project.participating].some(value=>String(value||"").toLocaleLowerCase().includes(query)));
   const chooseFilter=(next)=>setFilter(current=>current===next?"all":next);
 
   return <div className="body admin-projects ev2-project-page ev2-project-admin">
@@ -110,7 +111,7 @@ export default function AdminProjects({ me, scheduleMeeting, openItem, initialPr
     ]} />
 
     <div className="ev2p-register-toolbar">
-      <label className="ev2p-register-search"><span>Find a project</span><input type="search" aria-label="Find a project" placeholder="Search by project or department" value={search} onChange={event=>setSearch(event.target.value)} /></label>
+      <label className="ev2p-register-search"><span>Find a project</span><input type="search" aria-label="Find a project" placeholder="Search by project, person or department" value={search} onChange={event=>setSearch(event.target.value)} /></label>
       <p aria-live="polite">{visible.length} {visible.length===1?"project":"projects"} shown</p>
     </div>
     <ProjectSectionHeader eyebrow="Your project portfolio" title={filter==="archived"?"Archived projects":filter==="all"?"All projects":filter==="attention"?"Projects needing attention":filter==="active"?"Active projects":"Planned projects"} count={visible.length} />
@@ -144,7 +145,7 @@ export default function AdminProjects({ me, scheduleMeeting, openItem, initialPr
           key={project.id}
           eyebrow="Project"
           title={project.name}
-          meta={`Lead: ${project.leadUnit} · Created by ${projectCreatorLabel(project, me)} · ${projectCreatedAtLabel(project.created_at)} · ${dateContext}`}
+          meta={`Lead: ${project.responsiblePerson||project.leadUnit} · Created by ${projectCreatorLabel(project, me)} · ${projectCreatedAtLabel(project.created_at)} · ${dateContext}`}
           note={`${project.purpose||"No description added yet."} · Other departments: ${projectUnits}`}
           status={project.archived_at?"archived":project.status}
           facts={facts}

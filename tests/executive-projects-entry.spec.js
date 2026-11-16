@@ -31,6 +31,12 @@ test('Executive Projects navigation offers project creation',async({page})=>{
  await page.getByRole('button',{name:'Create project'}).click();
  await expect(page.getByRole('heading',{name:'Create project'})).toBeVisible();
  await expect(page.getByLabel('Lead department')).toBeVisible();
+ await page.getByRole('radio',{name:'Individual'}).check();
+ await expect(page.getByLabel('Lead department')).toHaveCount(0);
+ await page.getByLabel('Responsible person').selectOption('31000000-0000-4000-8000-000000000001');
+ await expect(page.getByLabel('Responsible person')).toHaveValue('31000000-0000-4000-8000-000000000001');
+ await page.getByRole('radio',{name:'Department'}).check();
+ await expect(page.getByLabel('Lead department')).toBeVisible();
 });
 
 test('Staff does not gain Executive project access through a direct URL',async({page})=>{

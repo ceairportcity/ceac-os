@@ -3,16 +3,18 @@ import {useEffect,useRef,useState} from "react";
 import {ComposerDrawer} from "../experience-v2/components";
 import {FieldGroup,ProductNotice} from "./bits";
 import {supabase} from "../lib/supabase";
+import ProjectPersonPicker from "./ProjectPersonPicker";
 import {humanError} from "../lib/productLanguage";
 
 export default function AdminProjectComposer({me,units,onClose,onCreated}) {
-  const [form,setForm]=useState({name:"",purpose:"",leadUnitId:units.some(u=>u.id===me.unit_id)?me.unit_id:"",startsOn:"",endsOn:"",participants:[]});
+  const [form,setForm]=useState({name:"",purpose:"",leadUnitId:units.some(u=>u.id===me.unit_id)?me.unit_id:"",startsOn:"",endsOn:"",participants:[],assignmentType:"department",assignedPersonId:""});
   const draft = useWorkFormDraft(me, "admin-create-project", form, setForm);
   const [busy,setBusy]=useState(false),[error,setError]=useState("");
   const saving=useRef(false),errorRef=useRef(null),createdId=useRef(null);
   useEffect(()=>{if(error)errorRef.current?.focus();},[error]);
   const set=(key,value)=>setForm(previous=>({...previous,[key]:value}));
-  const ready=form.name.trim()&&units.some(u=>u.id===form.leadUnitId)&&(!form.startsOn||!form.endsOn||form.endsOn>=form.startsOn);
+  const individual=me.is_exec&&form.assignmentType==="individual";
+  const ready=form.name.trim()&&(individual?form.assignedPersonId:units.some(u=>u.id===form.leadUnitId))&&(!form.startsOn||!form.endsOn||form.endsOn>=form.startsOn);
   async function save(event) {
     event.preventDefault();
     if(!ready||saving.current)return;
@@ -21,19 +23,24 @@ export default function AdminProjectComposer({me,units,onClose,onCreated}) {
       // A confirmed server identity is retained if a subsequent read fails;
       // retry verifies it rather than creating a second project.
       if(!createdId.current) {
-        const result=await supabase.rpc("create_project_with_participants",{
-          p_lead_unit_id:form.leadUnitId,p_name:form.name.trim(),p_purpose:form.purpose.trim()||null,
+        const details={
+          p_name:form.name.trim(),p_purpose:form.purpose.trim()||null,
           p_starts_on:form.startsOn||null,p_ends_on:form.endsOn||null,
-          p_participant_unit_ids:form.participants.filter(id=>id!==form.leadUnitId),
-        });
+        };
+        const result=individual
+          ? await supabase.rpc("create_individually_assigned_project",{...details,p_assigned_person_id:form.assignedPersonId})
+          : await supabase.rpc("create_project_with_participants",{
+            ...details,p_lead_unit_id:form.leadUnitId,
+            p_participant_unit_ids:form.participants.filter(id=>id!==form.leadUnitId),
+          });
         if(result.error)throw result.error;
         if(typeof result.data!=="string"||!result.data)throw new Error("The project identity could not be confirmed. Review Projects before retrying.");
         createdId.current=result.data;
         void draft.clear();
       }
-      const result=await supabase.from("projects").select("id,org_id,name,lead_unit_id").eq("org_id",me.org_id).eq("id",createdId.current).single();
+      const result=await supabase.from("projects").select("id,org_id,name,lead_unit_id,assigned_person_id").eq("org_id",me.org_id).eq("id",createdId.current).single();
       if(result.error)throw result.error;
-      if(result.data?.id!==createdId.current||result.data.org_id!==me.org_id||result.data.name!==form.name.trim()||result.data.lead_unit_id!==form.leadUnitId)
+      if(result.data?.id!==createdId.current||result.data.org_id!==me.org_id||result.data.name!==form.name.trim()||(individual ? result.data.assigned_person_id!==form.assignedPersonId || result.data.lead_unit_id!==null : result.data.lead_unit_id!==form.leadUnitId))
         throw new Error("The saved project could not be independently confirmed. Review Projects before retrying.");
       await onCreated(createdId.current);
     } catch(failure) {setError(humanError(failure,"The project could not be confirmed. Your draft is retained."));}
@@ -50,7 +57,13 @@ export default function AdminProjectComposer({me,units,onClose,onCreated}) {
           <FieldGroup label="Purpose"><textarea className="field" rows={3} placeholder="What is this project for, and what should it achieve?" value={form.purpose} onChange={e=>set("purpose",e.target.value)}/></FieldGroup>
         </section>
         <section className="ceac-project-create-section" aria-labelledby="project-people-heading">
-          <div className="ceac-project-create-section-head"><span className="ceac-project-create-step">02</span><div><h3 id="project-people-heading">Who's responsible?</h3><p>Choose the department that will lead this project.</p></div></div>
+          <div className="ceac-project-create-section-head"><span className="ceac-project-create-step">02</span><div><h3 id="project-people-heading">Who's responsible?</h3><p>{me.is_exec?"Choose who will lead this project.":"Choose the department that will lead this project."}</p></div></div>
+          {me.is_exec&&<fieldset className="ceac-project-create-departments">
+            <legend className="field-label">Assign to</legend>
+            <label className="ck"><input type="radio" name="project-assignment" checked={!individual} onChange={()=>set("assignmentType","department")} />Department</label>
+            <label className="ck"><input type="radio" name="project-assignment" checked={individual} onChange={()=>set("assignmentType","individual")} />Individual</label>
+          </fieldset>}
+          {individual ? <ProjectPersonPicker orgId={me.org_id} value={form.assignedPersonId||""} onChange={id=>set("assignedPersonId",id)} /> : <>
           <FieldGroup label="Lead department"><select className="field" required value={form.leadUnitId} onChange={e=>setForm(previous=>({...previous,leadUnitId:e.target.value,participants:previous.participants.filter(id=>id!==e.target.value)}))}>
             <option value="">Choose a department</option>{units.map(unit=><option key={unit.id} value={unit.id}>{unit.name}</option>)}
           </select></FieldGroup>
@@ -60,7 +73,7 @@ export default function AdminProjectComposer({me,units,onClose,onCreated}) {
             <fieldset className="ceac-project-create-departments"><legend className="field-label">Participating departments</legend>
               {units.filter(unit=>unit.id!==form.leadUnitId).map(unit=><label className="ck" key={unit.id}><input type="checkbox" checked={form.participants.includes(unit.id)} onChange={e=>set("participants",e.target.checked?[...form.participants,unit.id]:form.participants.filter(id=>id!==unit.id))}/><span>{unit.name}</span></label>)}
             </fieldset>
-          </details>
+          </details></>}
         </section>
         <section className="ceac-project-create-section" aria-labelledby="project-dates-heading">
           <div className="ceac-project-create-section-head"><span className="ceac-project-create-step">03</span><div><h3 id="project-dates-heading">Project dates</h3><p>Add dates if you know them. You can plan the work after creating the project.</p></div></div>
