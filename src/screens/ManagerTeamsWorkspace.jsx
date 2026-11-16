@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Archive, ArrowDown, ArrowLeft, ArrowUp, ChevronRight, ClipboardList, MessageCircle, Plus, Search, Users } from "lucide-react";
+import { CeacIcon } from "../experience-v2/icons";
 import { Avatar, LoadingState, ProductNotice, Sheet } from "../components/bits";
 import { supabase } from "../lib/supabase";
 import { dueLabel, isWorkOverdue } from "../lib/time";
@@ -29,19 +29,19 @@ async function readRows(makeQuery) {
 function WorkRow({ item, onOpen }) {
   const overdue = isWorkOverdue(item);
   return <button type="button" className="mt-work-row" onClick={() => onOpen(item.id)}>
-    <span className="mt-row-icon"><ClipboardList size={17} aria-hidden="true" /></span>
+    <span className="mt-row-icon"><CeacIcon name="task" size={17} aria-hidden="true" /></span>
     <span className="mt-row-main">
       <strong>{item.title}</strong>
       <small>{[item.ref, item.owner?.full_name || (item.assignee_id ? "Owner unavailable" : "No owner"), item.due_at && dueLabel(item.due_at, item.status)].filter(Boolean).join(" · ")}</small>
     </span>
     <span className={overdue ? "mt-work-status is-overdue" : "mt-work-status"}>{overdue ? "Past due" : STATUS[item.status] || "Status unavailable"}</span>
-    <ChevronRight size={16} className="mt-chevron" aria-hidden="true" />
+    <CeacIcon name="chevronRight" size={16} className="mt-chevron" aria-hidden="true" />
   </button>;
 }
 
-function EmptyTeamSection({ icon: Icon, title, children }) {
+function EmptyTeamSection({ icon, title, children }) {
   return <div className="mt-empty">
-    <span className="mt-row-icon"><Icon size={19} aria-hidden="true" /></span>
+    <span className="mt-row-icon"><CeacIcon name={icon} size={19} /></span>
     <div><strong>{title}</strong>{children && <p>{children}</p>}</div>
   </div>;
 }
@@ -174,9 +174,9 @@ export default function ManagerTeamsWorkspace({ me, canManage, selection, onSele
   return <div className="body ev2-people-page ev2-people-manager mt-page">
     <header className="mt-header">
       <div><p>{me.unit_name || "Your unit"}</p><h1>Team</h1></div>
-      {canManage && snapshot && <button className="mt-button mt-primary" onClick={() => start("create")}><Plus size={18} aria-hidden="true" /> New team</button>}
+      {canManage && snapshot && <button className="mt-button mt-primary" onClick={() => start("create")}><CeacIcon name="add" size={18} aria-hidden="true" /> New team</button>}
     </header>
-    {!me.unit_id && <EmptyTeamSection icon={Users} title="No unit selected">Select a unit to see its teams.</EmptyTeamSection>}
+    {!me.unit_id && <EmptyTeamSection icon="team" title="No unit selected">Select a unit to see its teams.</EmptyTeamSection>}
     {error && <ProductNotice tone="error" title={error} action={<button className="mt-button" onClick={() => setAttempt(value => value + 1)}>Try again</button>} />}
     {me.unit_id && !snapshot && !error && <LoadingState label="Loading teams…" />}
     {snapshot && <div className={selection ? "mt-split has-selection" : "mt-split"}>
@@ -186,26 +186,26 @@ export default function ManagerTeamsWorkspace({ me, canManage, selection, onSele
           const count = snapshot.people.filter(person => entry.members.includes(person.profile_id)).length;
           return <button key={entry.id} type="button" aria-current={team?.id === entry.id ? "true" : undefined}
             className="mt-team-link" onClick={() => select(entry.id)}>
-            <span className="mt-row-icon"><Users size={17} aria-hidden="true" /></span>
+            <span className="mt-row-icon"><CeacIcon name="team" size={17} aria-hidden="true" /></span>
             <span className="mt-row-main"><strong>{entry.name}</strong><small>{count} {count === 1 ? "member" : "members"}</small></span>
-            <ChevronRight size={15} className="mt-chevron" aria-hidden="true" />
+            <CeacIcon name="chevronRight" size={15} className="mt-chevron" aria-hidden="true" />
           </button>;
         })}
         {!active.length && <p className="mt-sidebar-empty">No active teams</p>}
         <div className="mt-sidebar-tools">
           <button type="button" className="mt-team-link" aria-current={selection === PEOPLE ? "true" : undefined} onClick={() => select(PEOPLE)}>
-            <Users size={17} aria-hidden="true" /><span className="mt-row-main">Unit people</span><ChevronRight size={15} className="mt-chevron" aria-hidden="true" />
+            <CeacIcon name="team" size={17} aria-hidden="true" /><span className="mt-row-main">Unit people</span><CeacIcon name="chevronRight" size={15} className="mt-chevron" aria-hidden="true" />
           </button>
           {openRoom && <button type="button" aria-label="Open room · Unit Room" className="mt-team-link" onClick={openRoom}>
-            <MessageCircle size={17} aria-hidden="true" /><span className="mt-row-main">Unit Room</span><ChevronRight size={15} className="mt-chevron" aria-hidden="true" />
+            <CeacIcon name="messages" size={17} aria-hidden="true" /><span className="mt-row-main">Unit Room</span><CeacIcon name="chevronRight" size={15} className="mt-chevron" aria-hidden="true" />
           </button>}
           {archived.length > 0 && <button type="button" className="mt-team-link" aria-current={selection === ARCHIVED || team?.active === false ? "true" : undefined} onClick={() => select(ARCHIVED)}>
-            <Archive size={17} aria-hidden="true" /><span className="mt-row-main">Archived teams</span><ChevronRight size={15} className="mt-chevron" aria-hidden="true" />
+            <CeacIcon name="folder" size={17} aria-hidden="true" /><span className="mt-row-main">Archived teams</span><CeacIcon name="chevronRight" size={15} className="mt-chevron" aria-hidden="true" />
           </button>}
         </div>
       </nav>
       <section className="mt-detail" aria-label={team?.name || (selection === PEOPLE ? "Unit people" : "Team details")}>
-        <button type="button" className="mt-back" onClick={() => select(team?.active === false ? ARCHIVED : null)}><ArrowLeft size={18} aria-hidden="true" />{team?.active === false ? "Archived teams" : "Teams"}</button>
+        <button type="button" className="mt-back" onClick={() => select(team?.active === false ? ARCHIVED : null)}><CeacIcon name="arrowLeft" size={18} aria-hidden="true" />{team?.active === false ? "Archived teams" : "Teams"}</button>
         {notice && <p className="mt-feedback" role="status">{notice}</p>}
         {selection === PEOPLE ? <>
           <h2 className="mt-title" ref={detailHeading} tabIndex={-1}>Unit people</h2>
@@ -213,7 +213,7 @@ export default function ManagerTeamsWorkspace({ me, canManage, selection, onSele
         </> : selection === ARCHIVED ? <>
           <h2 className="mt-title" ref={detailHeading} tabIndex={-1}>Archived teams</h2>
           <div className="mt-rows">{archived.map(entry => <button key={entry.id} type="button" className="mt-team-link" onClick={() => select(entry.id)}>
-            <span className="mt-row-icon"><Archive size={17} aria-hidden="true" /></span><span className="mt-row-main">{entry.name}</span><ChevronRight size={16} className="mt-chevron" aria-hidden="true" />
+            <span className="mt-row-icon"><CeacIcon name="folder" size={17} aria-hidden="true" /></span><span className="mt-row-main">{entry.name}</span><CeacIcon name="chevronRight" size={16} className="mt-chevron" aria-hidden="true" />
           </button>)}</div>
         </> : team ? <>
           <div className="mt-detail-head">
@@ -224,7 +224,7 @@ export default function ManagerTeamsWorkspace({ me, canManage, selection, onSele
             {canManage && (team.active
               ? <div className="mt-detail-actions">
                 {teamPeople.length > 0 && <button type="button" className="mt-button mt-primary" onClick={() => goAssign({ subTeamId: team.id })}>Assign work</button>}
-                <button type="button" className={teamPeople.length ? "mt-button" : "mt-button mt-primary"} onClick={() => start("add_members")}><Plus size={17} aria-hidden="true" /> Add people</button>
+                <button type="button" className={teamPeople.length ? "mt-button" : "mt-button mt-primary"} onClick={() => start("add_members")}><CeacIcon name="add" size={17} aria-hidden="true" /> Add people</button>
               </div>
               : <button type="button" className="mt-button mt-primary" disabled={busy} onClick={() => save("restore", {}, data => `${data.name} restored.`)}>Restore team</button>)}
           </div>
@@ -238,10 +238,10 @@ export default function ManagerTeamsWorkspace({ me, canManage, selection, onSele
                 <Avatar name={person.profiles.full_name} /><span className="mt-row-main"><strong>{person.profiles.full_name}</strong><small>{team.lead_id === person.profile_id ? "Team lead · You" : "You"}</small></span>
               </div> : <button type="button" className="mt-person" onClick={() => openPerson(person.profile_id, "current")}>
                 <Avatar name={person.profiles.full_name} /><span className="mt-row-main"><strong>{person.profiles.full_name}</strong><small>{team.lead_id === person.profile_id ? "Team lead" : person.profiles.job_title || "Member"}</small></span>
-                <ChevronRight size={16} className="mt-chevron" aria-hidden="true" />
+                <CeacIcon name="chevronRight" size={16} className="mt-chevron" aria-hidden="true" />
               </button>}
               {canManage && team.active && <button type="button" className="mt-text-button" aria-label={`Remove ${person.profiles.full_name} from ${team.name}`} onClick={() => start("remove_member", person)}>Remove</button>}
-            </div>)}</div> : <EmptyTeamSection icon={Users} title="No members yet">{canManage && team.active && "Add someone from your unit to start assigning work from this team."}</EmptyTeamSection>}
+            </div>)}</div> : <EmptyTeamSection icon="team" title="No members yet">{canManage && team.active && "Add someone from your unit to start assigning work from this team."}</EmptyTeamSection>}
           </section>
           <section className="mt-section" aria-labelledby="mt-work-title">
             <div className="mt-section-head">
@@ -253,8 +253,8 @@ export default function ManagerTeamsWorkspace({ me, canManage, selection, onSele
             </div>
             {teamWork.length ? <div className="mt-rows">{(workTab === "closed" ? closedWork : openWork)
               .map(item => <WorkRow key={item.id} item={item} onOpen={openItem} />)}
-              {workTab === "open" && !openWork.length && <EmptyTeamSection icon={ClipboardList} title="No open work">See Closed for this team’s work history.</EmptyTeamSection>}
-            </div> : <EmptyTeamSection icon={ClipboardList} title="No work linked to this team yet" />}
+              {workTab === "open" && !openWork.length && <EmptyTeamSection icon="task" title="No open work">See Closed for this team’s work history.</EmptyTeamSection>}
+            </div> : <EmptyTeamSection icon="task" title="No work linked to this team yet" />}
           </section>
           {canManage && team.active && <details className="mt-settings">
             <summary>Team settings</summary>
@@ -262,9 +262,8 @@ export default function ManagerTeamsWorkspace({ me, canManage, selection, onSele
               <button type="button" className="mt-button" onClick={() => start("rename")}>Rename team</button>
               {[-1, 1].map(direction => {
                 const other = active[active.findIndex(entry => entry.id === team.id) + direction];
-                const Icon = direction < 0 ? ArrowUp : ArrowDown;
                 return <button type="button" key={direction} className="mt-button" disabled={busy || !other} onClick={() => save("reorder", { p_other_team_id: other.id }, data => `${data.name} moved.`)}>
-                  <Icon size={16} aria-hidden="true" /> {direction < 0 ? "Move up" : "Move down"}
+                  <CeacIcon name={direction < 0 ? "chevronUp" : "chevronDown"} size={16} /> {direction < 0 ? "Move up" : "Move down"}
                 </button>;
               })}
               <button type="button" className="mt-text-button mt-danger" onClick={() => start("archive")}>Archive team</button>
@@ -272,7 +271,7 @@ export default function ManagerTeamsWorkspace({ me, canManage, selection, onSele
           </details>}
         </> : <>
           <h2 className="mt-title" ref={detailHeading} tabIndex={-1}>Your teams</h2>
-          <EmptyTeamSection icon={Users} title="No team selected">{canManage ? "Create a team to bring its people and work together." : "Teams in this unit will appear here."}</EmptyTeamSection>
+          <EmptyTeamSection icon="team" title="No team selected">{canManage ? "Create a team to bring its people and work together." : "Teams in this unit will appear here."}</EmptyTeamSection>
         </>}
       </section>
     </div>}
@@ -285,7 +284,7 @@ export default function ManagerTeamsWorkspace({ me, canManage, selection, onSele
         <button className="mt-button mt-primary mt-sheet-action" disabled={busy || !name.trim()}>{busy ? "Saving…" : dialog.type === "create" ? "Create team" : "Save name"}</button>
       </form>}
       {dialog.type === "add_members" && <>
-        {candidates.length > 0 && <label className="mt-search"><Search size={18} aria-hidden="true" /><input type="search" aria-label="Search unit people" placeholder="Search by name" value={filter} onChange={event => setFilter(event.target.value)} /></label>}
+        {candidates.length > 0 && <label className="mt-search"><CeacIcon name="search" size={18} aria-hidden="true" /><input type="search" aria-label="Search unit people" placeholder="Search by name" value={filter} onChange={event => setFilter(event.target.value)} /></label>}
         <div className="mt-picker">
           {visibleCandidates.map(person => <label key={person.profile_id}>
             <Avatar name={person.profiles.full_name} />

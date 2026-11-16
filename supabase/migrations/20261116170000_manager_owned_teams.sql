@@ -7,7 +7,7 @@ drop policy if exists sub_team_members_admin_write on public.sub_team_members;
 revoke execute on function public.admin_set_work_lane_membership(uuid,uuid,boolean,text) from public, anon, authenticated;
 revoke execute on function public.swap_sub_team_positions(uuid,uuid) from public, anon, authenticated;
 
-create or replace function public.guard_sub_team_hr_fields()
+create function private.guard_manager_team_lead()
 returns trigger language plpgsql set search_path = '' as $$
 begin
   if tg_op = 'UPDATE' and new.lead_id is not distinct from old.lead_id then
@@ -30,6 +30,12 @@ begin
   return new;
 end;
 $$;
+
+revoke all on function private.guard_manager_team_lead() from public, anon, authenticated;
+drop trigger sub_teams_guard_hr_fields on public.sub_teams;
+create trigger sub_teams_guard_manager_lead
+before insert or update on public.sub_teams
+for each row execute function private.guard_manager_team_lead();
 
 create function public.manage_unit_team(
   p_unit_id uuid, p_action text, p_team_id uuid default null,
