@@ -531,14 +531,13 @@ test("Experience Stage 8 removes the known navigation, Team and Calendar defects
     await go(page, "Team");
     await expect(page.locator(".ev2-people-page.ev2-people-manager")).toBeVisible();
     await expect(page.getByRole("heading", { name: "Team", exact: true })).toBeVisible();
-    await expect(page.locator(".ev2p-section-head").getByText("People & volunteers",{exact:true})).toBeVisible();
-    const peopleSection = page.locator(".ev2p-section").filter({ hasText: /^People/ }).first();
-    const setupHeading = page.getByRole("heading", { name: "Team setup", exact: true });
-    await expect(peopleSection).toBeVisible();
-    await expect(setupHeading).toBeVisible();
-    const [peopleBox, setupBox] = await Promise.all([peopleSection.boundingBox(), setupHeading.boundingBox()]);
-    expect(peopleBox?.y || 0).toBeLessThan(setupBox?.y || Number.POSITIVE_INFINITY);
-    await expect(page.getByRole("button", { name: "Assign work to this part", exact: true }).first()).toBeVisible();
+    const teamList = page.getByRole("navigation", { name: "Unit teams" });
+    await expect(teamList.getByRole("button", { name: /Fixture Video Team/ })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Assign work", exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "New team", exact: true })).toBeVisible();
+    await teamList.getByRole("button", { name: "Unit people", exact: true }).click();
+    await expect(page.getByRole("heading", { name: "Unit people", exact: true })).toBeVisible();
+    await expect(page.locator(".ev2p-section-head").getByText("People & volunteers", { exact: true })).toBeVisible();
 
     await go(page, "Calendar");
     await expect(page.getByText("Your Google Calendar", { exact: true })).toBeVisible();

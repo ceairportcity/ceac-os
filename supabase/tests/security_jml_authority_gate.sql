@@ -167,6 +167,8 @@ update public.profiles
 set active=true
 where id='31000000-0000-4000-8000-000000000002';
 
+-- Inject stale data as the fixture owner, outside the application role.
+select set_config('request.jwt.claims', '{}', true);
 update public.sub_teams
 set lead_id='31000000-0000-4000-8000-000000000002'
 where id='22000000-0000-4000-8000-000000000011';

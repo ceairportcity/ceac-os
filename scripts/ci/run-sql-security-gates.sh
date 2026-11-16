@@ -62,6 +62,7 @@ tests=(
   production_hardening_gate.sql
   operational_clarity_files_gate.sql
   onboarding_access_presence_gate.sql
+  manager_owned_teams_gate.sql
   attendance_phase2_gate.sql
   stage2_attendance_start_locations_gate.sql
   offsite_location_optional_responsibility_gate.sql

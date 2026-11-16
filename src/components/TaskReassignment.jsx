@@ -1,7 +1,7 @@
 import { useId, useState } from "react";
 import { supabase } from "../lib/supabase";
 
-export default function TaskReassignment({ item, onSaved }) {
+export default function TaskReassignment({ item, teamScoped = false, onSaved }) {
   const heading = useId();
   const [people, setPeople] = useState(null);
   const [person, setPerson] = useState("");
@@ -12,16 +12,22 @@ export default function TaskReassignment({ item, onSaved }) {
   async function open() {
     setBusy(true);
     setError("");
-    const { data, error: failure } = await supabase.from("unit_memberships")
-      .select("profiles!unit_memberships_profile_id_fkey!inner(id,full_name,active)")
-      .eq("unit_id", item.unit_id).eq("org_id", item.org_id)
-      .eq("profiles.active", true).neq("profile_id", item.assignee_id);
+    const [unit, team] = await Promise.all([
+      supabase.from("unit_memberships")
+        .select("profiles!unit_memberships_profile_id_fkey!inner(id,full_name,active)")
+        .eq("unit_id", item.unit_id).eq("org_id", item.org_id)
+        .eq("profiles.active", true).neq("profile_id", item.assignee_id),
+      teamScoped ? supabase.from("sub_team_members").select("profile_id").eq("sub_team_id", item.sub_team_id) : null,
+    ]);
     setBusy(false);
-    if (failure) {
-      setError("Could not load department members. Try again.");
+    if (unit.error || team?.error) {
+      setError("Could not load eligible members. Try again.");
       return;
     }
-    setPeople(data.map(row => row.profiles).sort((a, b) => a.full_name.localeCompare(b.full_name)));
+    const teamIds = team && new Set(team.data.map(row => row.profile_id));
+    setPeople(unit.data.map(row => row.profiles)
+      .filter(profile => !teamIds || teamIds.has(profile.id))
+      .sort((a, b) => a.full_name.localeCompare(b.full_name)));
   }
 
   async function save(event) {
@@ -48,19 +54,19 @@ export default function TaskReassignment({ item, onSaved }) {
 
   return <section aria-label="Task assignment">
     {people === null ? <button type="button" className="btn btn-ghost btn-sm" onClick={open} disabled={busy}>
-      {busy ? "Loading department members…" : "Reassign task"}
+      {busy ? "Loading eligible members…" : "Reassign task"}
     </button> : <form className="s2-work-diary-form" aria-labelledby={heading} onSubmit={save}>
       <h3 id={heading} className="wide">Reassign task</h3>
       <label>New assignee
         <select name="assignee" value={person} onChange={event => setPerson(event.target.value)} disabled={busy} required>
-          <option value="">Choose an active department member</option>
+          <option value="">{teamScoped ? "Choose an active team member" : "Choose an active department member"}</option>
           {people.map(profile => <option key={profile.id} value={profile.id}>{profile.full_name}</option>)}
         </select>
       </label>
       <label>Reason
         <input name="reason" value={reason} onChange={event => setReason(event.target.value)} disabled={busy} maxLength={1000} required />
       </label>
-      {!people.length && <p role="status">No other active department members are available.</p>}
+      {!people.length && <p role="status">{teamScoped ? "No other active team members are available." : "No other active department members are available."}</p>}
       <div className="wide">
         <button type="submit" className="btn btn-sm" disabled={busy || !person || !reason.trim()}>{busy ? "Saving…" : "Save reassignment"}</button>
         <button type="button" className="btn btn-ghost btn-sm" disabled={busy} onClick={() => { setPeople(null); setPerson(""); setReason(""); setError(""); }}>Cancel</button>

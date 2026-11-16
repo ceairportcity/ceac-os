@@ -27,7 +27,7 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
   const [mode, setMode] = useState("invite");
   const [invitationFilter,setInvitationFilter]=useState("all");
   const [invitationEmailFilter, setInvitationEmailFilter] = useState("");
-  const [form, setForm] = useState({ name: "", email: "", person: "", unit: "", role: "staff", reason: "", lane: "" });
+  const [form, setForm] = useState({ name: "", email: "", person: "", unit: "", role: "staff", reason: "" });
   const inviteDraft = useRef(form);
   inviteDraft.current = form;
   const [busy, setBusy] = useState(false);
@@ -57,7 +57,7 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
     setEndMembershipTarget(null);
     setRevokeReason("");
     setInvitationFilter("all");
-    setForm({ name: "", email: "", person: "", unit: "", role: "staff", reason: "", lane: "" });
+    setForm({ name: "", email: "", person: "", unit: "", role: "staff", reason: "" });
     if (canManage) void load();
     return () => { loadGeneration.current += 1; identityGeneration.current += 1; actionBusyRef.current = false; };
   }, [me.id, me.org_id, canManage]);
@@ -67,7 +67,6 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
       ...current,
       person: initialProfileId || current.person,
       unit: initialUnitId || current.unit,
-      ...(initialUnitId ? { lane: "" } : {}),
     }));
     if (initialMode === "invite" || initialMode === "responsibility" || initialMode === "invitations") setMode(initialMode);
     else if (initialProfileId) setMode("responsibility");
@@ -187,7 +186,7 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
     // outcome, newer typing or another account must keep its current values.
     if (recorded && identity === identityGeneration.current) {
       setForm(current => current === submitted
-        ? { ...current, name: "", email: "", unit: "", lane: "" }
+        ? { ...current, name: "", email: "", unit: "" }
         : current);
     }
   }
@@ -201,16 +200,6 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
       p_reason: reason,
     });
     if (failure) throw failure;
-  }
-
-  async function saveLane(member) {
-    const result = await supabase.rpc("admin_set_work_lane_membership", {
-      p_profile_id: form.person,
-      p_sub_team_id: form.lane,
-      p_member: member,
-      p_reason: form.reason,
-    });
-    if (result.error) throw result.error;
   }
 
   async function revokeInvitation() {
@@ -241,11 +230,9 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
     return {
       ...current,
       [key]: value,
-      ...(key === "unit" ? { lane: "" } : {}),
       ...(key === "person" ? {
         // Several distinct roles in one unit still constitute one unit.
         unit: peopleUnits.length === 1 ? peopleUnits[0] : "",
-        lane: "",
       } : {}),
     };
   });
@@ -260,9 +247,7 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
   );
   const alreadyHasResponsibility = selectedMemberships.some((member) =>
     member.unit_id === form.unit && member.role === form.role);
-  const belongsToSelectedUnit = selectedMemberships.some((member) => member.unit_id === form.unit);
   const selectedLaneMemberships = snapshot?.laneMemberships.filter((member) => member.profile_id === form.person) || [];
-  const belongsToSelectedLane = selectedLaneMemberships.some((member) => member.sub_team_id === form.lane);
   const pendingInvitationCount = snapshot?.invitations.filter((invitation) =>
     !invitation.revoked_at && invitation.activation_state !== "verified" && invitation.activation_state !== "expired"
   ).length || 0;
@@ -451,17 +436,7 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
                     </div>;
                   }) : <div className="phase5-access-empty">No team placement is recorded for this person.</div>}
                 </div>
-                <FieldGroup label="Team / sub-team">
-                  <select className="field" aria-label="Work lane" value={form.lane} onChange={set("lane")}>
-                    <option value="">Choose a team / sub-team</option>
-                    {snapshot.lanes.filter((lane) => lane.unit_id === form.unit).map((lane) => <option key={lane.id} value={lane.id}>{lane.name}</option>)}
-                  </select>
-                </FieldGroup>
-                {!belongsToSelectedUnit && form.unit ? <p className="screen-note" role="status">Assign an authorised unit responsibility before adding this person to one of its teams.</p> : null}
-                <div className="phase5-access-actions">
-                  <Button variant="secondary" size="compact" disabled={busy || !form.person || !form.lane || !belongsToSelectedUnit || belongsToSelectedLane || !form.reason.trim()} onClick={() => action(() => saveLane(true), "Team / sub-team membership recorded.")}>Add to team</Button>
-                  <Button variant="quiet" size="compact" disabled={busy || !form.person || !form.lane || !belongsToSelectedLane || !form.reason.trim()} onClick={() => action(() => saveLane(false), "Team / sub-team membership ended.")}>Remove from team</Button>
-                </div>
+                <p className="screen-note">Team placements are managed by the unit manager in Teams.</p>
               </div>
             </>}
           </DataPanel>

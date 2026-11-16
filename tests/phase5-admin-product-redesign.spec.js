@@ -38,7 +38,7 @@ test("Phase 5 keeps Administration monitoring, People & Access and configuration
   expect(overview).not.toContain("onInviteUnit");
   expect(people).toContain('["access","Access"]');
   expect(access).toContain('rpc("admin_record_unit_responsibility"');
-  expect(access).toContain('rpc("admin_set_work_lane_membership"');
+  expect(access).not.toContain('rpc("admin_set_work_lane_membership"');
   expect(access).toContain('rpc("admin_access_invitations")');
   expect(access).toContain("resendStaffInvitation");
   expect(access).toContain('rpc("admin_revoke_staff_invitation"');

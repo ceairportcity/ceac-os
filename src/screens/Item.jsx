@@ -559,9 +559,10 @@ function ItemDetail({ id, me, session, isManager = false, initialRoutineDate=nul
         setSaveResult("Work details saved.");
         if (!(await load())) setSaveResult("Work details saved. Refresh this work to see the latest details.");
       }} />
-      {me.is_admin && item.assignee_id && item.kind === "task" && item.origin === "assigned"
+      {(me.is_admin || (item.sub_team_id && me.memberships?.some(member => member.unit_id === item.unit_id && member.role === "manager")))
+        && item.assignee_id && item.kind === "task" && item.origin === "assigned"
         && item.status === "not_started" && item.visibility === "unit" && !item.confidential
-        && <TaskReassignment key={item.assignee_id} item={item} onSaved={async (assignee) => {
+        && <TaskReassignment key={item.assignee_id} item={item} teamScoped={!me.is_admin} onSaved={async (assignee) => {
           const saved = await load();
           setSaveResult(saved?.assignee_id === assignee.id
             ? `Task reassigned to ${assignee.full_name}.`

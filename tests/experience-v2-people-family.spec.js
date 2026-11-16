@@ -129,7 +129,7 @@ test("Stage 10 Family B3 Manager Team preserves factual unit scope without scori
   expect(screen).toContain('from("leave_requests")');
   expect(screen).toContain('from("pending_invitations")');
   expect(screen).toContain('from("unit_resources")');
-  expect(screen).toContain('rpc("swap_sub_team_positions"');
+  expect(readFileSync("src/screens/ManagerTeamsWorkspace.jsx", "utf8")).toContain('rpc("manage_unit_team"');
   expect(screen).toContain('rpc("save_unit_resource"');
   expect(screen).toContain('rpc("set_unit_resource_active"');
   expect(screen).toContain("Volunteers use the Staff experience. This invitation does not grant Unit Head, HR, Compliance, Administration or Executive authority.");
@@ -149,14 +149,17 @@ for (const viewport of [
 
     await expect(page.getByRole("heading", { name: "Team", exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: /Open room/ })).toBeVisible();
+    const teamList = page.getByRole("navigation", { name: "Unit teams" });
+    await teamList.getByRole("button", { name: /Fixture Video Team/ }).click();
+    await expect(page.getByRole("heading", { name: "Fixture Video Team" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Add people", exact: true })).toBeVisible();
+    await page.screenshot({
+      path: `test-artifacts/redesign-r7-stage10b3-manager-team-${viewport.name}.png`,
+      fullPage: true,
+    });
+    if (viewport.width <= 760) await page.getByRole("button", { name: "Teams", exact: true }).click();
+    await teamList.getByRole("button", { name: "Unit people", exact: true }).click();
     await expect(page.getByText("People & volunteers", { exact: true }).first()).toBeVisible();
-    await expect(page.getByText("Work lanes", { exact: true }).first()).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Team setup", exact: true })).toBeVisible();
-
-    const peopleSection = page.locator(".ev2p-section").filter({ hasText: /^People/ }).first();
-    const setupHeading = page.getByRole("heading", { name: "Team setup", exact: true });
-    const [peopleBox, setupBox] = await Promise.all([peopleSection.boundingBox(), setupHeading.boundingBox()]);
-    expect(peopleBox?.y || 0).toBeLessThan(setupBox?.y || Number.POSITIVE_INFINITY);
 
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
 
@@ -192,16 +195,13 @@ for (const viewport of [
       expect(stripBox?.height || Number.POSITIVE_INFINITY).toBeLessThanOrEqual(72);
     }
 
-    await page.screenshot({
-      path: `test-artifacts/redesign-r7-stage10b3-manager-team-${viewport.name}.png`,
-      fullPage: true,
-    });
     await context.close();
   });
 }
 
 test("Stage 10 Family B3 Manager Team evidence opens the existing unit-scoped person workspace", async ({ browser }) => {
   const { context, page } = await openManagerTeam(browser, { width: 1366, height: 768 });
+  await page.getByRole("button", { name: "Unit people", exact: true }).click();
   const person = page.locator(".ev2p-evidence-person").filter({ hasText: "Staff Fixture" }).first();
   await expect(person).toBeVisible();
   await person.locator(".ev2p-evidence-strip button").filter({ hasText: "overdue" }).click();
@@ -214,6 +214,7 @@ test("Stage 10 Family B3 Manager Team evidence opens the existing unit-scoped pe
 
 async function openManagerPerson(browser, viewport) {
   const { context, page } = await openManagerTeam(browser, viewport);
+  await page.getByRole("button", { name: "Unit people", exact: true }).click();
   const person = page.locator(".ev2p-evidence-person").filter({ hasText: "Staff Fixture" }).first();
   await expect(person).toBeVisible();
   await person.locator(".ev2p-evidence-person-main").click();
@@ -701,7 +702,9 @@ test("VF3C Manager Team and Person workspace locks factual command composition",
   expect(person).toContain("There are no private manager notes.");
 
   expect(css).toContain("/* VF3C — Manager Team and Person workspace");
-  expect(css).toContain(".ev2-people-manager .ev2p-stack");
+  const teamsCss = readFileSync("src/screens/manager-teams.css", "utf8");
+  expect(teamsCss).toContain(".mt-split");
+  expect(teamsCss).toContain("grid-template-columns:minmax(176px,24%) minmax(0,1fr)");
   expect(css).toContain(".ev2p-person-context-rail");
   expect(css).toContain("position: sticky");
   expect(css).toContain("grid-template-columns: minmax(15.5rem, 17.5rem) minmax(0, 1fr)");

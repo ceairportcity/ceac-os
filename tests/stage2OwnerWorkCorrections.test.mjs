@@ -113,10 +113,12 @@ test("rejected live mobile Team screenshot is not a design reference, and Manage
   const manifest = JSON.parse(source("docs/design/stage2-v4/CEAC_STAGE2_OWNER_SELECTED_SCREEN_PROVENANCE_2026-10-17.json"));
   assert.equal(manifest.rejected_live_team_capture?.never_use_as_design_baseline, true);
   assert.equal(manifest.rejected_live_team_capture?.status, "EXPLICITLY_REJECTED_NOT_A_MOCKUP");
-  assert.match(team, /title="Team"/);
+
   assert.doesNotMatch(team, /Volunteer is an engagement type, not a new CEAC role or authority level\./);
-  assert.match(team, /className="s2-team-room-entry"/);
-  assert.match(team, /className="s2-team-room-open" onClick=\{openRoom\}/);
+  assert.match(team, /openRoom=\{openRoom\}/);
+  const teamWorkspace = readFileSync("src/screens/ManagerTeamsWorkspace.jsx", "utf8");
+  assert.match(teamWorkspace, /<h1>Team<\/h1>/);
+  assert.match(teamWorkspace, /aria-label="Open room · Unit Room"[^>]*onClick=\{openRoom\}/);
   assert.doesNotMatch(team, /<PeopleRoomCard/);
   assert.match(team, /role="tablist" aria-label="People type"/);
   assert.match(team, /\["all", `All \$\{people\.length \+ 1\}`\]/);
@@ -126,8 +128,6 @@ test("rejected live mobile Team screenshot is not a design reference, and Manage
   assert.match(team, /disabled=\{!volunteerInvitationsReady\}/);
   assert.match(styles, /\.phase6-manager-people-tabs button\.is-selected\{border-bottom-color:/);
   assert.match(styles, /\.phase6-add-volunteer\.btn\{[^}]*width:auto/);
-  assert.match(styles, /\.s2-team-room-entry\{display:flex/);
-  assert.match(styles, /\.ev2-people-manager \.ev2p-count\{display:inline-flex/);
 });
 
 test("optional individual project-close review stays unpublished and is not mandatory for closure", () => {
