@@ -76,7 +76,7 @@ export default function ManagerTeamsWorkspace({ me, canManage, selection, onSele
             .select("profile_id,role,profiles!unit_memberships_profile_id_fkey!inner(id,full_name,job_title,active)")
             .eq("unit_id", me.unit_id).eq("org_id", me.org_id).eq("profiles.active", true).order("profile_id")),
           readRows(() => supabase.from("work_items")
-            .select("id,ref,title,status,due_at,assignee_id,sub_team_id,owner:profiles!work_items_assignee_id_fkey(full_name)")
+            .select("id,ref,title,kind,status,due_at,assignee_id,sub_team_id,owner:profiles!work_items_assignee_id_fkey(full_name)")
             .eq("unit_id", me.unit_id).eq("org_id", me.org_id).neq("visibility", "private")
             .not("sub_team_id", "is", null).order("due_at", { nullsFirst: false }).order("id")),
         ]);
