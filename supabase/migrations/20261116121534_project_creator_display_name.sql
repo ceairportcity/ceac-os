@@ -2,12 +2,14 @@
 -- The staff directory continues to apply its own profile visibility rules.
 alter table public.projects add column creator_display_name text;
 
+-- The operational archive guards hidden records against all updates.
 update public.projects as project
 set creator_display_name = nullif(btrim(creator.full_name), '')
 from public.profiles as creator
 where creator.id = project.created_by
   and creator.org_id = project.org_id
-  and nullif(btrim(creator.full_name), '') is not null;
+  and nullif(btrim(creator.full_name), '') is not null
+  and not public.operational_record_is_archived('projects', project.id, project.org_id);
 
 create function private.record_project_creator_name()
 returns trigger
