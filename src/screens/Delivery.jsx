@@ -1,3 +1,4 @@
+import { projectCreatedAtLabel, projectCreatorLabel } from "../lib/projectAttribution";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { FieldGroup, LoadingState, ProductNotice, Sheet } from "../components/bits";
@@ -66,7 +67,7 @@ export default function Delivery({ me, initialProjectId = null, insightsOnly = f
   async function load() {
     setLoading(true); setError(null);
     const queries = await Promise.all([
-      supabase.from("projects").select("id,name,purpose,status,lead_unit_id,starts_on,ends_on,priority,health,sponsor_profile_id,delivery_owner_id").eq("org_id",me.org_id).order("name"),
+      supabase.from("projects").select("id,name,purpose,status,lead_unit_id,starts_on,ends_on,priority,health,sponsor_profile_id,delivery_owner_id,created_by,created_at,creator_display_name").eq("org_id",me.org_id).order("name"),
       supabase.from("delivery_groups").select("*").eq("org_id",me.org_id).order("name"),
       supabase.from("delivery_group_projects").select("*").eq("org_id",me.org_id).eq("state","active"),
       supabase.from("project_milestones").select("*").eq("org_id",me.org_id).order("target_on",{ascending:true,nullsFirst:false}),
@@ -355,7 +356,7 @@ export default function Delivery({ me, initialProjectId = null, insightsOnly = f
             key={project.id}
             eyebrow="Explicit recorded state"
             title={project.name}
-            meta={(unitsById[project.lead_unit_id]?.name||"Lead unit")+" · "+label(PRIORITIES,project.priority)+" priority"}
+            meta={`${unitsById[project.lead_unit_id]?.name || "Lead unit"} · ${label(PRIORITIES, project.priority)} priority · Created by ${projectCreatorLabel(project, me)} · ${projectCreatedAtLabel(project.created_at)}`}
             note={project.purpose||"No purpose recorded."}
             health={project.health}
             facts={[
@@ -385,7 +386,7 @@ export default function Delivery({ me, initialProjectId = null, insightsOnly = f
             key={project.id}
             eyebrow={needsDecision?"Executive attention":"Recorded project"}
             title={project.name}
-            meta={`${unitsById[project.lead_unit_id]?.name||"Lead unit not recorded"} · Owner: ${owner}`}
+            meta={`${unitsById[project.lead_unit_id]?.name||"Lead unit not recorded"} · Owner: ${owner} · Created by ${projectCreatorLabel(project, me)} · ${projectCreatedAtLabel(project.created_at)}`}
             note={`Objective served: ${linkedObjectives.join(", ")||"Not recorded"} · ${project.purpose||"No purpose recorded."}`}
             health={project.health}
             facts={[

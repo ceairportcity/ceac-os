@@ -1,4 +1,5 @@
 import { lazy, useEffect, useState } from "react";
+import { projectCreatedAtLabel, projectCreatorLabel } from "../lib/projectAttribution";
 import { supabase } from "../lib/supabase";
 
 const Stage2ProjectReader = lazy(() => import("./Stage2ProjectReader"));
@@ -10,7 +11,7 @@ export default function AssignedProjects({ me, openItem, children }) {
 
   useEffect(() => {
     let current = true;
-    supabase.from("projects").select("id,name", { count: "exact" })
+    supabase.from("projects").select("id,name,created_by,created_at,creator_display_name", { count: "exact" })
       .eq("org_id", me.org_id).eq("assigned_person_id", me.id)
       .is("archived_at", null).order("name").order("id")
       .then(result => {
@@ -28,6 +29,7 @@ export default function AssignedProjects({ me, openItem, children }) {
       <ul>
         {projects.map(project => <li key={project.id}>
           <button className="btn btn-ghost" type="button" onClick={() => setSelectedId(project.id)}>{project.name}</button>
+          <p className="screen-note">Created by {projectCreatorLabel(project, me)} · {projectCreatedAtLabel(project.created_at)}</p>
         </li>)}
       </ul>
     </section>}
