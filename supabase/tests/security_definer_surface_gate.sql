@@ -293,6 +293,11 @@ insert into s2_expected_authenticated_definers(signature) values
  ('public.set_work_supervisor(p_work uuid, p_supervisor uuid, p_reason text)'),
  ('public.add_work_oversight_entry(p_work uuid, p_kind text, p_note text, p_request_id uuid, p_reply_to uuid)');
 
+-- Executive project creation requires existing creation authority and an active
+-- assignee from the caller's organisation. See executive_assignment_scope_gate.sql.
+insert into s2_expected_authenticated_definers(signature) values
+ ('public.create_individually_assigned_project(p_assigned_person_id uuid, p_name text, p_purpose text, p_starts_on date, p_ends_on date)');
+
 do $allowlist$
 declare
   v_unexpected text;
@@ -342,7 +347,7 @@ begin
 
   -- The three new Executive-only projections have explicit signatures and
   -- actor/tenant/no-anon/read-only checks above.
-  if v_actual<>194 or v_expected<>194 or v_unexpected is not null or v_missing is not null then
+  if v_actual<>195 or v_expected<>195 or v_unexpected is not null or v_missing is not null then
     raise exception E'S2 SECURITY DEFINER allowlist mismatch. actual=% expected=%\nunexpected:\n%\nmissing:\n%',
       v_actual,v_expected,coalesce(v_unexpected,'(none)'),coalesce(v_missing,'(none)');
   end if;
