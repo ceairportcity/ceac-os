@@ -22,6 +22,7 @@ declare
   volunteer constant uuid := '31000000-0000-4000-8000-000000000006';
   outsider constant uuid := '31000000-0000-4000-8000-000000000005';
   team uuid;
+  work uuid;
   saved jsonb;
 begin
   team := (public.manage_unit_team(home, 'create', p_name => 'Team security fixture', p_code => 'MTST')->>'id')::uuid;
@@ -60,9 +61,23 @@ begin
   if saved->>'lead_id' is distinct from volunteer::text then
     raise exception 'Manager could not appoint an existing member as lead.';
   end if;
+  work := (public.create_task_with_checklist(
+    home, staff, 'Manager team handover fixture', 'Confirm team handover', p_sub_team_id => team,
+    p_purpose => 'Verify the manager can reassign unstarted team work', p_due_at => now() + interval '1 day'
+  )->>'id')::uuid;
+  begin
+    perform public.reassign_unstarted_task(work, staff, outsider, 'Out-of-team action must be denied');
+    raise exception 'Manager assigned team work to someone outside the team.';
+  exception when insufficient_privilege then null;
+  end;
+  perform public.reassign_unstarted_task(work, staff, volunteer, 'Manager team handover');
+
   saved := public.manage_unit_team(home, 'remove_member', team, p_member_ids => array[volunteer]);
   if saved->>'lead_id' is not null or jsonb_array_length(saved->'members') <> 1 then
     raise exception 'Removing the lead left stale lead authority.';
+  end if;
+  if not exists (select 1 from public.work_items where id = work and assignee_id = volunteer and sub_team_id = team) then
+    raise exception 'Team membership removal erased or silently reassigned linked work.';
   end if;
   if not exists (select 1 from public.unit_memberships where unit_id = home and profile_id = volunteer) then
     raise exception 'Team removal changed official unit membership.';
