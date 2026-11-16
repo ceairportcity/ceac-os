@@ -39,6 +39,7 @@ test.describe("Premium redesign R2 Manager",()=>{
     await page.locator(".ev2s-sidebar").getByRole("button",{name:"Team",exact:true}).click();
     await expect(page.getByRole("heading",{name:"Team",exact:true})).toBeVisible();
     await expect(page.getByRole("button",{name:/Open room/})).toBeVisible();
+    await page.getByRole("button",{name:"Unit people",exact:true}).click();
     await expect(page.getByText("People & volunteers",{exact:true}).first()).toBeVisible();
     const person=page.locator(".ev2p-evidence-person").filter({hasText:"Staff Fixture"}).first();
     if(await person.count()) {

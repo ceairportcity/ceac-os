@@ -5,7 +5,6 @@ declare signature text; definition text;
 begin
  foreach signature in array array[
   'public.admin_record_unit_responsibility(uuid,uuid,text,text,text)',
-  'public.admin_set_work_lane_membership(uuid,uuid,boolean,text)',
   'public.admin_revoke_staff_invitation(uuid,text)',
   'public.admin_access_invitations()',
   'public.prepare_staff_invitation_resend(uuid)',

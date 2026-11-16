@@ -35,8 +35,8 @@ const WORK_INTENTS = [
   ["meeting_outcome", "Follow up from a meeting", "Turn an agreed meeting action into accountable work."],
 ];
 
-export default function Assign({ me, back, initialProjectId = "", initialObjectiveId = "", initialPhaseId = "", initialSubTeamId = "", initialMeetingId = "", initialKind = "", initialMeetingTitle = "", initialMeetingOn = "", initialMeetingNote = "", initialTitle = "", initialSourceRoomId = "", initialSourceMessageId = "", selectedUnitId = null, initialAssigneeId = "", scopeControl = null, scopeChangePending = false }) {
-  const organisationAssignment = Boolean(me.is_exec || me.is_admin);
+export default function Assign({ me, back, initialProjectId = "", initialObjectiveId = "", initialPhaseId = "", initialSubTeamId = "", teamScoped = false, initialMeetingId = "", initialKind = "", initialMeetingTitle = "", initialMeetingOn = "", initialMeetingNote = "", initialTitle = "", initialSourceRoomId = "", initialSourceMessageId = "", selectedUnitId = null, initialAssigneeId = "", scopeControl = null, scopeChangePending = false }) {
+  const organisationAssignment = !teamScoped && Boolean(me.is_exec || me.is_admin);
   const workUnitId = organisationAssignment ? (selectedUnitId || me.unit_id) : me.unit_id;
   const [people, setPeople] = useState([]);
   const [assignmentReady, setAssignmentReady] = useState(false);
@@ -70,7 +70,7 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
   const [routineValueLabel, setRoutineValueLabel] = useState("");
   const [caseOpenedOn, setCaseOpenedOn] = useState(() => new Date().toISOString().slice(0, 10));
   const [caseTargetOn, setCaseTargetOn] = useState("");
-  const [requestResponsibleUnit, setRequestResponsibleUnit] = useState("");
+  const [requestResponsibleUnit, setRequestResponsibleUnit] = useState(teamScoped ? workUnitId : "");
   const [decisionQuestion, setDecisionQuestion] = useState("");
   const [meetingTitle, setMeetingTitle] = useState("");
   const [meetingOn, setMeetingOn] = useState(() => new Date().toISOString().slice(0, 10));
@@ -89,7 +89,7 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
   const assignmentSource = [
     initialProjectId, initialObjectiveId, initialPhaseId, initialSubTeamId,
     initialAssigneeId, initialMeetingId, initialSourceRoomId, initialSourceMessageId,
-  ].join(":");
+  ].join(":") + (teamScoped ? ":team" : "");
   const draft = useWorkFormDraft(me, done ? "" : `assign:${workUnitId}:${assignmentSource}`, {
     title, purpose, instructions, expectedOutcome, kind, assignee, subTeam, project, objective, phase,
     due, steps, noStepsNeeded, routineSchedule, routineWeeklyDay, routineWeekdays,
@@ -99,14 +99,14 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
   }, (saved) => {
     setTitle(saved.title); setPurpose(saved.purpose); setInstructions(saved.instructions);
     setExpectedOutcome(saved.expectedOutcome); setKind(saved.kind); setAssignee(saved.assignee);
-    setSubTeam(saved.subTeam); setProject(saved.project); setObjective(saved.objective); setPhase(saved.phase);
+    setSubTeam(teamScoped ? initialSubTeamId : saved.subTeam); setProject(saved.project); setObjective(saved.objective); setPhase(saved.phase);
     setDue(saved.due); setSteps(saved.steps); setNoStepsNeeded(saved.noStepsNeeded);
     setRoutineSchedule(saved.routineSchedule); setRoutineWeeklyDay(saved.routineWeeklyDay);
     setRoutineWeekdays(saved.routineWeekdays); setRoutineDayOfMonth(saved.routineDayOfMonth);
     setRoutineStart(saved.routineStart); setRoutineEnd(saved.routineEnd); setRoutineOptions(saved.routineOptions);
     setRoutineRecordsValue(saved.routineRecordsValue); setRoutineValueLabel(saved.routineValueLabel);
     setCaseOpenedOn(saved.caseOpenedOn); setCaseTargetOn(saved.caseTargetOn);
-    setRequestResponsibleUnit(saved.requestResponsibleUnit); setDecisionQuestion(saved.decisionQuestion);
+    setRequestResponsibleUnit(teamScoped ? workUnitId : saved.requestResponsibleUnit); setDecisionQuestion(saved.decisionQuestion);
     setMeetingTitle(saved.meetingTitle); setMeetingOn(saved.meetingOn); setMeetingNote(saved.meetingNote);
     setDeliverableEvidenceRequired(saved.deliverableEvidenceRequired);
   });
@@ -134,7 +134,7 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
     if (!workUnitId) return;
     setAssignmentReady(false);
     setErr(null);
-    const readOptions = organisationAssignment ? {count:"exact"} : undefined;
+    const readOptions = organisationAssignment || teamScoped ? {count:"exact"} : undefined;
     const [peopleResult, leaveResult, unitResult] = await Promise.all([
       supabase.from("unit_memberships")
         .select("profile_id, profiles(full_name,active)", readOptions).eq("org_id", me.org_id).eq("unit_id", workUnitId),
@@ -146,16 +146,25 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
     if (peopleResult.error) { setErr(peopleResult.error.message); return; }
     if (leaveResult.error) { setErr(leaveResult.error.message); return; }
     if (unitResult.error) { setErr(unitResult.error.message); return; }
-    if (organisationAssignment && (!Array.isArray(peopleResult.data) || peopleResult.count !== peopleResult.data.length)) {
+    if ((organisationAssignment || teamScoped) && (!Array.isArray(peopleResult.data) || peopleResult.count !== peopleResult.data.length)) {
       setErr("The department's people could not be completely loaded. Close and try again."); return;
     }
-    setPeople((peopleResult.data || []).filter(row => row.profiles?.active));
+    let availablePeople = (peopleResult.data || []).filter(row => row.profiles?.active);
+    if (teamScoped) {
+      const roster = await supabase.from("sub_team_members").select("profile_id", { count: "exact" }).eq("sub_team_id", initialSubTeamId);
+      if (roster.error || roster.data?.length !== roster.count) { setErr("Could not load this team’s members. Reopen the assignment to try again."); return; }
+      const teamIds = new Set(roster.data.map(row => row.profile_id));
+      availablePeople = availablePeople.filter(row => teamIds.has(row.profile_id));
+    }
+    setPeople(availablePeople);
     setUnits(unitResult.data || []);
     const memberIds = new Set((peopleResult.data || []).map((row) => row.profile_id));
     setApprovedLeave((leaveResult.data || []).filter((row) => memberIds.has(row.profile_id)));
     const { data: st, error: teamError } = await supabase.from("sub_teams")
       .select("id,name,code").eq("unit_id", workUnitId).eq("active", true).order("position");
     if (teamError) { setErr(teamError.message); return; }
+    if (teamScoped && !(st || []).some(team => team.id === initialSubTeamId)) { setErr("This team is no longer active in your unit."); return; }
+    if (teamScoped && availablePeople.length === 0) { setErr("Add an active member to this team before assigning work."); return; }
     setSubTeams(st || []);
     const { data: p, error: projectError, count: projectCount } = await supabase.from("projects").select("id,name,starts_on,ends_on,status,lead_unit_id,project_units(unit_id)", readOptions).eq("org_id",me.org_id).order("name");
     if (projectError) { setErr(projectError.message); return; }
@@ -241,7 +250,7 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
       if (proposal.kind && WORK_KINDS.some(([value]) => value === proposal.kind)) setKind(proposal.kind);
       if (proposal.assignee_id) setAssignee(proposal.assignee_id);
       if (proposal.project_id) setProject(proposal.project_id);
-      if (proposal.sub_team_id) setSubTeam(proposal.sub_team_id);
+      if (proposal.sub_team_id && !teamScoped) setSubTeam(proposal.sub_team_id);
       if (proposal.due_at) {
         const d = new Date(proposal.due_at);
         const pad = (n) => String(n).padStart(2, "0");
@@ -306,7 +315,8 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
   }
 
   function primaryActionDisabled() {
-    if (busy || scopeChangePending || (organisationAssignment && !assignmentReady)) return true;
+    if (busy || scopeChangePending || ((organisationAssignment || teamScoped) && !assignmentReady)) return true;
+    if (teamScoped && !people.some(person => person.profile_id === assignee)) return true;
     if (kind === "deliverable") return !title.trim() || !expectedOutcome.trim() || !assignee;
     if (kind === "meeting_outcome") return !title.trim() || !meetingTitle.trim() || !meetingOn || !assignee;
     if (kind === "decision") return !title.trim() || !decisionQuestion.trim() || !assignee;
@@ -320,9 +330,22 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
   }
 
   async function create() {
-    if (busy || scopeChangePending || (organisationAssignment && !assignmentReady)) return;
+    if (busy || scopeChangePending || ((organisationAssignment || teamScoped) && !assignmentReady)) return;
+    if (teamScoped && !people.some(person => person.profile_id === assignee)) return;
     setBusy(true); setErr(null); setTraceWarning(null);
     try {
+      if (teamScoped) {
+        const { data: membership, error: teamError } = await supabase.from("sub_team_members")
+          .select("profile_id,sub_teams!inner(active,unit_id)")
+          .eq("sub_team_id", initialSubTeamId).eq("profile_id", assignee)
+          .eq("sub_teams.active", true).eq("sub_teams.unit_id", workUnitId).maybeSingle();
+        if (teamError) throw new Error("Could not check this team’s roster. Try again.");
+        if (!membership) {
+          setPeople(current => current.filter(person => person.profile_id !== assignee));
+          setAssignee("");
+          throw new Error("This person is no longer available on the team. Choose another member.");
+        }
+      }
       const selectedKind = WORK_KINDS.find(([value]) => value === kind);
       if (!selectedKind?.[3]) throw new Error("This work type is not connected yet. CEAC OS will not save it with the wrong behaviour.");
 
@@ -652,7 +675,7 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
             </select>
           </FieldGroup>
           <FieldGroup label="Team">
-            <select className="field" value={subTeam} onChange={(e) => setSubTeam(e.target.value)}>
+            <select className="field" disabled={teamScoped} value={subTeam} onChange={(e) => setSubTeam(e.target.value)}>
               <option value="">Not selected</option>
               {subTeams.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
             </select>
@@ -847,7 +870,7 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
             <option value="">Choose owner</option>
             {people.map((p) => <option key={p.profile_id} value={p.profile_id}>{p.profiles ? p.profiles.full_name : "—"}</option>)}
           </select>
-          <select className="field" value={subTeam} onChange={(e) => setSubTeam(e.target.value)}>
+          <select className="field" disabled={teamScoped} value={subTeam} onChange={(e) => setSubTeam(e.target.value)}>
             <option value="">Which part of the team (optional)</option>
             {subTeams.map((row) => <option key={row.id} value={row.id}>{row.name}</option>)}
           </select>
@@ -873,7 +896,7 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
             <option value="">Choose owner</option>
             {people.map((p) => <option key={p.profile_id} value={p.profile_id}>{p.profiles ? p.profiles.full_name : "—"}</option>)}
           </select>
-          <select className="field" value={subTeam} onChange={(e) => setSubTeam(e.target.value)}>
+          <select className="field" disabled={teamScoped} value={subTeam} onChange={(e) => setSubTeam(e.target.value)}>
             <option value="">Which part of the team (optional)</option>
             {subTeams.map((row) => <option key={row.id} value={row.id}>{row.name}</option>)}
           </select>
@@ -895,7 +918,7 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
             <option value="">Choose decision-maker</option>
             {people.map((p) => <option key={p.profile_id} value={p.profile_id}>{p.profiles ? p.profiles.full_name : "—"}</option>)}
           </select>
-          <select className="field" value={subTeam} onChange={(e) => setSubTeam(e.target.value)}>
+          <select className="field" disabled={teamScoped} value={subTeam} onChange={(e) => setSubTeam(e.target.value)}>
             <option value="">Which part of the team (optional)</option>
             {subTeams.map((row) => <option key={row.id} value={row.id}>{row.name}</option>)}
           </select>
@@ -913,12 +936,12 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
         </div>}
         {kind === "request" && <div className="side-col">
           <div className="sec"><span>Who should respond</span></div>
-          <select className="field" value={requestResponsibleUnit} onChange={(e) => { setRequestResponsibleUnit(e.target.value); setAssignee(""); }}>
+          <select className="field" disabled={teamScoped} value={requestResponsibleUnit} onChange={(e) => { setRequestResponsibleUnit(e.target.value); setAssignee(""); }}>
             <option value="">Choose responsible unit</option>
             {units.map((unit) => <option key={unit.id} value={unit.id}>{unit.name}</option>)}
           </select>
           <select className="field" aria-label="Responsible person" value={assignee} onChange={(e) => setAssignee(e.target.value)}>
-            <option value="">Named person (optional)</option>
+            <option value="">{teamScoped ? "Choose a team member" : "Named person (optional)"}</option>
             {requestResponsibleUnit === workUnitId && people.map((p) => <option key={p.profile_id} value={p.profile_id}>{p.profiles ? p.profiles.full_name : "—"}</option>)}
           </select>
           {requestResponsibleUnit && requestResponsibleUnit !== workUnitId &&
@@ -941,7 +964,7 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
             <option value="">Choose someone</option>
             {people.map((p) => <option key={p.profile_id} value={p.profile_id}>{p.profiles ? p.profiles.full_name : "—"}</option>)}
           </select>
-          <select className="field" value={subTeam} onChange={(e) => setSubTeam(e.target.value)}>
+          <select className="field" disabled={teamScoped} value={subTeam} onChange={(e) => setSubTeam(e.target.value)}>
             <option value="">Which part of the team (optional)</option>
             {subTeams.map((row) => <option key={row.id} value={row.id}>{row.name}</option>)}
           </select>
@@ -965,7 +988,7 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
             <option value="">Choose someone</option>
             {people.map((p) => (<option key={p.profile_id} value={p.profile_id}>{p.profiles ? p.profiles.full_name : "—"}</option>))}
           </select>
-          <select className="field" value={subTeam} onChange={(e) => setSubTeam(e.target.value)}>
+          <select className="field" disabled={teamScoped} value={subTeam} onChange={(e) => setSubTeam(e.target.value)}>
             <option value="">Which part of the team (optional)</option>
             {subTeams.map((row) => <option key={row.id} value={row.id}>{row.name}</option>)}
           </select>
@@ -990,7 +1013,7 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
             <option value="">Choose someone</option>
             {people.map((p) => (<option key={p.profile_id} value={p.profile_id}>{p.profiles ? p.profiles.full_name : "—"}</option>))}
           </select>
-          <select className="field" value={subTeam} onChange={(e) => setSubTeam(e.target.value)}>
+          <select className="field" disabled={teamScoped} value={subTeam} onChange={(e) => setSubTeam(e.target.value)}>
             <option value="">Which part of the team (optional)</option>
             {subTeams.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
           </select>

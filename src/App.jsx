@@ -151,6 +151,7 @@ export default function App() {
   const [goalId, setGoalId] = useState(null);
   const [assignmentPosition, setAssignmentPosition] = useEditorPosition(me, "assignment-editor", null);
   const [assignmentContext, setAssignmentContext] = useState(null);
+  const [teamSelection, setTeamSelection] = useState(null);
   const assignmentActor = me ? `${me.org_id}:${me.id}:${me.unit_id || ""}` : "";
   const assigning = assignmentPosition && (assignmentContext?.actor === assignmentActor ? assignmentContext.context : assignmentPosition);
   const [person, setPerson] = useState(null);
@@ -589,7 +590,7 @@ export default function App() {
       return <Home me={me} notificationPanel={notificationPanel} session={session} setSession={setSession} openItem={openItem} openMeeting={openMeeting} openRoom={openRoom} openWork={() => go("work")} openMe={() => go("me")} openAnnouncements={() => go("announcements")} openTeam={() => go("team")} openCalendar={() => go("staff-calendar")} />;
     }
     if (tab === "team") return (isAdmin || managesCurrentUnit)
-      ? <Team key={managerScopeKey} me={me} openPerson={(id, focus) => setPerson({ id, focus })} goAssign={startAssignment} openRoom={() => openRoom({ kind: "unit", unitId: me.unit_id })} />
+      ? <Team key={managerScopeKey} me={me} openPerson={(id, focus) => setPerson({ id, focus })} openItem={openItem} goAssign={startAssignment} canManage={managesCurrentUnit} selection={teamSelection?.scope === managerScopeKey ? teamSelection.id : null} onSelect={id => setTeamSelection({ scope: managerScopeKey, id })} openRoom={() => openRoom({ kind: "unit", unitId: me.unit_id })} />
       : <StaffTeam me={me} openRoom={() => openRoom({ kind: "unit", unitId: me.unit_id })} />;
     if (tab === "work") {
       if (isExec) return <ExecutiveWork key={managerScopeKey} me={me} openItem={openItem} goAssign={startAssignment} />;
@@ -796,12 +797,13 @@ export default function App() {
           <Suspense fallback={<RouteFallback />}>
           <SettingsBack tab={tab} enabled={isAdmin && !overlay} go={go} returnTo={settingsReturn}>
           {itemId ? <Item id={itemId} me={me} reviewOnly={isExec && tab === "exec-organisation"} openFullWork={() => openSearchWork(itemId)} session={session} isManager={isUnitManager} initialRoutineDate={itemRoutineDate} openRoom={openRoom} onOpenCalendar={dueAt=>{setCalendarFocusDate(dueAt||null);navigate({tab:isExec?"exec-calendar":isAdmin?"admin-calendar":isUnitManager?"calendar":"staff-calendar"});}} onOpenMemo={work=>{setMemoWorkContext({id:work.id,ref:work.ref,title:work.title});navigate({tab:"messages"});}} back={closeUrlOverlay} />
-            : assigning && (isExec || isAdmin) ? <ExecutiveAssign key={`${me.org_id}:${me.id}`} me={me} context={assigning} resuming={assignmentContext?.actor !== assignmentActor} back={() => { setAssignmentContext(null); setAssignmentPosition(null); }} />
+            : assigning && (isExec || isAdmin) && !(tab === "team" && managesCurrentUnit && assigning.subTeamId) ? <ExecutiveAssign key={`${me.org_id}:${me.id}`} me={me} context={assigning} resuming={assignmentContext?.actor !== assignmentActor} back={() => { setAssignmentContext(null); setAssignmentPosition(null); }} />
             : assigning ? <Assign me={me}
                 initialProjectId={assigning.projectId}
                 initialObjectiveId={assigning.objectiveId}
                 initialPhaseId={assigning.phaseId}
                 initialSubTeamId={assigning.subTeamId}
+                teamScoped={tab === "team" && managesCurrentUnit && Boolean(assigning.subTeamId)}
                 initialAssigneeId={assigning.assigneeId}
                 initialMeetingId={assigning.meetingId}
                 initialKind={assigning.kind}

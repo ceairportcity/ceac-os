@@ -85,9 +85,9 @@ test("People & Access never displays a previous account's roster after switching
   assert.match(access, /generation !== loadGeneration\.current/);
   assert.match(access, /setSnapshot\(null\)/);
   assert.match(access, /\[me\.id, me\.org_id, canManage\]/);
-  assert.match(access, /rpc\("admin_set_work_lane_membership"/);
+  assert.doesNotMatch(access, /rpc\("admin_set_work_lane_membership"/);
   assert.match(access, /alreadyHasResponsibility/);
-  assert.match(access, /belongsToSelectedUnit/);
+  assert.match(access, /Team placements are managed by the unit manager in Teams/);
 });
 
 test("Invitation email delivery is never confused with a stored invitation", () => {

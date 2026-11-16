@@ -48,6 +48,7 @@ for (const viewport of [
     mkdirSync("test-artifacts", { recursive: true });
 
     await expect(page.getByRole("heading", { name: "Team", exact: true })).toBeVisible();
+    await page.getByRole("button",{name:"Unit people",exact:true}).click();
     await expect(page.getByRole("button", { name: "Add volunteer", exact: true })).toBeVisible();
     await expect(page.getByRole("tab", { name: /Volunteers/ })).toBeVisible();
 

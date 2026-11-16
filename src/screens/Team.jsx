@@ -2,11 +2,11 @@ import { useEffect, useState } from "react";
 import { supabase, inviteByEmail } from "../lib/supabase";
 import { isOverdue } from "../lib/time";
 import { isMissingVolunteerInvitationSchema } from "../lib/stage1SchemaCompatibility";
+import ManagerTeamsWorkspace from "./ManagerTeamsWorkspace";
 import { LoadingState, ProductNotice, Sheet } from "../components/bits";
 import {
   PeopleEmpty,
   PeopleEvidencePerson,
-  PeoplePageHeader,
   PeoplePersonRow,
   PeopleSection,
 } from "../experience-v2/people-family/PeopleFamilyV2";
@@ -69,17 +69,14 @@ function PersonRow({ person, openPerson, laneNames = [] }) {
   />;
 }
 
-export default function Team({ me, openPerson, goAssign, openRoom }) {
+function UnitPeople({ me, openPerson }) {
   const [people, setPeople] = useState([]);
   const [ownEngagement, setOwnEngagement] = useState(null);
   const [subTeams, setSubTeams] = useState([]);
   const [members, setMembers] = useState({});
   const [pending, setPending] = useState([]);
   const [resources, setResources] = useState([]);
-  const [showSetup, setShowSetup] = useState(false);
   const [sheet, setSheet] = useState(null);
-  const [name, setName] = useState("");
-  const [code, setCode] = useState("");
   const [email, setEmail] = useState("");
   const [fullName, setFullName] = useState("");
   const [peopleView, setPeopleView] = useState("all");
@@ -87,9 +84,6 @@ export default function Team({ me, openPerson, goAssign, openRoom }) {
   const [volunteerDays, setVolunteerDays] = useState(["sat"]);
   const [volunteerStart, setVolunteerStart] = useState("");
   const [volunteerEnd, setVolunteerEnd] = useState("");
-  const [editName, setEditName] = useState("");
-  const [moveWorkTo, setMoveWorkTo] = useState("");
-  const [removeWorkCount, setRemoveWorkCount] = useState(0);
   const [resourceForm, setResourceForm] = useState({ id: null, title: "", category: "reference", reference_url: "", description: "", pinned: false, sort_order: 0 });
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -204,68 +198,6 @@ export default function Team({ me, openPerson, goAssign, openRoom }) {
     finally { setLoading(false); }
   }
 
-  async function addSubTeam() {
-    setBusy(true); setMsg(null);
-    try {
-      const { error: insertError } = await supabase.from("sub_teams").insert({
-        org_id: me.org_id, unit_id: me.unit_id, name: name.trim(),
-        code: (code.trim() || name.trim().slice(0, 3)).toUpperCase(), position: subTeams.length + 1,
-      });
-      if (insertError) throw insertError;
-      setSheet(null); setName(""); setCode(""); await load();
-    } catch (err) { setMsg(err.message || "That part of the team could not be added."); }
-    finally { setBusy(false); }
-  }
-
-  async function renameSubTeam(team) {
-    if (!editName.trim()) return;
-    setBusy(true); setMsg(null);
-    try {
-      const { error: updateError } = await supabase.from("sub_teams")
-        .update({ name: editName.trim() }).eq("id", team.id).eq("unit_id", me.unit_id);
-      if (updateError) throw updateError;
-      setSheet(null); setEditName(""); await load();
-    } catch (err) { setMsg(err.message || "That part could not be renamed."); }
-    finally { setBusy(false); }
-  }
-
-  async function moveSubTeam(team, direction) {
-    const index = subTeams.findIndex((row) => row.id === team.id);
-    const other = subTeams[index + direction];
-    if (!other) return;
-    setError(null);
-    const result = await supabase.rpc("swap_sub_team_positions", {
-      p_first_id: team.id,
-      p_second_id: other.id,
-    });
-    if (result.error) { setError(result.error.message); return; }
-    await load();
-  }
-
-  async function openRemoveSubTeam(team) {
-    setMsg(null); setMoveWorkTo("");
-    const result = await supabase.from("work_items").select("id", { count: "exact", head: true }).eq("sub_team_id", team.id);
-    if (result.error) { setError(result.error.message); return; }
-    setRemoveWorkCount(result.count || 0);
-    setSheet({ type: "remove-subteam", team });
-  }
-
-  async function removeSubTeam(team) {
-    setBusy(true); setMsg(null);
-    try {
-      if (removeWorkCount > 0) {
-        const { error: workError } = await supabase.from("work_items")
-          .update({ sub_team_id: moveWorkTo || null })
-          .eq("sub_team_id", team.id);
-        if (workError) throw new Error(`Work could not be moved: ${workError.message}`);
-      }
-      const { error: deleteError } = await supabase.from("sub_teams").delete().eq("id", team.id).eq("unit_id", me.unit_id);
-      if (deleteError) throw deleteError;
-      setSheet(null); setMoveWorkTo(""); setRemoveWorkCount(0); await load();
-    } catch (err) { setMsg(err.message || "That part could not be removed."); }
-    finally { setBusy(false); }
-  }
-
   async function invite() {
     setBusy(true); setMsg(null);
     try {
@@ -352,32 +284,8 @@ export default function Team({ me, openPerson, goAssign, openRoom }) {
   const volunteerCount = people.filter((person) => person.employment_type === "volunteer").length + (selfIsVolunteer ? 1 : 0);
   const staffCount = people.length + 1 - volunteerCount;
 
-  const groupedPeople = subTeams.map((team) => ({
-    ...team,
-    people: people.filter((person) => (members[person.profile_id] || []).includes(team.id)),
-  }));
-  const unassignedPeople = people.filter((person) => !(members[person.profile_id] || []).length);
-
   return (
-    <div className="body manager-team ev2-people-page ev2-people-manager">
-      <PeoplePageHeader
-        eyebrow={me.unit_name || "Your unit"}
-        title="Team"
-        description="People, responsibilities and coordination for your unit."
-        count={people.length + 1}
-        countLabel={(people.length + 1) === 1 ? "person" : "people"}
-      />
-
-      {openRoom && <div className="s2-team-room-entry" aria-label="Unit coordination">
-        <div className="s2-team-room-copy">
-          <strong>Unit Room</strong>
-          <span>Messages and coordination for {me.unit_name || "your unit"}</span>
-        </div>
-        <button type="button" className="s2-team-room-open" onClick={openRoom}>
-          Open room <span aria-hidden="true">→</span>
-        </button>
-      </div>}
-
+    <div className="manager-team ev2-people-manager team-unit-people">
       <section className="phase6-manager-people-toolbar" aria-label="People and volunteer controls">
         <div className="phase6-manager-people-tabs" role="tablist" aria-label="People type">
           {[
@@ -442,84 +350,31 @@ export default function Team({ me, openPerson, goAssign, openRoom }) {
             />}
           </PeopleSection>
 
-          <PeopleSection
-            title="Work lanes"
-            meta={`${subTeams.length} ${subTeams.length === 1 ? "part" : "parts"}`}
-            description="Current unit work lanes. This does not change official employment or role authority."
-          >
-            {groupedPeople.map((team) => <div key={team.id} className="ev2p-manager-resource-row">
-              <strong>{team.name}</strong>
-              <span>
-                {team.code} · {team.people.length} {team.people.length === 1 ? "person" : "people"}
-                {team.profiles?.full_name ? ` · led by ${team.profiles.full_name}` : " · no lead yet"}
-              </span>
-              {goAssign && <div className="ev2p-manager-setup-actions">
-                <button className="btn btn-ghost btn-sm" onClick={() => goAssign({ subTeamId: team.id })}>Assign work to this part</button>
-              </div>}
-            </div>)}
-            {unassignedPeople.length > 0 && <div className="ev2p-manager-resource-row">
-              <strong>Not assigned to a part yet</strong>
-              <span>{unassignedPeople.length} {unassignedPeople.length === 1 ? "person" : "people"} · unit membership remains unchanged</span>
-            </div>}
-            {subTeams.length === 0 && <PeopleEmpty
-              title="No work lanes set up"
-              description="Empty parts are allowed. Use Team setup only if this unit needs work lanes."
-            />}
-          </PeopleSection>
         </div>
 
-        <section className="ev2p-manager-setup">
-          <div className="ev2p-manager-setup-head">
-            <div>
-              <h2>Team setup</h2>
-              <p>Invitations, work-lane structure and unit resources are secondary administration. Official role and membership changes remain with Administration & HR; leave decisions remain on Home.</p>
-            </div>
-            <button className="btn btn-ghost wide-auto" onClick={() => setShowSetup((value) => !value)}>
-              {showSetup ? "Hide team setup" : "Open team setup"}
-            </button>
-          </div>
-
-          {showSetup && <>
-            <div className="ev2p-manager-setup-grid">
-              <PeopleSection title="People and invitations" meta={String(people.length + pending.length)}>
-                {people.map((person) => {
-                  const laneNames = subTeams
-                    .filter((team) => (members[person.profile_id] || []).includes(team.id))
-                    .map((team) => team.name);
-                  return <div key={person.id} className="ev2p-manager-resource-row">
-                    <strong>{person.profiles?.full_name || "—"}</strong>
-                    <span>{person.employment_type === "volunteer" ? "Volunteer" : person.role === "manager" ? "Unit head" : person.role === "sub_team_lead" ? "Team lead" : "Staff"}</span>
-                    <small>{laneNames.length ? laneNames.join(" · ") : "Not assigned to a part yet"}</small>
-                  </div>;
-                })}
-                {pending.map((person) => <div key={person.email} className="ev2p-manager-resource-row">
-                  <strong>{person.full_name || person.email}</strong>
-                  <span>{person.engagement_type === "volunteer" ? "Volunteer invitation" : "Staff invitation"} — waiting for activation</span>
-                </div>)}
-                <div className="ev2p-manager-setup-actions">
-                  <button className="btn btn-ghost wide-auto" onClick={() => { setSheet("invite"); setMsg(null); }}>Add Staff</button>
-                  <button className="btn btn-ghost wide-auto" disabled={!volunteerInvitationsReady}
-                    onClick={() => { setSheet("volunteer"); setMsg(null); }}>Add volunteer</button>
-                </div>
-              </PeopleSection>
-
-              <PeopleSection title="Parts of the team" meta={String(subTeams.length)}>
-                {subTeams.map((team, index) => <div key={team.id} className="ev2p-manager-resource-row">
-                  <strong>{team.name}</strong>
-                  <span>{team.code} · {Object.values(members).filter((value) => value.includes(team.id)).length} people{team.profiles?.full_name ? ` · led by ${team.profiles.full_name}` : " · no lead yet"}</span>
-                  <div className="ev2p-manager-setup-actions">
-                    <button className="btn btn-ghost btn-sm" onClick={() => { setEditName(team.name); setMsg(null); setSheet({ type: "rename-subteam", team }); }}>Rename</button>
-                    <button className="btn btn-ghost btn-sm" disabled={index === 0} onClick={() => moveSubTeam(team, -1)}>Move up</button>
-                    <button className="btn btn-ghost btn-sm" disabled={index === subTeams.length - 1} onClick={() => moveSubTeam(team, 1)}>Move down</button>
-                    <button className="btn btn-ghost btn-sm" onClick={() => openRemoveSubTeam(team)}>Remove</button>
-                  </div>
-                </div>)}
-                {subTeams.length === 0 && <PeopleEmpty title="No parts have been set up" description="Empty parts are allowed." />}
-                <div className="ev2p-manager-setup-actions">
-                  <button className="btn btn-ghost wide-auto" onClick={() => { setSheet("subteam"); setMsg(null); }}>Add a part</button>
-                </div>
-              </PeopleSection>
-            </div>
+        <details className="mt-settings">
+          <summary>Invitations and resources</summary>
+            <PeopleSection title="People and invitations" meta={String(people.length + pending.length)}>
+              {people.map((person) => {
+                const laneNames = subTeams
+                  .filter((team) => (members[person.profile_id] || []).includes(team.id))
+                  .map((team) => team.name);
+                return <div key={person.id} className="ev2p-manager-resource-row">
+                  <strong>{person.profiles?.full_name || "—"}</strong>
+                  <span>{person.employment_type === "volunteer" ? "Volunteer" : person.role === "manager" ? "Unit head" : person.role === "sub_team_lead" ? "Team lead" : "Staff"}</span>
+                  <small>{laneNames.length ? laneNames.join(" · ") : "Not assigned to a part yet"}</small>
+                </div>;
+              })}
+              {pending.map((person) => <div key={person.email} className="ev2p-manager-resource-row">
+                <strong>{person.full_name || person.email}</strong>
+                <span>{person.engagement_type === "volunteer" ? "Volunteer invitation" : "Staff invitation"} — waiting for activation</span>
+              </div>)}
+              <div className="ev2p-manager-setup-actions">
+                <button className="btn btn-ghost wide-auto" onClick={() => { setSheet("invite"); setMsg(null); }}>Add Staff</button>
+                <button className="btn btn-ghost wide-auto" disabled={!volunteerInvitationsReady}
+                  onClick={() => { setSheet("volunteer"); setMsg(null); }}>Add volunteer</button>
+              </div>
+            </PeopleSection>
 
             <PeopleSection
               title="Unit resources"
@@ -540,35 +395,8 @@ export default function Team({ me, openPerson, goAssign, openRoom }) {
                 <button className="btn btn-ghost wide-auto" onClick={() => openResource()}>Add a resource</button>
               </div>
             </PeopleSection>
-          </>}
-        </section>
+        </details>
 
-      {sheet === "subteam" && <Sheet onClose={() => setSheet(null)}>
-        <div className="h2">Add a part of the team</div>
-        <p className="screen-note">It can exist before anybody is placed in it.</p>
-        <input className="field" placeholder="What it is called" value={name} onChange={(event) => setName(event.target.value)} />
-        <input className="field" placeholder="Short code, e.g. GFX" value={code} onChange={(event) => setCode(event.target.value)} maxLength={4} />
-        {msg && <div className="flag flag-brick" style={{ marginTop: 12 }}>{msg}</div>}
-        <button className="btn" style={{ marginTop: 14 }} onClick={addSubTeam} disabled={busy || !name.trim()}>{busy ? "Saving..." : "Add it"}</button>
-      </Sheet>}
-      {sheet?.type === "rename-subteam" && <Sheet onClose={() => !busy && setSheet(null)}>
-        <div className="h2">Rename this part</div>
-        <p className="screen-note">Existing work references stay unchanged. New work will use the same short code unless you set up a different part.</p>
-        <input className="field" value={editName} onChange={(event) => setEditName(event.target.value)} />
-        {msg && <div className="flag flag-brick" style={{ marginTop: 12 }}>{msg}</div>}
-        <button className="btn" style={{ marginTop: 14 }} disabled={busy || !editName.trim()} onClick={() => renameSubTeam(sheet.team)}>{busy ? "Saving..." : "Rename"}</button>
-      </Sheet>}
-      {sheet?.type === "remove-subteam" && <Sheet onClose={() => !busy && setSheet(null)}>
-        <div className="h2">Remove {sheet.team.name}?</div>
-        <p className="screen-note">{removeWorkCount > 0 ? `${removeWorkCount} work item${removeWorkCount === 1 ? "" : "s"} currently sit in this part. Choose where that work should go before removing it.` : "No work is currently attached to this part."}</p>
-        {removeWorkCount > 0 && <select className="field" value={moveWorkTo} onChange={(event) => setMoveWorkTo(event.target.value)}>
-          <option value="">General unit work — no part</option>
-          {subTeams.filter((team) => team.id !== sheet.team.id).map((team) => <option key={team.id} value={team.id}>{team.name}</option>)}
-        </select>}
-        <div className="hint">Removing the part does not delete its work. Existing work references are kept.</div>
-        {msg && <div className="flag flag-brick" style={{ marginTop: 12 }}>{msg}</div>}
-        <button className="btn" style={{ marginTop: 14 }} disabled={busy} onClick={() => removeSubTeam(sheet.team)}>{busy ? "Moving work..." : "Move work and remove part"}</button>
-      </Sheet>}
       {sheet === "invite" && <Sheet onClose={() => { setSheet(null); setMsg(null); }}>
         <div className="h2">Add Staff</div>
         <p className="screen-note">This creates a Staff invitation for the current unit. Formal authority remains separate.</p>
@@ -662,4 +490,12 @@ export default function Team({ me, openPerson, goAssign, openRoom }) {
       </>}
     </div>
   );
+}
+
+export default function Team({ me, openPerson, openItem, goAssign, openRoom, canManage, selection, onSelect }) {
+  return <ManagerTeamsWorkspace
+    me={me} openPerson={openPerson} openItem={openItem} goAssign={goAssign}
+    canManage={canManage} openRoom={openRoom} selection={selection} onSelect={onSelect}
+    renderPeople={() => <UnitPeople me={me} openPerson={openPerson} />}
+  />;
 }
