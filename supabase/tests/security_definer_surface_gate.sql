@@ -346,7 +346,7 @@ begin
 
   -- The three new Executive-only projections have explicit signatures and
   -- actor/tenant/no-anon/read-only checks above.
-  if v_actual<>195 or v_expected<>195 or v_unexpected is not null or v_missing is not null then
+  if v_actual<>194 or v_expected<>194 or v_unexpected is not null or v_missing is not null then
     raise exception E'S2 SECURITY DEFINER allowlist mismatch. actual=% expected=%\nunexpected:\n%\nmissing:\n%',
       v_actual,v_expected,coalesce(v_unexpected,'(none)'),coalesce(v_missing,'(none)');
   end if;
