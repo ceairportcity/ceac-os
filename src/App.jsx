@@ -18,7 +18,6 @@ import RouteTransition from "./experience-v2/RouteTransition";
 import AuthFrame from "./components/AuthFrame";
 import SettingsBack from "./components/SettingsBack";
 import ExecutiveAssign from "./components/ExecutiveAssign";
-import AssignedProjects from "./components/AssignedProjects";
 import { RolePresentationContext } from "./experience-v2/RolePresentationContext";
 import PrivilegedMfaGate from "./components/PrivilegedMfaGate";
 import Stage2UniversalMfaGate from "./components/Stage2UniversalMfaGate";
@@ -32,6 +31,7 @@ const ActiveMfaGate = import.meta.env.VITE_STAGE2_UNIVERSAL_AAL2 === "true"
 
 const Home = lazy(() => import("./screens/Home"));
 const Work = lazy(() => import("./screens/Work"));
+const AssignedProjects = lazy(() => import("./components/AssignedProjects"));
 const Item = lazy(() => import("./screens/Item"));
 const Record = lazy(() => import("./screens/Record"));
 const MeScreen = lazy(() => import("./screens/Me"));
