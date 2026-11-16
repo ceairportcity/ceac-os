@@ -1,7 +1,7 @@
 // Present the immutable project creation audit separately from delivery ownership.
-// Permission-filtered profile joins can hide a name; never infer a person from a unit.
+// The project stores the creator’s display name under its own visibility rules.
 export function projectCreatorLabel(project, viewer) {
-  const name = project?.creator?.full_name?.trim();
+  const name = project?.creator_display_name?.trim();
   if (name) return name;
   if (project?.created_by && project.created_by === viewer?.id && viewer?.full_name?.trim()) {
     return viewer.full_name.trim();

@@ -34,7 +34,7 @@ export default function AdminProjects({ me, scheduleMeeting, openItem, initialPr
     setLoading(true); setError(null); setProjects([]);
     try{
       const [projectResult,unitResult,objectiveResult,projectUnitResult]=await Promise.all([
-        supabase.from("projects").select("id,name,status,archived_at,lead_unit_id,assigned_person_id,assignee:profiles!projects_assigned_person_id_fkey(full_name),starts_on,ends_on,purpose,created_by,created_at,creator:profiles!projects_created_by_fkey(full_name)").eq("org_id",me.org_id).order("ends_on",{ascending:true,nullsFirst:false}),
+        supabase.from("projects").select("id,name,status,archived_at,lead_unit_id,assigned_person_id,assignee:profiles!projects_assigned_person_id_fkey(full_name),starts_on,ends_on,purpose,created_by,created_at,creator_display_name").eq("org_id",me.org_id).order("ends_on",{ascending:true,nullsFirst:false}),
         supabase.from("units").select("id,name,active").eq("org_id",me.org_id),
         supabase.from("objectives").select("id,project_id,status").eq("org_id",me.org_id),
         supabase.from("project_units").select("project_id,unit_id"),

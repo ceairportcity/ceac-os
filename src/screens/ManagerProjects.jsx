@@ -184,7 +184,7 @@ export default function ManagerProjects({ me, initialProjectId = null, openItem,
     try {
       const [projectResult, capabilityResult, unitResult] = await Promise.all([
         supabase.from("projects")
-          .select("id, kind, name, purpose, starts_on, ends_on, status, archived_at, lead_unit_id, created_by, created_at, creator:profiles!projects_created_by_fkey(full_name), units!projects_lead_unit_id_fkey(name)")
+          .select("id, kind, name, purpose, starts_on, ends_on, status, archived_at, lead_unit_id, created_by, created_at, creator_display_name, units!projects_lead_unit_id_fkey(name)")
           .order("starts_on", { ascending: false, nullsFirst: false }),
         supabase.from("capabilities").select("id").eq("profile_id", me.id).eq("capability", "create_project").maybeSingle(),
         supabase.from("units").select("id, name").eq("org_id", me.org_id).order("name"),
@@ -242,7 +242,7 @@ export default function ManagerProjects({ me, initialProjectId = null, openItem,
     setError(null); setDetail(null); setDetailScope(null);
     try {
       const projectResult = await supabase.from("projects")
-        .select("id, org_id, kind, name, purpose, starts_on, ends_on, follow_up_ends_on, status, archived_at, lead_unit_id, created_by, created_at, creator:profiles!projects_created_by_fkey(full_name), units!projects_lead_unit_id_fkey(name)")
+        .select("id, org_id, kind, name, purpose, starts_on, ends_on, follow_up_ends_on, status, archived_at, lead_unit_id, created_by, created_at, creator_display_name, units!projects_lead_unit_id_fkey(name)")
         .eq("id", projectId).single();
       if (projectResult.error) throw new Error(`Project: ${projectResult.error.message}`);
       const [participantResult, phaseResult, objectiveResult, workResult, budgetResult, spendResult, milestoneResult] = await Promise.all([
