@@ -169,5 +169,57 @@ BEGIN
   RAISE EXCEPTION 'Staff forged Executive attribution';
  EXCEPTION WHEN insufficient_privilege THEN NULL; END;
 END $staff$;
+RESET ROLE;
+INSERT INTO public.capabilities (org_id,profile_id,capability)
+VALUES ('10000000-0000-4000-8000-000000000010','31000000-0000-4000-8000-000000000004','create_project')
+ON CONFLICT DO NOTHING;
+SET LOCAL ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000004',true);
+SELECT set_config('request.jwt.claims','{"sub":"31000000-0000-4000-8000-000000000004","role":"authenticated","aal":"aal1"}',true);
+DO $individual$
+DECLARE
+  v_id uuid;
+  v_assignee uuid := '31000000-0000-4000-8000-000000000001';
+  v_colleague uuid := '31000000-0000-4000-8000-000000000006';
+  v_exec uuid := auth.uid();
+BEGIN
+  BEGIN
+    PERFORM public.create_individually_assigned_project(
+      '31000000-0000-4000-8000-000000000005', 'Inactive person');
+    RAISE EXCEPTION 'Inactive person accepted an individual project';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+
+  v_id := public.create_individually_assigned_project(v_assignee, 'Individual project fixture');
+  IF NOT EXISTS (SELECT 1 FROM public.projects WHERE id=v_id AND assigned_person_id=v_assignee AND lead_unit_id IS NULL)
+    OR EXISTS (SELECT 1 FROM public.project_units WHERE project_id=v_id) THEN
+    RAISE EXCEPTION 'Individual project must be assigned without a department';
+  END IF;
+  PERFORM set_config('request.jwt.claim.sub',v_assignee::text,true);
+  PERFORM set_config('request.jwt.claims',jsonb_build_object('sub',v_assignee,'role','authenticated','aal','aal1')::text,true);
+  IF NOT EXISTS (SELECT 1 FROM public.projects WHERE id=v_id) THEN
+    RAISE EXCEPTION 'Named assignee cannot read their project';
+  END IF;
+  BEGIN
+    PERFORM public.create_individually_assigned_project(v_assignee, 'Staff cannot create');
+    RAISE EXCEPTION 'Staff gained individual project creation authority';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+
+  PERFORM set_config('request.jwt.claim.sub',v_colleague::text,true);
+  PERFORM set_config('request.jwt.claims',jsonb_build_object('sub',v_colleague,'role','authenticated','aal','aal1')::text,true);
+  IF EXISTS (SELECT 1 FROM public.projects WHERE id=v_id) THEN
+    RAISE EXCEPTION 'Individual assignment shared the project with a colleague in the same department';
+  END IF;
+  PERFORM set_config('request.jwt.claim.sub',v_exec::text,true);
+  PERFORM set_config('request.jwt.claims',jsonb_build_object('sub',v_exec,'role','authenticated','aal','aal1')::text,true);
+  UPDATE public.projects SET assigned_person_id=v_colleague WHERE id=v_id;
+  IF NOT FOUND THEN RAISE EXCEPTION 'Executive could not reassign the project'; END IF;
+  PERFORM set_config('request.jwt.claim.sub',v_assignee::text,true);
+  PERFORM set_config('request.jwt.claims',jsonb_build_object('sub',v_assignee,'role','authenticated','aal','aal1')::text,true);
+  IF EXISTS (SELECT 1 FROM public.projects WHERE id=v_id) THEN
+    RAISE EXCEPTION 'The previous assignee retained access after reassignment';
+  END IF;
+END $individual$;
 ROLLBACK;
 SELECT 'Executive assignment scope gate passed' AS result;

@@ -18,6 +18,7 @@ import RouteTransition from "./experience-v2/RouteTransition";
 import AuthFrame from "./components/AuthFrame";
 import SettingsBack from "./components/SettingsBack";
 import ExecutiveAssign from "./components/ExecutiveAssign";
+import AssignedProjects from "./components/AssignedProjects";
 import { RolePresentationContext } from "./experience-v2/RolePresentationContext";
 import PrivilegedMfaGate from "./components/PrivilegedMfaGate";
 import Stage2UniversalMfaGate from "./components/Stage2UniversalMfaGate";
@@ -593,8 +594,10 @@ export default function App() {
     if (tab === "work") {
       if (isExec) return <ExecutiveWork key={managerScopeKey} me={me} openItem={openItem} goAssign={startAssignment} />;
       if (isAdmin) return <AdminWork key={managerScopeKey} me={me} openItem={openItem} goAssign={startAssignment} />;
-      if (isUnitManager) return <ManagerWork key={managerScopeKey} me={me} openItem={openItem} goAssign={startAssignment} />;
-      return <Work key={managerScopeKey} me={me} isManager={false} openItem={openItem} />;
+      return <AssignedProjects key={managerScopeKey} me={me} openItem={openItem}>
+        {isUnitManager ? <ManagerWork key={managerScopeKey} me={me} openItem={openItem} goAssign={startAssignment} />
+          : <Work key={managerScopeKey} me={me} isManager={false} openItem={openItem} />}
+      </AssignedProjects>;
     }
     if (tab === "personal-calendar") return <StaffCalendar onGuideTour={openCalendarGuide} statusLabel="My calendar" key={window.location.search} me={me} openItem={openItem} openMeeting={openMeeting} initialDate={new URLSearchParams(window.location.search).get("date")} />;
     if (tab === "staff-calendar" && isStaff) return <StaffCalendar onGuideTour={openCalendarGuide} me={me} openItem={openItem} openMeeting={openMeeting} initialDate={calendarFocusDate} onFocusHandled={()=>setCalendarFocusDate(null)} />;
