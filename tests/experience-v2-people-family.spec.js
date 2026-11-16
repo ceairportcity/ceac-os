@@ -701,7 +701,9 @@ test("VF3C Manager Team and Person workspace locks factual command composition",
   expect(person).toContain("There are no private manager notes.");
 
   expect(css).toContain("/* VF3C — Manager Team and Person workspace");
-  expect(css).toContain(".ev2-people-manager .ev2p-stack");
+  const teamsCss = readFileSync("src/screens/manager-teams.css", "utf8");
+  expect(teamsCss).toContain(".mt-split");
+  expect(teamsCss).toContain("grid-template-columns:minmax(176px,24%) minmax(0,1fr)");
   expect(css).toContain(".ev2p-person-context-rail");
   expect(css).toContain("position: sticky");
   expect(css).toContain("grid-template-columns: minmax(15.5rem, 17.5rem) minmax(0, 1fr)");

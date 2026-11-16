@@ -285,7 +285,7 @@ function UnitPeople({ me, openPerson }) {
   const staffCount = people.length + 1 - volunteerCount;
 
   return (
-    <div className="manager-team ev2-people-manager team-unit-people">
+    <div className="manager-team team-unit-people">
       <section className="phase6-manager-people-toolbar" aria-label="People and volunteer controls">
         <div className="phase6-manager-people-tabs" role="tablist" aria-label="People type">
           {[
