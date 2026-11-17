@@ -13,6 +13,10 @@ select set_config('ceac.equipment.test_report',public.asset_submit_staff_report(
 select set_config('ceac.equipment.test_decline',public.asset_submit_staff_report(
   'Microphone','Shure',null,null,null,'Studio','Not working','Second unverified claim'
 )::text,true);
+select set_config('ceac.equipment.test_existing',public.asset_submit_staff_report(
+  'Laptop','Lenovo','ThinkPad','STAFF-TEST-SERIAL','STAFF-REPORTED-TAG',
+  'Media room','In working condition','Reported again for an existing register match'
+)::text,true);
 
 do $staff_checks$
 declare
@@ -58,12 +62,13 @@ do $hr_decision$
 declare
   report_id uuid:=current_setting('ceac.equipment.test_report')::uuid;
   decline_id uuid:=current_setting('ceac.equipment.test_decline')::uuid;
+  existing_id uuid:=current_setting('ceac.equipment.test_existing')::uuid;
   registered_id uuid;
 begin
   if not public.app_has_capability('asset.manage',null) then
     raise exception 'Test HR does not have real asset management authority.';
   end if;
-  if (select count(*) from public.asset_staff_reports where id in(report_id,decline_id))<>2 then
+  if (select count(*) from public.asset_staff_reports where id in(report_id,decline_id,existing_id))<>3 then
     raise exception 'HR cannot read pending staff asset reports.';
   end if;
   registered_id:=public.asset_resolve_staff_report(
@@ -84,6 +89,18 @@ begin
     select 1 from public.asset_assignment_events
       where asset_id=registered_id and to_profile_id='31000000-0000-4000-8000-000000000001'
   ) then raise exception 'Official custody audit is missing.'; end if;
+  -- An HR match to an already assigned, same-person asset must not
+  -- manufacture a duplicate inventory record or custody transfer.
+  if public.asset_resolve_staff_report(existing_id,'assign_existing',null,registered_id,
+      'Matched the original equipment identifier and checked the custodian') IS DISTINCT FROM registered_id then
+    raise exception 'HR existing-equipment reconciliation returned the wrong asset.';
+  end if;
+  if (select count(*) from public.asset_assignment_events where asset_id=registered_id)<>1
+     or (select count(*) from public.asset_items where asset_code='CEAC-REPORT-GATE-001')<>1
+     or not exists(select 1 from public.asset_staff_reports
+         where id=existing_id and status='recorded' and asset_id=registered_id) then
+    raise exception 'Matching an existing asset fabricated new custody or inventory records.';
+  end if;
   begin
     perform public.asset_resolve_staff_report(report_id,'decline',null,null,'Attempt second decision');
     raise exception 'Previously reviewed report was accepted again.';
