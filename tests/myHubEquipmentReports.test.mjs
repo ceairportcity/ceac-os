@@ -13,6 +13,10 @@ test("My Hub exposes a direct equipment path for staff and HR without giving sta
   assert.match(hub, /title="Equipment"/);
   assert.match(hub, /report items missing from your record/);
   assert.match(assets, /<EquipmentReports me=\{me\} canManage=\{canManage\} assets=\{assets\} people=\{people\} onAccepted=\{load\} \/>/);
+  assert.match(assets, /assets\.filter\(asset=>asset\.current_assignee_profile_id===me\.id\)/);
+  assert.match(assets, /assignments\.filter\(event=>event\.from_profile_id===me\.id\|\|event\.to_profile_id===me\.id\)/);
+  assert.match(assets, /shownAssets\.map/);
+  assert.match(assets, /shownAssignments\.map/);
   assert.match(reports, /Report equipment/);
   assert.match(reports, /asset_submit_staff_report/);
   assert.match(reports, /asset_resolve_staff_report/);
