@@ -68,7 +68,9 @@ jobs:
 
       - name: Dependency security audit
         if: steps.classify.outputs.documentation_only != 'true'
-        run: npm audit --audit-level=high
+        run: |
+          node --test tests/ciDependencyAuditException.test.mjs
+          node scripts/ci/audit-dependencies.mjs
       - name: Check changed lines
         shell: bash
         run: |
