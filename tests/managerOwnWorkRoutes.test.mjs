@@ -86,6 +86,7 @@ test("earlier work has a dated entry point and checklists do not depend on atten
   assert.match(item, /performed_on: performedOn/);
   assert.match(item, /session\?\.id \|\| null/);
   assert.match(item, /max=\{ghanaCalendarDate\(\)\}/);
+  assert.match(item, /!\/\^\\d\{4\}-\\d\{2\}-\\d\{2\}\$\//);
   assert.match(sql, /ADD COLUMN IF NOT EXISTS performed_on date/i);
   assert.match(sql, /NEW\.performed_on > today/);
   assert.match(sql, /OLD\.origin = 'self_created'/);
