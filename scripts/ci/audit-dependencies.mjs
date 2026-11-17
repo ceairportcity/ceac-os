@@ -1,4 +1,5 @@
 import { spawnSync } from "node:child_process";
+import { readFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 
 // Temporary, explicit exception for GHSA-fc5q-39xc-vjpf (Oct 2026).
@@ -12,7 +13,7 @@ const TRANSITIVE_DEV_CHAIN = new Set([
   "picomatch", "fdir", "tinyglobby", "vite", "@vitejs/plugin-react",
 ]);
 
-export function evaluateDependencyAudit(audit, dateMs = Date.now()) {
+export function evaluateDependencyAudit(audit, dateMs = Date.now(), lockedPackages = null) {
   if (!audit || typeof audit !== "object" || audit.error) {
     return { ok: false, explanation: "npm audit did not return a usable security report." };
   }
@@ -28,7 +29,13 @@ export function evaluateDependencyAudit(audit, dateMs = Date.now()) {
     return { ok: false, explanation: "New or unrelated high-severity dependency vulnerability." };
   }
   for (const [name, item] of vulnerabilities) {
-    if (item.dev !== true || item.severity === "critical") {
+    // npm metavulnerability summaries can report an incorrect "dev" bit
+    // for a transitive package. When available, the checked-in lockfile is
+    // the authoritative proof that EVERY flagged package is dev-only.
+    const verifiedDevOnly = lockedPackages
+      ? lockedPackages["node_modules/" + name]?.dev === true
+      : item.dev === true;
+    if (!verifiedDevOnly || item.severity === "critical") {
       return { ok: false, explanation: "A production or critical dependency vulnerability remains: " + name };
     }
     const via = Array.isArray(item.via) ? item.via : [];
@@ -65,7 +72,10 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     process.exitCode = 1;
   } else {
     let result;
-    try { result = evaluateDependencyAudit(JSON.parse(command.stdout)); }
+    try {
+      const lock = JSON.parse(readFileSync("package-lock.json", "utf8"));
+      result = evaluateDependencyAudit(JSON.parse(command.stdout), Date.now(), lock.packages);
+    }
     catch (error) { result = { ok: false, explanation: "Invalid npm audit output: " + error.message }; }
     if (!result.ok) {
       console.error("Dependency audit blocked:", result.explanation);
