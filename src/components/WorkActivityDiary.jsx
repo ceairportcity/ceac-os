@@ -8,10 +8,10 @@ import {OperationalFileList, PendingFilePicker} from "./OperationalFiles";
 import {uploadOperationalFile} from "../lib/operationalFiles";
 import "./WorkActivityDiary.css";
 
-function ghanaDay() {
+function ghanaDay(date = new Date()) {
   const parts = new Intl.DateTimeFormat("en-GB", {
     timeZone: "Africa/Accra", year: "numeric", month: "2-digit", day: "2-digit",
-  }).formatToParts(new Date());
+  }).formatToParts(date);
   const value = Object.fromEntries(parts.map(({ type, value }) => [type, value]));
   return `${value.year}-${value.month}-${value.day}`;
 }
@@ -274,6 +274,10 @@ function ActivityDiary({ me, item, prefillDate = "", prefillRequest = 0, compact
       <div><span className="eyebrow">Your work</span><h3>Progress history</h3>
         <p>Follow your progress, milestones and supporting evidence over time.</p>
       </div>
+      {verified && canRecord && !editor && <button type="button" className="btn btn-ghost btn-sm"
+        onClick={() => beginUpdate(ghanaDay(new Date(Date.now() - 86400000)))} disabled={busy}>
+        Add earlier activity
+      </button>}
     </header>}
     {inlineComposer}
     {editor && verified && <div className="s2-progress-editor-heading"><strong>{correctingId?"Edit progress":"Your progress"}</strong><button type="button" disabled={busy} onClick={()=>{void recovery.clear();setEditor(false);}}>Cancel</button></div>}

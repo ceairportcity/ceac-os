@@ -6,15 +6,20 @@ import { pathToFileURL } from "node:url";
 const { canSelfCertifyOwnWork } = await import(pathToFileURL(process.cwd() + "/src/lib/workCompletion.js"));
 const source = (path) => readFileSync(path, "utf8");
 
-test("all managers, including the OFTGP Secretariat head and HR manager, must submit for independent approval", () => {
-  const item = { assignee_id: "head", assigned_by: "head", origin: "self_created", unit_id: "unit-1" };
+test("a manager may finish their own ordinary unit work, but never self-approve another authority's assignment", () => {
+  const item = { kind: "task", visibility: "unit", confidential: false,
+    assignee_id: "head", assigned_by: "head", origin: "self_created", unit_id: "unit-1" };
   const manager = { id: "head", memberships: [{ unit_id: "unit-1", role: "manager" }] };
-  assert.equal(canSelfCertifyOwnWork(manager, item), false);
-  assert.equal(canSelfCertifyOwnWork({ ...manager, is_admin: true }, item), false);
-  assert.equal(canSelfCertifyOwnWork({ id: "head", memberships: [{ unit_id: "unit-2", role: "manager" }] }, item), false);
+  assert.equal(canSelfCertifyOwnWork(manager, item), true);
+  assert.equal(canSelfCertifyOwnWork({ ...manager, is_admin: true }, item), true);
+  assert.equal(canSelfCertifyOwnWork(manager, { ...item, origin: "assigned", assigned_by: "exec" }), false);
+  assert.equal(canSelfCertifyOwnWork(manager, { ...item, origin: "assigned_by_exec", assigned_by: "exec" }), false);
+  assert.equal(canSelfCertifyOwnWork(manager, { ...item, confidential: true }), false);
+  assert.equal(canSelfCertifyOwnWork(manager, { ...item, assigned_by: "another" }), false);
+  assert.equal(canSelfCertifyOwnWork(manager, { ...item, unit_id: "unit-2" }), false);
   assert.equal(canSelfCertifyOwnWork({ id: "head", memberships: [{ unit_id: "unit-1", role: "staff" }] }, item), false);
-  assert.equal(canSelfCertifyOwnWork({ id: "head", is_exec: true }, item), true);
   assert.equal(canSelfCertifyOwnWork({ ...manager }, { ...item, visibility: "private" }), true);
+  assert.equal(canSelfCertifyOwnWork({ id: "head", is_exec: true }, item), true);
   assert.equal(canSelfCertifyOwnWork({ id: "head", is_admin: true, memberships: [] }, item), true);
   assert.equal(canSelfCertifyOwnWork({ id: "another", is_exec: true }, item), false);
 });
@@ -66,4 +71,26 @@ test("mobile attendance review remains readable and factually qualified", () => 
   assert.match(css, /ev2wf-today-review-entry>td:nth-of-type\(1\)::before/);
   assert.match(css, /ev2wf-today-review-entry>td:last-child/);
   assert.match(css, /ev2wf-today-review-entry \.btn\{min-height:44px;scroll-margin-block:96px\}/);
+});
+
+
+test("earlier work has a dated entry point and checklists do not depend on attendance", () => {
+  const item = source("src/screens/Item.jsx");
+  const diary = source("src/components/WorkActivityDiary.jsx");
+  const sql = source("supabase/migrations/20261117110000_manager_self_completion_and_dated_checklists.sql");
+  assert.match(diary, /Add earlier activity/);
+  assert.match(diary, /activity_date: date/);
+  assert.match(item, /const canTickChecklist = item\?\.assignee_id === me\.id/);
+  assert.match(item, /disabled=\{!canTickChecklist \|\| Boolean\(tickingId\)\}/);
+  assert.doesNotMatch(item, /if \(gated\) return;/);
+  assert.match(item, /performed_on: performedOn/);
+  assert.match(item, /session\?\.id \|\| null/);
+  assert.match(item, /max=\{ghanaCalendarDate\(\)\}/);
+  assert.match(sql, /ADD COLUMN IF NOT EXISTS performed_on date/i);
+  assert.match(sql, /NEW\.performed_on > today/);
+  assert.match(sql, /OLD\.origin = 'self_created'/);
+  assert.match(sql, /OLD\.assigned_by = auth\.uid\(\)/);
+  assert.match(sql, /OLD\.unit_id/);
+  assert.match(sql, /Manager work must be sent for review/);
+  assert.doesNotMatch(sql, /UPDATE public\.work_items\s+SET status/i);
 });
