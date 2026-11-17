@@ -292,7 +292,7 @@ function ItemDetail({ id, me, session, isManager = false, initialRoutineDate=nul
   async function toggle(cid) {
     if (!canTickChecklist || tickingId) return;
     const performedOn = checklistWorkDate;
-    if (!ticks[cid] && (!/^\\d{4}-\\d{2}-\\d{2}$/.test(performedOn) || performedOn > ghanaCalendarDate())) {
+    if (!ticks[cid] && (!/^\d{4}-\d{2}-\d{2}$/.test(performedOn) || performedOn > ghanaCalendarDate())) {
       setErr("Choose the actual date the checklist step was completed, not a future date.");
       return;
     }
