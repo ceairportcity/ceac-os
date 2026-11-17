@@ -1,4 +1,4 @@
-\\set ON_ERROR_STOP on
+\set ON_ERROR_STOP on
 -- Synthetic, transactional, role-scoped acceptance: no production data changes.
 BEGIN;
 INSERT INTO public.work_items
