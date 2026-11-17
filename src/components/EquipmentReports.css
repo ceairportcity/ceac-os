@@ -1,0 +1,20 @@
+.ceac-equipment-reporting{margin:18px 0 24px;padding:22px 24px;background:var(--ev2-surface,var(--c1));border:1px solid var(--ev2-border,var(--c237));border-radius:18px}
+.ceac-equipment-reporting-header{display:flex;align-items:center;justify-content:space-between;gap:18px}
+.ceac-equipment-reporting-header h2{margin:5px 0 6px;font-size:18px;font-weight:680;letter-spacing:-.02em;color:var(--ev2-text,var(--c235))}
+.ceac-equipment-reporting-header p{font-size:13px;line-height:1.6;color:var(--ev2-text-secondary,var(--c236));margin:0;max-width:600px}
+.ceac-equipment-report-count{font-size:12px;font-weight:650;white-space:nowrap;color:var(--ev2-text-secondary,var(--c236))}
+.ceac-equipment-report-empty{font-size:13px;margin:16px 0 0;color:var(--ev2-text-secondary,var(--c236))}
+.ceac-equipment-report-list{display:grid;gap:0;margin-top:14px;border-top:1px solid var(--ev2-border,var(--c237))}
+.ceac-equipment-report-row{display:flex;align-items:start;justify-content:space-between;gap:15px;padding:16px 0;border-bottom:1px solid var(--ev2-border,var(--c237))}
+.ceac-equipment-report-row>div{min-width:0}
+.ceac-equipment-report-row strong{display:block;color:var(--ev2-text,var(--c235));font-size:14px;font-weight:650}
+.ceac-equipment-report-row p{font-size:12px;margin:5px 0;color:var(--ev2-text-secondary,var(--c236));line-height:1.55;overflow-wrap:anywhere}
+.ceac-equipment-report-row p strong{display:inline;font-size:inherit}
+.ceac-equipment-report-meta{display:flex;align-items:center;gap:6px;margin-bottom:6px;color:var(--ev2-text-secondary,var(--c236));font-size:11px}
+.ceac-equipment-report-form{display:grid;gap:15px;padding:8px 0}
+.ceac-equipment-report-form label{display:grid;gap:7px;font-size:13px;font-weight:600;color:var(--ev2-text,var(--c235))}
+.ceac-equipment-report-form :is(input,textarea,select){font:inherit;font-weight:400;max-width:100%;min-height:44px;box-sizing:border-box}
+.ceac-equipment-report-form textarea{min-height:80px;resize:vertical}
+.ceac-equipment-report-form .btn{justify-self:start}
+.ceac-equipment-report-two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px}
+@media(max-width:650px){.ceac-equipment-reporting{margin:14px 0;padding:16px;border-radius:14px}.ceac-equipment-reporting-header{flex-direction:column;align-items:stretch}.ceac-equipment-reporting-header>.btn{align-self:start}.ceac-equipment-report-row{flex-direction:column}.ceac-equipment-report-two{grid-template-columns:1fr}.ceac-equipment-report-form :is(input,textarea,select){font-size:16px}}
