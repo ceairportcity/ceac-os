@@ -65,6 +65,21 @@ BEGIN
     RAISE EXCEPTION 'Manager self-completion did not preserve the completion and audit.';
   END IF;
   BEGIN
+    UPDATE public.work_items
+       SET origin='self_created', assigned_by='31000000-0000-4000-8000-000000000002'
+     WHERE id='4a000000-0000-4000-8000-000000000002';
+    RAISE EXCEPTION 'Expected original-assigner protection was bypassed.';
+  EXCEPTION WHEN insufficient_privilege THEN
+    NULL;
+  END;
+  BEGIN
+    UPDATE public.work_items SET status='completed'
+     WHERE id='4a000000-0000-4000-8000-000000000002';
+    RAISE EXCEPTION 'Expected direct-approval protection was bypassed.';
+  EXCEPTION WHEN insufficient_privilege THEN
+    NULL;
+  END;
+  BEGIN
     PERFORM public.self_certify_work('4a000000-0000-4000-8000-000000000002',NULL,
       'Bypass independent review.',NULL);
   EXCEPTION WHEN insufficient_privilege THEN

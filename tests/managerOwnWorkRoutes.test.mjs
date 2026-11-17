@@ -92,6 +92,10 @@ test("earlier work has a dated entry point and checklists do not depend on atten
   assert.match(sql, /OLD\.origin = 'self_created'/);
   assert.match(sql, /OLD\.assigned_by = auth\.uid\(\)/);
   assert.match(sql, /OLD\.unit_id/);
+  assert.match(sql, /work_items_original_assigner_guard/);
+  assert.match(sql, /NEW\.origin IS DISTINCT FROM OLD\.origin/);
+  assert.match(sql, /NEW\.assigned_by IS DISTINCT FROM OLD\.assigned_by/);
+  assert.match(sql, /This work requires its recorded approval before it can close/);
   assert.match(sql, /Manager work must be sent for review/);
   assert.doesNotMatch(sql, /UPDATE public\.work_items\s+SET status/i);
 });

@@ -97,4 +97,73 @@ BEGIN
 END;
 $function$;
 
+
+-- Do not permit a browser/client to rewrite an assignment's recorded source
+-- before invoking the self-completion RPC. Legitimate assignment changes use
+-- the existing auditable reassignment operations; migration/maintenance roles
+-- remain able to reconcile legacy rows without impersonating an employee.
+CREATE OR REPLACE FUNCTION private.guard_work_original_assigner()
+RETURNS trigger
+LANGUAGE plpgsql
+SET search_path = ''
+AS $body$
+BEGIN
+  IF auth.uid() IS NOT NULL AND
+     (NEW.origin IS DISTINCT FROM OLD.origin
+       OR NEW.assigned_by IS DISTINCT FROM OLD.assigned_by)
+  THEN
+    RAISE EXCEPTION 'The recorded work origin and assigner cannot be changed.'
+      USING ERRCODE = '42501';
+  END IF;
+  RETURN NEW;
+END;
+$body$;
+DROP TRIGGER IF EXISTS work_items_original_assigner_guard ON public.work_items;
+CREATE TRIGGER work_items_original_assigner_guard
+  BEFORE UPDATE OF origin, assigned_by ON public.work_items
+  FOR EACH ROW EXECUTE FUNCTION private.guard_work_original_assigner();
+
+-- Even a manager with broad unit editing rights must not turn assigned work
+-- straight into "completed" without the authoritative independent review RPC.
+-- The existing review function sets ceac.work_approve in the same transaction.
+CREATE OR REPLACE FUNCTION public.guard_work_review_transitions()
+RETURNS trigger
+LANGUAGE plpgsql
+SET search_path TO 'public'
+AS $function$
+BEGIN
+  IF auth.uid() IS NULL THEN
+    RETURN NEW;
+  END IF;
+  IF OLD.status = 'in_review'
+     AND NEW.status = 'completed'
+     AND coalesce(current_setting('ceac.work_approve', true), '') <> 'on' THEN
+    RAISE EXCEPTION 'Approve work through the review action so the review and completion are recorded together.'
+      USING ERRCODE = '42501';
+  END IF;
+  IF NEW.status = 'completed'
+     AND NEW.status IS DISTINCT FROM OLD.status
+     AND OLD.kind IN ('task','deliverable','meeting_outcome')
+     AND coalesce(current_setting('ceac.work_approve', true), '') <> 'on' THEN
+    RAISE EXCEPTION 'This work requires its recorded approval before it can close.'
+      USING ERRCODE = '42501';
+  END IF;
+  IF OLD.status = 'in_review'
+     AND NEW.status = 'returned'
+     AND coalesce(current_setting('ceac.work_return', true), '') <> 'on' THEN
+    RAISE EXCEPTION 'Return work through the review action so the reason is recorded.'
+      USING ERRCODE = '42501';
+  END IF;
+  IF OLD.status IN ('completed','self_certified')
+     AND (NEW.status IS DISTINCT FROM OLD.status
+       OR NEW.completed_at IS DISTINCT FROM OLD.completed_at
+       OR NEW.first_time_approved IS DISTINCT FROM OLD.first_time_approved)
+     AND coalesce(current_setting('ceac.work_reopen', true), '') <> 'on' THEN
+    RAISE EXCEPTION 'Finished work must be reopened with a reason before its completion state can change.'
+      USING ERRCODE = '42501';
+  END IF;
+  RETURN NEW;
+END;
+$function$;
+
 commit;
