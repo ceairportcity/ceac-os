@@ -51,6 +51,9 @@ function ItemDetail({ id, me, session, isManager = false, initialRoutineDate=nul
   const [responsibleReviewer, setResponsibleReviewer] = useState(null);
   const [checks, setChecks] = useState([]);
   const [ticks, setTicks] = useState({});
+  const [checkDates, setCheckDates] = useState({});
+  const [checklistWorkDate, setChecklistWorkDate] = useState(() => ghanaCalendarDate());
+  const [tickingId, setTickingId] = useState(null);
   // Discard checklist reads that started before a newer local tick mutation.
   const tickMutationVersion = useRef(0);
   const [myStep, setMyStep] = useState("");
@@ -182,14 +185,16 @@ function ItemDetail({ id, me, session, isManager = false, initialRoutineDate=nul
       .select("id,label,position").eq("work_item_id", id).order("position");
     if (checklistError) { setErr(checklistError.message); return; }
     setChecks(c || []);
-    if (tickReadVersion === tickMutationVersion.current) setTicks({});
+    if (tickReadVersion === tickMutationVersion.current) { setTicks({}); setCheckDates({}); }
     if (c && c.length) {
       const { data: t, error: tickError } = await supabase.from("checklist_ticks")
-        .select("checklist_item_id, undone_at").in("checklist_item_id", c.map((x) => x.id));
+        .select("checklist_item_id, undone_at, performed_on").in("checklist_item_id", c.map((x) => x.id));
       if (tickError) { setErr(tickError.message); return; }
-      const map = {};
-      (t || []).forEach((x) => { if (!x.undone_at) map[x.checklist_item_id] = true; });
-      if (tickReadVersion === tickMutationVersion.current) setTicks(map);
+      const map = {}, dates = {};
+      (t || []).forEach((x) => {
+        if (!x.undone_at) { map[x.checklist_item_id] = true; dates[x.checklist_item_id] = x.performed_on; }
+      });
+      if (tickReadVersion === tickMutationVersion.current) { setTicks(map); setCheckDates(dates); }
     }
 
     setRecipeSteps([]);
@@ -234,6 +239,10 @@ function ItemDetail({ id, me, session, isManager = false, initialRoutineDate=nul
   const done = checks.filter((c) => ticks[c.id]).length;
   const allDone = checks.length > 0 && done === checks.length;
   const gated = !session;
+  // Attendance is separate from work history. Only the assignee may change
+  // unfinished checklist entries; review and finished records stay read-only.
+  const canTickChecklist = item?.assignee_id === me.id &&
+    ["not_started", "in_progress", "returned", "waiting_on"].includes(item.status);
   const selfCertifiableWork = canSelfCertifyOwnWork(me, item);
 
   async function addMyStep() {
@@ -281,27 +290,37 @@ function ItemDetail({ id, me, session, isManager = false, initialRoutineDate=nul
   }
 
   async function toggle(cid) {
-    if (gated) return;
+    if (!canTickChecklist || tickingId) return;
+    const performedOn = checklistWorkDate;
+    if (!ticks[cid] && (!/^\d{4}-\d{2}-\d{2}$/.test(performedOn) || performedOn > ghanaCalendarDate())) {
+      setErr("Choose the actual date the checklist step was completed, not a future date.");
+      return;
+    }
+    setTickingId(cid);
     ++tickMutationVersion.current;
     setErr(null);
-    if (ticks[cid]) {
-      const { error } = await supabase.from("checklist_ticks").update({ undone_at: new Date().toISOString() })
-        .eq("checklist_item_id", cid).eq("profile_id", me.id).is("undone_at", null);
-      if (error) { setErr(error.message); return; }
-      ++tickMutationVersion.current;
-      setTicks((t) => ({ ...t, [cid]: false }));
-    } else {
-      const { error } = await supabase.from("checklist_ticks")
-        .insert({ checklist_item_id: cid, profile_id: me.id, session_id: session ? session.id : null });
-      if (error) { setErr(error.message); return; }
-      ++tickMutationVersion.current;
-      setTicks((t) => ({ ...t, [cid]: true }));
-      if (item.status === "not_started") {
-        const { error: statusError } = await supabase.from("work_items").update({ status: "in_progress", last_movement_at: new Date().toISOString() }).eq("id", id);
-        if (statusError) { setErr(statusError.message); return; }
-        setItem((i) => ({ ...i, status: "in_progress" }));
+    try {
+      if (ticks[cid]) {
+        const { error } = await supabase.from("checklist_ticks").update({ undone_at: new Date().toISOString() })
+          .eq("checklist_item_id", cid).eq("profile_id", me.id).is("undone_at", null);
+        if (error) { setErr(error.message); return; }
+        ++tickMutationVersion.current;
+        setTicks((t) => ({ ...t, [cid]: false }));
+        setCheckDates((dates) => ({ ...dates, [cid]: null }));
+      } else {
+        const { error } = await supabase.from("checklist_ticks")
+          .insert({ checklist_item_id: cid, profile_id: me.id, session_id: session?.id || null, performed_on: performedOn });
+        if (error) { setErr(error.message); return; }
+        ++tickMutationVersion.current;
+        setTicks((t) => ({ ...t, [cid]: true }));
+        setCheckDates((dates) => ({ ...dates, [cid]: performedOn }));
+        if (item.status === "not_started") {
+          const { error: statusError } = await supabase.from("work_items").update({ status: "in_progress", last_movement_at: new Date().toISOString() }).eq("id", id);
+          if (statusError) { setErr(statusError.message); return; }
+          setItem((i) => ({ ...i, status: "in_progress" }));
+        }
       }
-    }
+    } finally { setTickingId(null); }
   }
 
   async function submit() {
@@ -320,6 +339,7 @@ function ItemDetail({ id, me, session, isManager = false, initialRoutineDate=nul
         });
         if (selfCertificationError) throw selfCertificationError;
         setSheet(null); setNote(""); setLink(""); await load();
+        setSaveResult("Work finished. The completion is recorded and remains visible to authorised supervisors.");
         return;
       }
       const { error: submissionError } = await supabase.rpc("submit_work_for_review", {
@@ -755,11 +775,23 @@ function ItemDetail({ id, me, session, isManager = false, initialRoutineDate=nul
         <div className="staff-check-progress" aria-label={`${done} of ${checks.length} checklist items complete`}>
           <span style={{ width: `${Math.round((done / checks.length) * 100)}%` }} />
         </div>
+        {canTickChecklist && <div className="ceac-checklist-entry-date" style={{ padding: "0 15px 12px", display: "flex", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
+          <label style={{ display: "grid", gap: 4, fontSize: 13 }}>Date these steps were done
+            <input type="date" className="field" aria-label="Date checklist work was done"
+              max={ghanaCalendarDate()} value={checklistWorkDate}
+              onChange={(event) => setChecklistWorkDate(event.target.value)} />
+          </label>
+          <small>Choose an earlier date for past work. The time you record it is saved separately. Attendance is unchanged.</small>
+        </div>}
         <div className="card checklist-card" style={{ padding: "2px 15px" }}>
           {checks.map((c) => (
-            <button key={c.id} className={"ck " + (ticks[c.id] ? "done" : "")} onClick={() => toggle(c.id)} disabled={gated}>
+            <button key={c.id} className={"ck " + (ticks[c.id] ? "done" : "")} onClick={() => toggle(c.id)} disabled={!canTickChecklist || Boolean(tickingId)}>
               <span className={"box " + (ticks[c.id] ? "on" : "")} />
-              <span className="ck-l">{c.label}</span>
+              <span className="ck-l">{c.label}
+                {ticks[c.id] && checkDates[c.id] && <small style={{ display: "block", fontWeight: 400 }}>
+                  Done on {new Date(checkDates[c.id] + "T12:00:00Z").toLocaleDateString("en-GB", { timeZone: "Africa/Accra", day: "numeric", month: "short", year: "numeric" })}
+                </small>}
+              </span>
             </button>))}
         </div>
         <footer>{done} of {checks.length} recorded step{checks.length === 1 ? "" : "s"} complete</footer>
