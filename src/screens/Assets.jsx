@@ -226,12 +226,23 @@ export default function Assets({ me }) {
     if(ok) setLifeSheet(null);
   }
 
-  const assigned=useMemo(()=>assets.filter((asset)=>asset.current_status==="assigned"),[assets]);
-  const service=useMemo(()=>assets.filter((asset)=>asset.current_status==="repair"||asset.current_status==="retired"),[assets]);
+  const personalAssets = !canManage && !me.is_admin;
+  // My Hub means equipment given to this PERSON, not the whole department.
+  // Unit managers may read unit records under RLS, but those are not their
+  // personal assignments and must not be represented as such here.
+  const shownAssets=useMemo(()=>personalAssets
+    ? assets.filter(asset=>asset.current_assignee_profile_id===me.id)
+    : assets,[assets,personalAssets,me.id]);
+  const shownAssignments=useMemo(()=>personalAssets
+    ? assignments.filter(event=>event.from_profile_id===me.id||event.to_profile_id===me.id)
+    : assignments,[assignments,personalAssets,me.id]);
+  const shownLifecycle=useMemo(()=>personalAssets
+    ? lifecycle.filter(event=>shownAssets.some(asset=>asset.id===event.asset_id))
+    : lifecycle,[lifecycle,shownAssets,personalAssets]);
+  const assigned=useMemo(()=>shownAssets.filter(asset=>asset.current_status==="assigned"),[shownAssets]);
+  const service=useMemo(()=>shownAssets.filter(asset=>asset.current_status==="repair"||asset.current_status==="retired"),[shownAssets]);
 
   if(loading) return <div className="body"><LoadingState label="Loading assets & devices…" /></div>;
-
-  const personalAssets = !canManage && !me.is_admin;
   const FactsWrapper = personalAssets ? "details" : "div";
   return <div className={`body assets-page ${personalAssets ? "ev2-personal-page ev2-personal-assets" : ""}`.trim()}>
     {personalAssets ? <PersonalPageHeader
@@ -250,7 +261,7 @@ export default function Assets({ me }) {
     <EquipmentReports me={me} canManage={canManage} assets={assets} people={people} onAccepted={load} />
 
     {personalAssets && <div className="ceac-hub-intro" aria-label="Your equipment at a glance">
-      <div><span>Equipment in your care</span><strong>{assets.length}</strong><small>Based on your recorded assignments</small></div>
+      <div><span>Equipment in your care</span><strong>{shownAssets.length}</strong><small>Based on your recorded assignments</small></div>
       <p>Select an item to read its details. You can also check repairs and previous assignments below.</p>
     </div>}
     <div className="asset-tabs ceac-hub-tabs" role="tablist" aria-label="Equipment sections">
@@ -265,7 +276,7 @@ export default function Assets({ me }) {
     {tab==="inventory"&&<>
       <div className="sec"><span>{canManage?"Equipment register":"Equipment assigned to you"}</span>{canManage&&<button className="btn btn-sm" onClick={openCreate}>Add asset</button>}</div>
       <div className="asset-grid">
-        {assets.map((asset)=><article className="card asset-card" key={asset.id}>
+        {shownAssets.map((asset)=><article className="card asset-card" key={asset.id}>
           <div className="asset-card-head">
             <div><span className="eyebrow">{asset.asset_code}</span><h3>{asset.manufacturer||asset.category}{asset.model?" · "+asset.model:""}</h3></div>
             <Pill tone={statusTone(asset.current_status)}>{human(asset.current_status)}</Pill>
@@ -299,7 +310,7 @@ export default function Assets({ me }) {
           </div>}
         </article>)}
       </div>
-      {!assets.length&&<EmptyState title={canManage?"No assets recorded yet":"No equipment is assigned to you yet"}>{canManage?"Add the first CEAC asset/device to begin the register.":"Equipment officially assigned by HR will appear here. Use Report equipment above if an item is missing."}</EmptyState>}
+      {!shownAssets.length&&<EmptyState title={canManage?"No assets recorded yet":"No equipment is assigned to you yet"}>{canManage?"Add the first CEAC asset/device to begin the register.":"Equipment officially assigned by HR will appear here. Use Report equipment above if an item is missing."}</EmptyState>}
     </>}
 
     {tab==="assigned"&&<>
@@ -318,18 +329,18 @@ export default function Assets({ me }) {
         <div className="row-m">{human(asset.current_status)} · {asset.current_condition_note||"Condition not recorded"}</div>
       </div>)}
       <div className="sec"><span>Lifecycle history</span></div>
-      {lifecycle.map((event)=><div className="row" key={event.id}>
+      {shownLifecycle.map((event)=><div className="row" key={event.id}>
         <div className="row-t">{human(event.action)}</div>
         <div className="row-m">{new Date(event.occurred_at).toLocaleString("en-GB")} · {human(event.from_status)} → {human(event.to_status)}{event.actor?.full_name?" · "+event.actor.full_name:""}</div>
         {event.note&&<div className="row-note">{event.note}</div>}
         <div className="row-note">{event.reason}</div>
       </div>)}
-      {!lifecycle.length&&<EmptyState compact title="No lifecycle events recorded">Repairs, warranty claims and retirement events will appear here.</EmptyState>}
+      {!shownLifecycle.length&&<EmptyState compact title="No lifecycle events recorded">Repairs, warranty claims and retirement events will appear here.</EmptyState>}
     </>}
 
     {tab==="history"&&<>
       <div className="sec"><span>Custody history</span></div>
-      {assignments.map((event)=><div className="row asset-history-row" key={event.id}>
+      {shownAssignments.map((event)=><div className="row asset-history-row" key={event.id}>
         <div className="row-t">{human(event.action)}</div>
         <div className="row-m">{new Date(event.occurred_at).toLocaleString("en-GB")}</div>
         <div className="row-note">{event.from_profile?.full_name||event.from_unit?.name||event.from_location||"Available"} → {event.to_profile?.full_name||event.to_unit?.name||event.to_location||"Available"}</div>
@@ -337,7 +348,7 @@ export default function Assets({ me }) {
         {event.condition_note&&<div className="row-note">Condition: {event.condition_note}</div>}
         <div className="row-note">{event.reason}</div>
       </div>)}
-      {!assignments.length&&<EmptyState compact title="No custody history in your scope">Assignments, transfers and returns will appear here.</EmptyState>}
+      {!shownAssignments.length&&<EmptyState compact title="No custody history in your scope">Assignments, transfers and returns will appear here.</EmptyState>}
     </>}
 
     {assetSheet&&<AssetForm modern={me.is_admin} title={editing?"Edit asset":"Add asset"} description="Record factual equipment details and the purchase currency, where known." error={error} onClose={()=>!busy&&setAssetSheet(false)}>
