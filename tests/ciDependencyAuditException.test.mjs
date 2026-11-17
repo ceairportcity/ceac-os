@@ -27,3 +27,12 @@ test("new advisories, prod exposure, critical findings and audit errors always b
   const critical=knownIssue();critical.vulnerabilities.picomatch={...picomatch,severity:"critical"};
   assert.equal(evaluateDependencyAudit(critical).ok,false);
 });
+
+test("checked-in dependency types, not npm metapackage labels, determine actual dev exposure", () => {
+  const audit=knownIssue();
+  audit.vulnerabilities["@vitejs/plugin-react"]={...audit.vulnerabilities["@vitejs/plugin-react"],dev:false};
+  const packages=Object.fromEntries(Object.keys(audit.vulnerabilities).map(name=>["node_modules/"+name,{dev:true}]));
+  assert.equal(evaluateDependencyAudit(audit,Date.parse("2026-11-17"),packages).ok,true);
+  packages["node_modules/@vitejs/plugin-react"].dev=false;
+  assert.equal(evaluateDependencyAudit(audit,Date.parse("2026-11-17"),packages).ok,false);
+});
