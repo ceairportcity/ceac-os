@@ -5,6 +5,7 @@ import { humanError } from "../lib/productLanguage";
 import { ComposerDrawer } from "../experience-v2/components";
 import { WorkPageHeader } from "../experience-v2/work-family/WorkFamilyV2";
 import { PersonalPageHeader } from "../experience-v2/personal-family/PersonalFamilyV2";
+import EquipmentReports from "../components/EquipmentReports";
 import "../experience-v2/cohesive-refresh.css";
 
 function human(value=""){
@@ -236,7 +237,7 @@ export default function Assets({ me }) {
     {personalAssets ? <PersonalPageHeader
       eyebrow="My Hub"
       title="My equipment"
-      description="See the equipment recorded in your care, its condition and its history."
+      description="See equipment assigned by HR, check its condition and history, or report missing equipment."
       statusLabel="My Hub"
     /> : me.is_admin ? <WorkPageHeader eyebrow="Enterprise asset register" title="Assets & devices" description="CEAC equipment, current custody, repairs and recorded history. This register does not remotely wipe, lock, configure or monitor device operating systems." /> : <div style={{paddingTop:26}}>
       <div className="eyebrow">Enterprise asset register</div>
@@ -246,6 +247,7 @@ export default function Assets({ me }) {
 
     {error&&<ProductNotice tone="error" title="Assets & devices">{error}</ProductNotice>}
     {notice&&<ProductNotice tone="success" title="Recorded">{notice}</ProductNotice>}
+    <EquipmentReports me={me} canManage={canManage} assets={assets} people={people} onAccepted={load} />
 
     {personalAssets && <div className="ceac-hub-intro" aria-label="Your equipment at a glance">
       <div><span>Equipment in your care</span><strong>{assets.length}</strong><small>Based on your recorded assignments</small></div>
@@ -297,7 +299,7 @@ export default function Assets({ me }) {
           </div>}
         </article>)}
       </div>
-      {!assets.length&&<EmptyState title={canManage?"No assets recorded yet":"No equipment is assigned to you yet"}>{canManage?"Add the first CEAC asset/device to begin the register.":"Equipment recorded in your care will appear here."}</EmptyState>}
+      {!assets.length&&<EmptyState title={canManage?"No assets recorded yet":"No equipment is assigned to you yet"}>{canManage?"Add the first CEAC asset/device to begin the register.":"Equipment officially assigned by HR will appear here. Use Report equipment above if an item is missing."}</EmptyState>}
     </>}
 
     {tab==="assigned"&&<>
