@@ -3,12 +3,25 @@ import { supabase } from "../lib/supabase";
 import { humanError } from "../lib/productLanguage";
 import { ComposerDrawer } from "../experience-v2/components";
 import { ProductNotice } from "./bits";
-import "./EquipmentReports.css";
+
 
 const blankReport = {
   category: "", manufacturer: "", model: "", serial: "", tag: "",
   location: "", condition: "", details: "",
 };
+
+// Reuse CEAC's existing card/field/button design instead of adding a new
+// stylesheet to the large shared CSS bundle.
+const sectionStyle = { margin: "18px 0 24px", padding: "20px 22px" };
+const headerStyle = { display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, flexWrap: "wrap" };
+const subtitleStyle = { color: "var(--ev2-text-secondary,var(--c236))", fontSize: 13, lineHeight: 1.55, maxWidth: 600 };
+const mutedStyle = { color: "var(--ev2-text-secondary,var(--c236))", fontSize: 13 };
+const listStyle = { display: "grid", gap: 0, marginTop: 14 };
+const rowStyle = { display: "flex", flexWrap: "wrap", alignItems: "flex-start", justifyContent: "space-between", gap: 14, padding: "14px 0", borderBottom: "1px solid var(--ev2-border,var(--c237))" };
+const metaStyle = { display: "flex", alignItems: "center", flexWrap: "wrap", gap: 6, marginBottom: 6, fontSize: 12, color: "var(--ev2-text-secondary,var(--c236))" };
+const formStyle = { display: "grid", gap: 14, padding: "8px 0" };
+const formLabelStyle = { display: "grid", gap: 7, fontSize: 13, fontWeight: 600 };
+const columnsStyle = { display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,230px),1fr))", gap: 12 };
 
 function readableDate(value) {
   if (!value) return "Date not available";
@@ -141,12 +154,12 @@ export default function EquipmentReports({ me, canManage, assets = [], people = 
     } finally { writing.current = false; setBusy(false); }
   }
 
-  return <section className="ceac-equipment-reporting" aria-label={canManage ? "Staff equipment reports" : "Report missing equipment"}>
-    <div className="ceac-equipment-reporting-header">
+  return <section className="card ceac-equipment-reporting" style={sectionStyle} aria-label={canManage ? "Staff equipment reports" : "Report missing equipment"}>
+    <div className="ceac-equipment-reporting-header" style={headerStyle}>
       <div>
         <span className="eyebrow">{canManage ? "Administration · Equipment" : "My Hub · Equipment"}</span>
-        <h2>{canManage ? "Equipment reported by staff" : "Equipment missing from your record?"}</h2>
-        <p>{canManage
+        <h2 className="h2">{canManage ? "Equipment reported by staff" : "Equipment missing from your record?"}</h2>
+        <p style={subtitleStyle}>{canManage
           ? "Check staff-reported equipment before adding it to the official register or assigning an existing item."
           : "Tell HR about church equipment in your care that is not shown here. HR checks each report and records the official assignment."}</p>
       </div>
@@ -163,13 +176,13 @@ export default function EquipmentReports({ me, canManage, assets = [], people = 
     {loading && <p className="screen-note">Loading equipment reports…</p>}
     {!loading && !readError && (
       (canManage ? pending : reports).length === 0
-        ? <p className="ceac-equipment-report-empty">{canManage
+        ? <p className="ceac-equipment-report-empty" style={mutedStyle}>{canManage
           ? "No staff equipment reports are awaiting review."
           : "No reports submitted yet. Equipment officially assigned by HR appears in the register below."}</p>
-        : <div className="ceac-equipment-report-list">
-          {(canManage ? pending : reports).map(report => <article className="ceac-equipment-report-row" key={report.id}>
+        : <div className="ceac-equipment-report-list" style={listStyle}>
+          {(canManage ? pending : reports).map(report => <article className="ceac-equipment-report-row" style={rowStyle} key={report.id}>
             <div>
-              <div className="ceac-equipment-report-meta">
+              <div className="ceac-equipment-report-meta" style={metaStyle}>
                 {canManage
                   ? (people.find(person => person.id === report.reporter_id)?.full_name || "Employee")
                   : statusLabel(report.status)}
@@ -194,41 +207,41 @@ export default function EquipmentReports({ me, canManage, assets = [], people = 
     {formOpen && !canManage && <ComposerDrawer open title="Report equipment to HR"
       description="This records what you report. HR will verify it before an official assignment appears."
       onClose={() => { if (!busy) setFormOpen(false); }}>
-      <div className="ceac-equipment-report-form">
-        <label>Equipment type *
+      <div className="ceac-equipment-report-form" style={formStyle}>
+        <label style={formLabelStyle} style={formLabelStyle}>Equipment type *
           <input className="field" aria-label="Reported equipment type" required maxLength={80}
             placeholder="Laptop, camera, microphone…" value={draft.category}
             onChange={e => updateDraft("category", e.target.value)} />
         </label>
-        <div className="ceac-equipment-report-two">
-          <label>Brand or manufacturer
+        <div className="ceac-equipment-report-two" style={columnsStyle}>
+          <label style={formLabelStyle} style={formLabelStyle}>Brand or manufacturer
             <input className="field" maxLength={120} value={draft.manufacturer}
               onChange={e => updateDraft("manufacturer", e.target.value)} />
           </label>
-          <label>Model
+          <label style={formLabelStyle} style={formLabelStyle}>Model
             <input className="field" maxLength={120} value={draft.model}
               onChange={e => updateDraft("model", e.target.value)} />
           </label>
-          <label>Existing equipment tag (if any)
+          <label style={formLabelStyle} style={formLabelStyle}>Existing equipment tag (if any)
             <input className="field" maxLength={80} value={draft.tag}
               onChange={e => updateDraft("tag", e.target.value)} />
           </label>
-          <label>Serial number (if known)
+          <label style={formLabelStyle} style={formLabelStyle}>Serial number (if known)
             <input className="field" maxLength={120} value={draft.serial}
               onChange={e => updateDraft("serial", e.target.value)} />
           </label>
         </div>
-        <label>Where is it kept?
+        <label style={formLabelStyle} style={formLabelStyle}>Where is it kept?
           <input className="field" maxLength={200} value={draft.location}
             onChange={e => updateDraft("location", e.target.value)}
             placeholder="Office, media room, at home…" />
         </label>
-        <label>Condition
+        <label style={formLabelStyle} style={formLabelStyle}>Condition
           <textarea className="field" rows={2} maxLength={500} value={draft.condition}
             onChange={e => updateDraft("condition", e.target.value)}
             placeholder="Working normally, needs repair…" />
         </label>
-        <label>Anything HR should know?
+        <label style={formLabelStyle} style={formLabelStyle}>Anything HR should know?
           <textarea className="field" rows={2} maxLength={1000} value={draft.details}
             onChange={e => updateDraft("details", e.target.value)}
             placeholder="When you received it, who issued it, or any missing information" />
@@ -242,9 +255,9 @@ export default function EquipmentReports({ me, canManage, assets = [], people = 
     {reviewing && canManage && <ComposerDrawer open title="Verify reported equipment"
       description={equipmentName(reviewing)}
       onClose={() => { if (!busy) setReviewing(null); }}>
-      <div className="ceac-equipment-report-form">
+      <div className="ceac-equipment-report-form" style={formStyle}>
         <p className="screen-note">Verify the physical item and ownership before recording an official assignment. The staff member cannot approve their own report.</p>
-        <label>HR decision
+        <label style={formLabelStyle} style={formLabelStyle}>HR decision
           <select className="field" aria-label="Equipment review action" value={reviewAction}
             onChange={e => setReviewAction(e.target.value)}>
             <option value="register">Register new equipment and assign it</option>
@@ -252,12 +265,12 @@ export default function EquipmentReports({ me, canManage, assets = [], people = 
             <option value="decline">Cannot confirm this report</option>
           </select>
         </label>
-        {reviewAction === "register" && <label>Verified CEAC equipment tag *
+        {reviewAction === "register" && <label style={formLabelStyle} style={formLabelStyle}>Verified CEAC equipment tag *
           <input className="field" aria-label="Verified equipment tag" maxLength={80}
             value={assetCode} onChange={e => setAssetCode(e.target.value)}
             placeholder="e.g. CEAC-LAP-014" />
         </label>}
-        {reviewAction === "assign_existing" && <label>Choose equipment from the register *
+        {reviewAction === "assign_existing" && <label style={formLabelStyle} style={formLabelStyle}>Choose equipment from the register *
           <select className="field" aria-label="Existing equipment item" value={existingAssetId}
             onChange={e => setExistingAssetId(e.target.value)}>
             <option value="">Choose equipment</option>
@@ -268,7 +281,7 @@ export default function EquipmentReports({ me, canManage, assets = [], people = 
         </label>}
         {reviewAction === "assign_existing" && !assignableAssets.length &&
           <p role="status">No assignable equipment is available. Use Register new equipment instead.</p>}
-        <label>HR verification note *
+        <label style={formLabelStyle} style={formLabelStyle}>HR verification note *
           <textarea className="field" aria-label="Equipment verification reason" rows={3}
             maxLength={1000} value={reviewReason} onChange={e => setReviewReason(e.target.value)}
             placeholder={reviewAction === "decline" ? "Explain why it cannot be confirmed" : "Record how HR verified the equipment and handover"} />
