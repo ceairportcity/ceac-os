@@ -227,15 +227,16 @@ export default function Assets({ me }) {
   }
 
   const personalAssets = !canManage && !me.is_admin;
-  // My Hub means equipment given to this PERSON, not the whole department.
-  // Unit managers may read unit records under RLS, but those are not their
-  // personal assignments and must not be represented as such here.
-  const shownAssets=useMemo(()=>personalAssets
+  // Unit managers retain their authorised unit register. Only direct
+  // individual custody is counted as "equipment in your care".
+  const unitInventory = personalAssets && me.role==="manager";
+  const personalAssetCount=useMemo(()=>assets.filter(asset=>asset.current_assignee_profile_id===me.id).length,[assets,me.id]);
+  const shownAssets=useMemo(()=>personalAssets && !unitInventory
     ? assets.filter(asset=>asset.current_assignee_profile_id===me.id)
-    : assets,[assets,personalAssets,me.id]);
-  const shownAssignments=useMemo(()=>personalAssets
+    : assets,[assets,personalAssets,unitInventory,me.id]);
+  const shownAssignments=useMemo(()=>personalAssets && !unitInventory
     ? assignments.filter(event=>event.from_profile_id===me.id||event.to_profile_id===me.id)
-    : assignments,[assignments,personalAssets,me.id]);
+    : assignments,[assignments,personalAssets,unitInventory,me.id]);
   const shownLifecycle=useMemo(()=>personalAssets
     ? lifecycle.filter(event=>shownAssets.some(asset=>asset.id===event.asset_id))
     : lifecycle,[lifecycle,shownAssets,personalAssets]);
@@ -248,7 +249,7 @@ export default function Assets({ me }) {
     {personalAssets ? <PersonalPageHeader
       eyebrow="My Hub"
       title="My equipment"
-      description="See equipment assigned by HR, check its condition and history, or report missing equipment."
+      description="See the equipment recorded in your care, its condition and its history. Report missing items to HR for verification."
       statusLabel="My Hub"
     /> : me.is_admin ? <WorkPageHeader eyebrow="Enterprise asset register" title="Assets & devices" description="CEAC equipment, current custody, repairs and recorded history. This register does not remotely wipe, lock, configure or monitor device operating systems." /> : <div style={{paddingTop:26}}>
       <div className="eyebrow">Enterprise asset register</div>
@@ -261,8 +262,8 @@ export default function Assets({ me }) {
     <EquipmentReports me={me} canManage={canManage} assets={assets} people={people} onAccepted={load} />
 
     {personalAssets && <div className="ceac-hub-intro" aria-label="Your equipment at a glance">
-      <div><span>Equipment in your care</span><strong>{shownAssets.length}</strong><small>Based on your recorded assignments</small></div>
-      <p>Select an item to read its details. You can also check repairs and previous assignments below.</p>
+      <div><span>Equipment in your care</span><strong>{personalAssetCount}</strong><small>Only equipment assigned directly to you</small></div>
+      <p>{unitInventory?"Your unit's equipment is shown below too, clearly marked where it is not assigned to you.":"Select an item to read its details. You can also check repairs and previous assignments below."}</p>
     </div>}
     <div className="asset-tabs ceac-hub-tabs" role="tablist" aria-label="Equipment sections">
       {(personalAssets
@@ -274,7 +275,7 @@ export default function Assets({ me }) {
     </div>
 
     {tab==="inventory"&&<>
-      <div className="sec"><span>{canManage?"Equipment register":"Equipment assigned to you"}</span>{canManage&&<button className="btn btn-sm" onClick={openCreate}>Add asset</button>}</div>
+      <div className="sec"><span>{canManage?"Equipment register":unitInventory?"Your equipment and unit register":"Equipment assigned to you"}</span>{canManage&&<button className="btn btn-sm" onClick={openCreate}>Add asset</button>}</div>
       <div className="asset-grid">
         {shownAssets.map((asset)=><article className="card asset-card" key={asset.id}>
           <div className="asset-card-head">
@@ -282,6 +283,7 @@ export default function Assets({ me }) {
             <Pill tone={statusTone(asset.current_status)}>{human(asset.current_status)}</Pill>
           </div>
           {personalAssets && <div className="ceac-equipment-preview">
+             {unitInventory && asset.current_assignee_profile_id!==me.id && <span><strong>Unit equipment — not assigned to you</strong></span>}
             <span>Location: {asset.current_location||"Not recorded"}</span>
             <span>Condition: {asset.current_condition_note||"Not recorded"}</span>
           </div>}
