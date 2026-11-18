@@ -144,8 +144,9 @@ begin
   -- Three Executive-only read summaries are individually enumerated in
   -- security_definer_surface_gate.sql, with negative-role and schema checks.
   -- Team ownership adds one manager-bound RPC and retires two older team RPC grants.
-  if n<>194 then
-    raise exception 'Security gate failure: expected 194 individually reviewed authenticated SECURITY DEFINER interfaces, including manager-owned teams; found %.',n;
+  -- My Hub equipment adds two actor-scoped RPCs: staff submission and HR-only verification; no raw inventory writes.
+  if n<>196 then
+    raise exception 'Security gate failure: expected 196 individually reviewed authenticated SECURITY DEFINER interfaces, including manager-owned teams; found %.',n;
   end if;
 end $$;
 

@@ -49,6 +49,7 @@ tests=(
   workforce_management_stage9_gate.sql
   go_live_annual_leave_policy_gate.sql
   assets_devices_stage10_gate.sql
+  myhub_equipment_reports_gate.sql
   compliance_policy_stage11_gate.sql
   integrations_stage12_gate.sql
   project_register_experience_stage5_gate.sql

@@ -40,6 +40,8 @@ insert into s2_expected_authenticated_definers(signature) values
   ('public.app_visible_projects()'),
   ('public.app_visible_units()'),
   ('public.approve_work_submission(p_submission_id uuid, p_comment text)'),
+  ('public.asset_submit_staff_report(p_category text, p_manufacturer text, p_model text, p_serial_number text, p_asset_tag text, p_location text, p_condition_note text, p_details text)'),
+  ('public.asset_resolve_staff_report(p_report_id uuid, p_action text, p_asset_code text, p_asset_id uuid, p_reason text)'),
   ('public.asset_assign(p_asset_id uuid, p_profile_id uuid, p_unit_id uuid, p_location text, p_expected_return_on date, p_condition_note text, p_reason text)'),
   ('public.asset_lifecycle_action(p_asset_id uuid, p_action text, p_note text, p_reason text)'),
   ('public.asset_record_item(p_asset_id uuid, p_asset_code text, p_category text, p_manufacturer text, p_model text, p_serial_number text, p_purchase_date date, p_purchase_vendor text, p_purchase_cost numeric, p_purchase_currency text, p_warranty_expires_on date, p_unit_id uuid, p_location text, p_condition_note text, p_notes text)'),
@@ -346,7 +348,7 @@ begin
 
   -- The three new Executive-only projections have explicit signatures and
   -- actor/tenant/no-anon/read-only checks above.
-  if v_actual<>194 or v_expected<>194 or v_unexpected is not null or v_missing is not null then
+  if v_actual<>196 or v_expected<>196 or v_unexpected is not null or v_missing is not null then
     raise exception E'S2 SECURITY DEFINER allowlist mismatch. actual=% expected=%\nunexpected:\n%\nmissing:\n%',
       v_actual,v_expected,coalesce(v_unexpected,'(none)'),coalesce(v_missing,'(none)');
   end if;
