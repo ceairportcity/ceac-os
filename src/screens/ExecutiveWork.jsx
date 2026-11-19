@@ -74,7 +74,6 @@ export default function ExecutiveWork({ me, openItem, goAssign, openWeeklyPlan }
   const selfCreated = mine.filter((item) => item.origin === "self_created");
   const completedMine = mine.filter((item) => item.status === "completed" || item.status === "self_certified");
   const tabs = [
-    ["weekly", "This Week"],
     ["oversight", "Oversight"],
     ["mine", "My work", mine.filter((item) => item.status !== "cancelled").length],
     ["created", "Created by me", selfCreated.length],
@@ -96,6 +95,8 @@ export default function ExecutiveWork({ me, openItem, goAssign, openWeeklyPlan }
       onAction={() => goAssign?.()}
       secondaryActionLabel="Add my work"
       onSecondaryAction={() => setAddingMyWork(true)}
+      weeklyActionLabel="This Week"
+      onWeeklyAction={openWeeklyPlan}
     />
     {addingMyWork && !scopedLoading && <SelfWorkComposer me={me}
       onClose={() => setAddingMyWork(false)}
@@ -104,12 +105,12 @@ export default function ExecutiveWork({ me, openItem, goAssign, openWeeklyPlan }
     {!scopedLoading && error && <ProductNotice tone="error" title="Could not load Work">{error}</ProductNotice>}
     {scopedLoading && <LoadingState label="Loading leadership work…" />}
 
-    {!scopedLoading && !error && view === "oversight" && <><WorkTabs items={tabs} value={view} onChange={next => next === "weekly" ? openWeeklyPlan?.() : setView(next)} ariaLabel="Executive work views" /><WorkOversightWorkspace me={me} openItem={openItem} /></>}
+    {!scopedLoading && !error && view === "oversight" && <><WorkTabs items={tabs} value={view} onChange={setView} ariaLabel="Executive work views" /><WorkOversightWorkspace me={me} openItem={openItem} /></>}
     {!scopedLoading && !error && view !== "oversight" && <WorkRegisterLayout me={me} rows={[...mine,...given]} reviews={reviews} role="executive"
       selectedId={view === "reviews" ? null : selectedInView}
       onClose={() => setSelectedWorkId("none")} openItem={openItem}
       recordCount={view === "reviews" ? reviews.length : rows.length}
-      tabs={<WorkTabs items={tabs} value={view} onChange={next => next === "weekly" ? openWeeklyPlan?.() : setView(next)} ariaLabel="Executive work views" />}>
+      tabs={<WorkTabs items={tabs} value={view} onChange={setView} ariaLabel="Executive work views" />}>
       {view === "reviews" ? (reviews.length ? <WorkGroup title="Waiting for your review" count={reviews.length}>
         {reviews.map(row=><WorkReviewRow key={row.submission_id} title={row.work_title}
           person={row.assignee_name || "Team member"} context={row.project_name || row.unit_name}
