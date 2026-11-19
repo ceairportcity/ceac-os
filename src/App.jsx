@@ -8,6 +8,7 @@ import { clearAccountCommunicationDrafts } from "./lib/useWorkFormDraft";
 import { useCeacUnreadNotifications } from "./lib/useCeacUnreadNotifications";
 import OverviewNotifications from "./components/OverviewNotifications";
 import { openSession } from "./lib/session";
+import WorkSessionCutoff from "./components/WorkSessionCutoff";
 import { useForegroundPresence } from "./lib/useForegroundPresence";
 import { validRoutineDate } from "./lib/routineDateRoute";
 import { canLeaveCalendarJournal } from "./lib/calendarJournalNavigation";
@@ -800,6 +801,7 @@ export default function App() {
           onOpenGuideArticle={(article) => openGuide(false, article)}
           onGuide={() => openGuide(true)}
         />
+        <WorkSessionCutoff key={me.org_id+":"+me.id} me={me} session={session} setSession={setSession} showCorrections={tab === "home"} />
         <main className={"app-content ev2s-content" + (isExec && (tab !== "home" || overlay) ? " exec-v2" : "")}>
           {me.capabilitySchemaReady === false && <div className="flag flag-amber" role="status">
             {me.legacyAuthorityVerified
