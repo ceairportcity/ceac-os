@@ -34,7 +34,7 @@ function PlanItem({ item, me, canEdit, canCarry, working, onEdit, onDrop, onCarr
         {item.planned_on && " · " + planDayLabel(item.planned_on)}
         {item.routine_date && item.routine_date !== item.planned_on && " · Occurrence " + planDayLabel(item.routine_date)}</small>
       {item.blocker && <p>{item.blocker}</p>}
-      {item.decision_response && <p><strong>Group Pastor’s response</strong><br />{item.decision_response}</p>}
+      {item.decision_response && <p><strong>Leadership response</strong><br />{item.decision_response}</p>}
       {onAnswer && needsDecision(item) && (responding
         ? <form className="weekly-response" onSubmit={async event => {
           event.preventDefault();
@@ -73,10 +73,13 @@ export default function WeeklyWorkPlan({ me, selection, openPlan, openItem, clos
   const writing = useRef(false);
   const viewId = selection === "current" ? null : selection;
   const managed = (me.memberships || []).filter(member => member.role === "manager");
-  const scope = [me.org_id, me.id, viewId || week].join(":");
+  const scope = [me.org_id, me.id, (me.memberships || []).filter(m => m.role === "manager").map(m => m.unit_id).sort().join(","), viewId || week].join(":");
   const current = data?.scope === scope ? data : null;
   const plan = viewId ? current?.plans[0] : null;
-  const canEdit = Boolean(plan && managed.some(member => member.unit_id === plan.unit_id));
+  const isPersonal = Boolean(plan?.owner_id);
+  const canEdit = Boolean(plan && (isPersonal ? plan.owner_id === me.id : managed.some(member => member.unit_id === plan.unit_id)));
+  const canRespond = Boolean(plan?.shared_at && !canEdit && (pastor || me.is_admin || (isPersonal && managed.some(member => member.unit_id === plan.unit_id))));
+  const leadershipViewer = pastor || me.is_admin;
   const canCarry = canEdit && [todayWeek, shiftPlanDay(todayWeek, -7)].includes(plan.week_start);
 
   useEffect(() => {
@@ -95,9 +98,10 @@ export default function WeeklyWorkPlan({ me, selection, openPlan, openItem, clos
           viewId && plans.length ? readPlanChanges(supabase, viewId) : [],
         ]);
         if (alive) setData({ scope, plans, items, changes });
-        if (viewId && plans.length && managed.some(member => member.unit_id === plans[0].unit_id)) {
+        if (viewId && plans.length && (plans[0].owner_id === me.id ||
+          (!plans[0].owner_id && managed.some(member => member.unit_id === plans[0].unit_id)))) {
           try {
-            const result = await readPlanEditor(supabase, plans[0]);
+            const result = await readPlanEditor(supabase, plans[0], me);
             if (alive) setEditorData({ scope, ...result });
           } catch (failure) {
             if (alive) setEditorError(humanError(failure, "Suggestions and department members could not be loaded."));
@@ -117,7 +121,8 @@ export default function WeeklyWorkPlan({ me, selection, openPlan, openItem, clos
   const carried = new Set(rows.map(row => row.carried_from).filter(Boolean));
   const suggestions = tool?.suggestions.filter(work => !linked.has(work.id + ":" + (work.routine || ""))) || [];
   const lastItems = tool?.lastItems.filter(item => !carried.has(item.id)) || [];
-  const optionUnits = managed.filter(member => !current?.plans.some(row => row.unit_id === member.unit_id));
+  const optionUnits = managed.filter(member => !current?.plans.some(row => !row.owner_id && row.unit_id === member.unit_id));
+  const hasOwnPlan = Boolean(current?.plans.some(row => row.owner_id === me.id));
   const selectedUnit = optionUnits.some(member => member.unit_id === newUnit) ? newUnit : optionUnits[0]?.unit_id;
   const selectedEditor = editor?.scope === scope ? editor : null;
   const live = activeItems(rows);
@@ -137,7 +142,7 @@ export default function WeeklyWorkPlan({ me, selection, openPlan, openItem, clos
       if (failure) throw failure;
       if (!result) throw new Error("The update could not be confirmed.");
       if (action === "share") {
-        setNotice("Plan shared with the Group Pastor. The memo has been sent.");
+        setNotice("Your plan was shared with its authorised reviewers. The memo has been sent.");
         window.dispatchEvent(new Event("ceac:notifications-changed"));
       }
       if (action === "carry") setNotice("Item carried forward. The original is still visible in its week.");
@@ -178,7 +183,7 @@ export default function WeeklyWorkPlan({ me, selection, openPlan, openItem, clos
   return <div className="body ev2-work-page weekly-work-plan">
     <header className="weekly-page-header">
       <div className="weekly-heading"><button type="button" className="weekly-back" onClick={viewId ? () => { if (plan) setWeek(plan.week_start); openPlan("current"); } : close}><ChevronLeft size={17} /> {viewId ? "Weekly plans" : "Work"}</button>
-        <span className="weekly-eyebrow"><CalendarDays size={14} /> WEEKLY WORK</span><h1>{plan?.units?.name || "This Week"}</h1>
+        <span className="weekly-eyebrow"><CalendarDays size={14} /> WEEKLY WORK</span><h1>{isPersonal ? "My weekly plan" : plan?.units?.name || "This Week"}</h1>
         <p>{weekLabel(plan?.week_start || week)}{plan && (plan.shared_at ? " · Shared" : " · Draft")}</p></div>
       {canEdit && !plan.shared_at && <button type="button" className="weekly-primary-action" disabled={working || !live.length} onClick={() => write("share")}><Send size={16} /> Share plan</button>}
     </header>
@@ -192,7 +197,7 @@ export default function WeeklyWorkPlan({ me, selection, openPlan, openItem, clos
         <button type="button" className="btn btn-ghost btn-sm" onClick={() => setWeek(todayWeek)}>Current week</button>
         <button type="button" className="btn btn-ghost btn-sm" aria-label="Next week" onClick={() => setWeek(shiftPlanDay(week, 7))}><ChevronRight size={18} /></button>
       </div>
-      {pastor && <section className="weekly-panel"><h2>Needs your attention</h2>
+      {leadershipViewer && <section className="weekly-panel"><h2>Needs your attention</h2>
         {rows.filter(needsDecision).length ? <ul className="weekly-team-list">{rows.filter(needsDecision).map(item => {
           const source = current.plans.find(row => row.id === item.plan_id);
           return <li key={item.id}><a href={weeklyPlanHref(source.id)} onClick={event => {
@@ -200,15 +205,22 @@ export default function WeeklyWorkPlan({ me, selection, openPlan, openItem, clos
           }}><span><strong>{titleFor(item)}</strong><small>{source.units?.name} · {item.blocker}</small></span><ChevronRight size={18} /></a></li>;
         })}</ul> : <p>No decisions requested for this week.</p>}
       </section>}
-      <section className="weekly-panel weekly-plans-panel"><div className="weekly-section-heading"><div><span className="weekly-section-kicker">OVERVIEW</span><h2>{pastor ? "Department plans" : "Your department plans"}</h2></div></div>
+      <section className="weekly-panel weekly-plans-panel"><div className="weekly-section-heading"><div><span className="weekly-section-kicker">OVERVIEW</span><h2>{leadershipViewer ? "Weekly plans awaiting review" : "Your weekly plans"}</h2></div></div>
         {current.plans.length ? <ul className="weekly-team-list">{current.plans.map(row => {
           const items = live.filter(item => item.plan_id === row.id);
           const decisions = items.filter(needsDecision).length;
           return <li key={row.id}><a href={weeklyPlanHref(row.id)} onClick={event => {
             if (!event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey) { event.preventDefault(); openPlan(row.id); }
-          }}><span><strong>{row.units?.name || "Department"}</strong><small>{items.filter(isPlanItemDone).length} of {items.length} done
+          }}><span><strong>{row.owner_id ? row.owner_id === me.id ? "My weekly plan" : "Personal weekly plan" : row.units?.name || "Department"}</strong><small>{items.filter(isPlanItemDone).length} of {items.length} done
             {decisions ? " · " + decisions + " awaiting decision" : ""}{!row.shared_at && " · Draft"}</small></span><ChevronRight size={18} /></a></li>;
-        })}</ul> : <p>{pastor ? "No teams have shared a plan for this week." : "There are no available plans for this week."}</p>}
+        })}</ul> : <p>{leadershipViewer ? "No plans have been shared for this week." : "No plans yet for this week."}</p>}
+        {editableWeek && !hasOwnPlan && <form className="weekly-create" onSubmit={async event => {
+          event.preventDefault();
+          const id = await write("create", { values: { personal: true, unit: me.unit_id || null, week } });
+          if (id) openPlan(id);
+        }}>
+          <button type="submit" className="weekly-primary-action" disabled={working}><Plus size={16} /> Create my weekly plan</button>
+        </form>}
         {editableWeek && selectedUnit && <form className="weekly-create" onSubmit={async event => {
           event.preventDefault();
           const id = await write("create", { values: { unit: selectedUnit, week } });
@@ -224,7 +236,7 @@ export default function WeeklyWorkPlan({ me, selection, openPlan, openItem, clos
     {plan && <>
       {canEdit && <section className="weekly-panel weekly-build-surface" aria-label="Weekly plan editor">
         <header className="weekly-section-heading">
-          <div><h2>Plan your week</h2><p>Add what your team will work on. You can edit items before or after sharing.</p></div>
+          <div><h2>{isPersonal ? "Plan your week" : "Plan your team's week"}</h2><p>{isPersonal ? "Set your own priorities, check them off, and share with your manager when ready." : "Add your team's work. You can update it before or after sharing."}</p></div>
           {!editor && <button type="button" className="weekly-primary-action" disabled={working || !tool} onClick={() => startEdit()}><Plus size={16} /> Add work</button>}
         </header>
         {editorError && <ProductNotice tone="error" title="Unable to load department work">{editorError}</ProductNotice>}
@@ -267,12 +279,12 @@ export default function WeeklyWorkPlan({ me, selection, openPlan, openItem, clos
               <input className="field" required maxLength={240} placeholder="e.g. Finalise Sunday's production schedule"
                 value={selectedEditor.title} onChange={event => changeEditor("title", event.target.value)}/>
             </label>
-            <label>Who will handle it?
+            {!isPersonal && <label>Who will handle it?
               <select className="field" value={selectedEditor.owner} required onChange={event => changeEditor("owner", event.target.value)}>
                 <option value="">Select a team member</option>
                 {tool?.members.map(member => <option key={member.profile_id} value={member.profile_id}>{member.profiles.full_name}</option>)}
               </select>
-            </label>
+            </label>}
           </>}
           <label>When this week?
             <select className="field" value={selectedEditor.day} onChange={event => changeEditor("day", event.target.value)}>
@@ -286,14 +298,14 @@ export default function WeeklyWorkPlan({ me, selection, openPlan, openItem, clos
           </label>
           <label className="weekly-editor-wide weekly-checkbox">
             <input type="checkbox" checked={selectedEditor.decision} onChange={event => changeEditor("decision", event.target.checked)}/>
-            <span><strong>Request a decision from Group Pastor</strong><small>Use this only when you need a response, not for ordinary updates.</small></span>
+            <span><strong>Request a leadership decision</strong><small>Direct a question to an authorised manager, Group Pastor or HR reviewer.</small></span>
           </label>
           <div className="weekly-editor-actions">
             <button type="submit" className="weekly-primary-action" disabled={working || !tool || (!selectedEditor.item && addMode === "linked" && !linkWork)}>Save to plan</button>
             <button type="button" className="weekly-secondary-action" onClick={() => {setEditor(null);setLinkWork("");}}>Cancel</button>
           </div>
         </form>}
-        {!selectedEditor && live.length === 0 && <p className="weekly-getting-started">Start by adding the first item for your team. You can then send the plan to Group Pastor.</p>}
+        {!selectedEditor && live.length === 0 && <p className="weekly-getting-started">Start by adding the first item. You can share the finished plan with its reviewers.</p>}
         {(suggestions.length > 0 || lastItems.length > 0) && <details className="weekly-history weekly-suggestion-drawer">
           <summary>Bring in suggested or unfinished work <span>{suggestions.length + lastItems.length}</span></summary>
           <ul className="weekly-suggestions">
@@ -308,7 +320,7 @@ export default function WeeklyWorkPlan({ me, selection, openPlan, openItem, clos
         {live.length ? <ul className="weekly-plan-list">{live.map(item => <PlanItem key={item.id} item={item} me={me} canEdit={canEdit} canCarry={canCarry} working={working}
           onEdit={startEdit} onDrop={row => write("drop", { itemId: row.id, values: { updated_at: row.updated_at } })} onCarry={carry} openItem={openItem}
           onTick={(row, done) => write("tick", { itemId: row.id, values: { done } })}
-          onAnswer={pastor && plan.shared_at ? (row, response) => write("answer", { itemId: row.id, values: { note: response } }) : null} />)}</ul>
+          onAnswer={canRespond ? (row, response) => write("answer", { itemId: row.id, values: { note: response } }) : null} />)}</ul>
         : <p>No items in this plan yet.</p>}
       </section>
       {plan.shared_at && <section className="weekly-panel">
