@@ -1,0 +1,32 @@
+.weekly-work-plan { max-width: 1050px; margin-inline: auto; display: grid; gap: 16px; min-width: 0; color: var(--ws-ink, var(--text)); }
+.weekly-page-header, .weekly-panel > header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: end; gap: 12px; }
+.weekly-page-header h1 { margin-block: 12px 4px; font-size: clamp(28px, 4vw, 43px); overflow-wrap: anywhere; }
+.weekly-work-plan p { margin-block: 4px; color: var(--ws-muted); }
+.weekly-panel { min-width: 0; padding: clamp(14px, 2.4vw, 24px); background: var(--ws-bg); border: 1px solid var(--ws-line); border-radius: 12px; overflow-wrap: anywhere; }
+.weekly-panel h2 { margin: 0 0 4px; font-size: 19px; }
+.weekly-work-plan :is(.btn, .field) { min-height: 44px; }
+.weekly-page-header .btn { display: inline-flex; align-items: center; gap: 8px; }
+.weekly-week-nav, .weekly-create { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.weekly-create { margin-top: 14px; }
+.weekly-create .field { width: auto; max-width: 100%; }
+.weekly-plan-list, .weekly-team-list, .weekly-suggestions { list-style: none; padding: 0; margin: 12px 0 0; }
+.weekly-team-list a, .weekly-suggestions li { display: flex; justify-content: space-between; align-items: center; gap: 10px; min-height: 56px; padding: 8px 4px; color: inherit; border-top: 1px solid var(--ws-line); text-decoration: none; }
+.weekly-work-plan small { display: block; color: var(--ws-muted); margin-top: 4px; }
+.weekly-team-list a:hover, .weekly-team-list a:focus-visible { background: var(--ws-tint); }
+.weekly-plan-row { display: grid; grid-template-columns: 44px minmax(0, 1fr) fit-content(30%); align-items: start; gap: 8px; padding-block: 12px; border-top: 1px solid var(--ws-line); }
+.weekly-tick { background: transparent; border: 1px solid var(--ws-line); border-radius: 50%; color: var(--ws-accent); width: 44px; height: 44px; padding: 0; display: grid; place-items: center; }
+.weekly-tick-static { border-color: transparent; }
+.weekly-tick[aria-pressed="true"] { background: var(--ws-tint); border-color: var(--ws-accent); }
+.weekly-source { color: var(--ws-accent); font-size: inherit; font-weight: 650; background: transparent; border: 0; padding: 0; text-align: start; min-height: 44px; }
+.weekly-row-main, .weekly-status { padding-top: 6px; min-width: 0; }
+.weekly-status { color: var(--ws-muted); font-size: .85rem; text-align: end; }
+.weekly-status[data-attention] { color: light-dark(#8a440b, #ffd198); font-weight: 650; }
+.weekly-row-actions { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.weekly-editor, .weekly-response { display: grid; gap: 12px; padding-block: 12px; }
+.weekly-editor { grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); }
+.weekly-editor label { display: grid; gap: 5px; }
+.weekly-editor-wide { grid-column: 1 / -1; }
+.weekly-editor .weekly-checkbox { display: flex; align-items: center; min-height: 44px; }
+.weekly-history { margin-top: 12px; }
+.weekly-history summary { cursor: pointer; padding-block: 8px; }
+.weekly-notice { padding: 10px 12px; border-radius: 8px; background: var(--ws-tint); }

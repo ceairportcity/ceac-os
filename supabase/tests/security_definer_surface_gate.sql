@@ -299,6 +299,10 @@ insert into s2_expected_authenticated_definers(signature) values
 insert into s2_expected_authenticated_definers(signature) values
  ('public.create_individually_assigned_project(p_assigned_person_id uuid, p_name text, p_purpose text, p_starts_on date, p_ends_on date)');
 
+-- Weekly work plan mutations recheck organisation, team, item and actor authority.
+insert into s2_expected_authenticated_definers(signature) values
+ ('public.update_weekly_work_plan(p_action text, p_plan uuid, p_item uuid, p_values jsonb)');
+
 do $allowlist$
 declare
   v_unexpected text;

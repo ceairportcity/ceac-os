@@ -302,3 +302,45 @@
 @media print {
   .s2-exec-brief .report-measures { display: none; }
 }
+
+.executive-project-frame { container: executive-project / inline-size; min-width: 0; }
+.executive-project-content .ev2p-tabs { display: flex; flex-wrap: wrap; overflow: visible; }
+.executive-project-content .ev2p-tabs button { min-height: 44px; }
+.executive-project-content .s2-project-quick-actions { display: flex; flex-wrap: wrap; }
+@container executive-project (max-width: 860px) {
+  .executive-project-layout { display: block; }
+  .executive-project-layout .ceac-project-register { display: none; }
+}
+
+.ceac-exec-task-panel { background: var(--ws-bg); border: 1px solid var(--ws-line); border-radius: 12px; padding: clamp(12px, 3cqw, 24px); }
+.ceac-exec-task-panel header { display: flex; align-items: start; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+.ceac-exec-task-panel header h2 { margin: 0; font-size: 21px; }
+.ceac-exec-task-panel header p { margin: 4px 0 0; color: var(--ws-muted); }
+.ceac-exec-task-filters { display: flex; flex-wrap: wrap; gap: 10px; margin-block: 18px 8px; }
+.ceac-exec-task-filters input { flex: 1 1 220px; min-width: 0; }
+.ceac-exec-task-filters select { width: auto; max-width: 100%; }
+.ceac-exec-task-panel :is(.field, .btn) { min-height: 44px; }
+.ceac-exec-task-list { padding: 0; margin: 0; list-style: none; }
+.ceac-exec-task-list li { border-top: 1px solid var(--ws-line); }
+.ceac-exec-task-list button { display: grid; grid-template-columns: minmax(0, 1fr) fit-content(32%) auto; gap: 12px; align-items: center; width: 100%; min-height: 64px; padding: 10px 4px; background: transparent; border: 0; color: var(--ws-ink); text-align: start; overflow-wrap: anywhere; }
+.ceac-exec-task-list button:is(:hover, :focus-visible) { background: var(--ws-tint); }
+.ceac-exec-task-name { display: grid; gap: 4px; }
+.ceac-exec-task-name small { color: var(--ws-muted); }
+.ceac-exec-task-overdue { color: var(--danger, light-dark(#a12c1b, #ffa28f)); }
+
+.weekly-plan-entry { margin: 12px 16px 0; }
+.weekly-plan-entry .btn { min-height: 44px; }
+
+.ev2-work-executive { container: executive-work / inline-size; }
+@container executive-work (max-width: 800px) {
+  .ceac-ws .ev2-work-executive .ev2w-tabs,
+  .ceac-ws .ev2-work-executive .s2-work-layout .s2-work-register > .ev2w-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    overflow: visible;
+  }
+  .ceac-ws .ev2-work-executive .ev2w-tabs button { flex: 0 1 auto; min-height: 44px; width: auto; }
+  .ceac-ws .ev2-work-executive .s2-work-layout,
+  .ceac-ws .ev2-work-executive .cw-oversight-columns.has-selection { grid-template-columns: minmax(0, 1fr); }
+  .ceac-ws .ev2-work-executive .s2-work-inspector { position: static; }
+}

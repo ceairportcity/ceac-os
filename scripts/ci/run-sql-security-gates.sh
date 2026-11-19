@@ -89,6 +89,7 @@ tests=(
   stage2_owner_activity_guard_gate.sql
   executive_assignment_scope_gate.sql
   project_creator_attribution_gate.sql
+  weekly_work_plan_gate.sql
   hr_operations_authority_gate.sql
   stage2_self_routines_gate.sql
   stage2_routine_date_files_gate.sql
