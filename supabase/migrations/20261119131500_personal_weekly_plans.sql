@@ -286,4 +286,4 @@ begin
 
   raise exception 'Unknown weekly plan action.';
 end;
-$function$
+$function$;
