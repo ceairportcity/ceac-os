@@ -79,3 +79,37 @@
  .weekly-row-actions { gap:8px; }
 }
 @media(prefers-reduced-motion:reduce) { .weekly-work-plan *, .weekly-work-plan *::before, .weekly-work-plan *::after { transition:none!important; } }
+
+
+/* Single guided weekly-plan form; disclosure only for optional suggestions. */
+.weekly-build-surface { padding: clamp(16px, 2.3vw, 25px); }
+.weekly-one-form { background: var(--ws-bg); border: 1px solid var(--ws-line); border-radius: 14px; padding: clamp(14px, 2vw, 22px); margin: 16px 0 0; gap: 17px; }
+.weekly-one-form .weekly-editor-heading { padding-bottom: 13px; border-bottom: 1px solid var(--ws-line); }
+.weekly-one-form .weekly-editor-heading strong { color: var(--ws-ink); font-size: 17px; }
+.weekly-one-form .weekly-editor-heading button { display: grid; place-items: center; padding: 6px; border-radius: 8px; }
+.weekly-kind-select { grid-column: 1 / -1; min-width: 0; margin: 0; padding: 0; border: 0; }
+.weekly-kind-select legend { display: block; color: var(--ws-muted); font-size: 12px; font-weight: 650; margin-bottom: 9px; }
+.weekly-kind-select > div { display: flex; flex-wrap: wrap; gap: 4px; padding: 4px; background: var(--ws-panel); border-radius: 10px; }
+.weekly-kind-select button { flex: 1 1 145px; min-height: 40px; background: transparent; border: 0; border-radius: 8px; color: var(--ws-muted); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+.weekly-kind-select button.is-active { background: var(--ws-bg); color: var(--ws-ink); box-shadow: 0 1px 4px rgb(0 0 0 / .09); }
+.weekly-one-form label { color: var(--ws-ink); font-size: 13px; gap: 8px; }
+.weekly-one-form .field { min-height: 46px; font-size: 14px; padding: 11px 12px; }
+.weekly-one-form textarea.field { min-height: 94px; }
+.weekly-optional { display: inline; color: var(--ws-muted); font-size: 12px; font-weight: 400; }
+.weekly-one-form .weekly-checkbox { background: var(--ws-panel); padding: 12px; border-radius: 10px; align-items: start; }
+.weekly-one-form .weekly-checkbox input { flex: none; margin-top: 4px; }
+.weekly-one-form .weekly-checkbox span { display: grid; gap: 3px; font-weight: 400; }
+.weekly-one-form .weekly-checkbox span strong { font-size: 13px; }
+.weekly-one-form .weekly-checkbox span small { margin: 0; font-weight: 400; font-size: 12px; }
+.weekly-linked-name { grid-column: 1 / -1; min-width: 0; display: flex; align-items: center; gap: 9px; padding: 12px; border-radius: 10px; background: var(--ws-panel); color: var(--ws-ink); }
+.weekly-linked-name strong { overflow-wrap: anywhere; font-size: 14px; }
+.weekly-getting-started { padding: 10px 0; font-size: 13px; }
+.weekly-suggestion-drawer summary { display: flex; justify-content: space-between; gap: 8px; }
+.weekly-suggestion-drawer summary span { color: var(--ws-muted); font-variant-numeric: tabular-nums; }
+.weekly-suggestions .weekly-secondary-action { flex: none; }
+@media (max-width: 650px) {
+ .weekly-one-form { grid-template-columns: minmax(0, 1fr); padding: 14px; gap: 15px; }
+ .weekly-kind-select button { flex-basis: 100px; font-size: 12px; }
+ .weekly-one-form .weekly-editor-actions > button { flex: 1 1 125px; }
+ .weekly-suggestions li { flex-wrap: wrap; }
+}
