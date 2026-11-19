@@ -801,7 +801,7 @@ export default function App() {
           onOpenGuideArticle={(article) => openGuide(false, article)}
           onGuide={() => openGuide(true)}
         />
-        <WorkSessionCutoff key={me.org_id+":"+me.id} me={me} session={session} setSession={setSession} />
+        <WorkSessionCutoff key={me.org_id+":"+me.id} me={me} session={session} setSession={setSession} showCorrections={tab === "home"} />
         <main className={"app-content ev2s-content" + (isExec && (tab !== "home" || overlay) ? " exec-v2" : "")}>
           {me.capabilitySchemaReady === false && <div className="flag flag-amber" role="status">
             {me.legacyAuthorityVerified
