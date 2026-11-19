@@ -192,7 +192,7 @@ begin
     return s;
   end if;
 end;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.app_heartbeat()
  RETURNS void
@@ -208,4 +208,4 @@ begin
  values('heartbeat','ok',jsonb_build_object('at',now(),'routine_reminders',v_delivered,'auto_closed_sessions',v_closed,'end_of_day_notices',v_notices),
   (extract(epoch from clock_timestamp()-v_started)*1000)::integer);
 end;
-$function$
+$function$;
