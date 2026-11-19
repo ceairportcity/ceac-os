@@ -95,7 +95,7 @@ declare
   v_effective timestamptz;
 begin
   if auth.uid() is null then raise exception 'Sign in to reconcile work.'; end if;
-  if p_action not in ('continue','close','overtime') then
+  if p_action not in ('continue','close','overtime','correct_auto') then
     raise exception 'Choose continue, close or overtime.';
   end if;
 
@@ -103,6 +103,36 @@ begin
   if s.id is null then raise exception 'That work session does not exist.'; end if;
   if s.org_id<>public.app_org_id() or s.profile_id<>auth.uid() then
     raise exception 'You can only reconcile your own work session.' using errcode='42501';
+  end if;
+  if p_action='correct_auto' then
+    if s.end_reason is distinct from 'auto' or s.ended_at is null
+      or s.ended_at < now()-interval '7 days' then
+      raise exception 'Only automatically ended sessions from the last 7 days can be corrected.' using errcode='42501';
+    end if;
+    if v_note is null or length(v_note)>500 then
+      raise exception 'Explain the corrected finish time in 500 characters or fewer.';
+    end if;
+    if p_effective_ended_at is null or p_effective_ended_at<s.started_at
+      or p_effective_ended_at>now()
+      or p_effective_ended_at>=((private.safeday(s.started_at)+1)::timestamp at time zone 'Africa/Accra') then
+      raise exception 'Choose an actual finish time on the original workday.';
+    end if;
+    if exists(select 1 from public.work_sessions next
+       where next.org_id=s.org_id and next.profile_id=s.profile_id and next.id<>s.id
+         and next.started_at>s.started_at and next.started_at<p_effective_ended_at) then
+      raise exception 'A corrected finish time cannot overlap the next work session.';
+    end if;
+    update public.work_sessions
+    set ended_at=p_effective_ended_at, end_reason='reconciled',
+      corrected_by=auth.uid(), corrected_at=now(),
+      flags=coalesce(flags,'{}'::jsonb)||jsonb_build_object('original_auto_ended_at',s.ended_at,'auto_end_corrected',true)
+    where id=s.id returning * into s;
+    insert into public.work_session_events(org_id,work_session_id,actor_id,action,effective_at,note)
+    values(s.org_id,s.id,auth.uid(),'reconciled',p_effective_ended_at,v_note);
+    insert into public.activity_events(org_id,actor_id,verb,object_type,object_id,meta)
+    values(s.org_id,auth.uid(),'session_reconciled','work_session',s.id,
+      jsonb_build_object('effective_at',p_effective_ended_at,'note',v_note,'reason','auto_end_correction'));
+    return s;
   end if;
   if s.ended_at is not null then raise exception 'That work session has already ended.'; end if;
 
