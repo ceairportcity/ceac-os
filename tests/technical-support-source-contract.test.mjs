@@ -432,7 +432,7 @@ test("This Week offers staff their own plans without authorising edits to depart
   const migration = read("supabase/migrations/20261119131500_personal_weekly_plans.sql");
   const page = read("src/screens/WeeklyWorkPlan.jsx");
   const reader = read("src/lib/weeklyWorkPlan.js");
-  assert.match(migration, /owner_id=(select auth.uid\(\))/);
+  assert.ok(migration.includes("owner_id=(select auth.uid())"));
   assert.match(migration, /values\(org,unit,actor,week\) on conflict do nothing/);
   assert.match(migration, /not personal and exists/);
   assert.match(migration, /personal and owner=actor/);
