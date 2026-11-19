@@ -257,6 +257,7 @@ test("canonical S3 migration and fifteen reviewed security migrations have uniqu
     "20261119083000_weekly_work_plans.sql",
     "20261119095000_announcement_employment_audiences.sql",
     "20261119100000_work_session_end_of_day.sql",
+    "20261119101500_unit_manager_announcement_authority.sql",
   ];
   for (const migration of stagedIntegratedSecurity) {
     assert.ok(migrations.includes(migration), "Missing single-candidate Stage 2 migration: " + migration);
