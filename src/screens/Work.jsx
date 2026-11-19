@@ -397,6 +397,8 @@ export default function Work({ me, isManager = false, openItem, openWeeklyPlan }
       description="See what needs doing, record progress and follow your approvals."
       actionLabel="Add my work"
       onAction={() => openCreate("unit")}
+      weeklyActionLabel="This Week"
+      onWeeklyAction={openWeeklyPlan}
     />
 
     {notice && <ProductNotice tone="success" title="Work updated">{notice}</ProductNotice>}
@@ -416,7 +418,7 @@ export default function Work({ me, isManager = false, openItem, openWeeklyPlan }
     {loading && <LoadingState label="Loading your work…" />}
     {!loading && !loadError && <WorkRegisterLayout me={me} selectedId={selectedInView} rows={visibleItems} role="staff"
       onClose={() => setSelectedWorkId("none")} openItem={openItem} recordCount={visibleItems.length}
-      tabs={<WorkTabs items={MODES} value={mode} onChange={nextMode=>{if(nextMode==="weekly"){openWeeklyPlan?.();return;}setMode(nextMode);setStatusFilter("all");}} ariaLabel="Work source" />}>
+      tabs={<WorkTabs items={MODES} value={mode} onChange={nextMode=>{setMode(nextMode);setStatusFilter("all");}} ariaLabel="Work source" />}>
       <ResponsibilityRegister key={mode} rows={visibleItems} selectedId={selectedInView}
         onSelect={setSelectedWorkId} onAdd={()=>openCreate(mode === "private" ? "private" : "unit")} />
     </WorkRegisterLayout>}
