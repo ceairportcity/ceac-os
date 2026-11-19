@@ -260,6 +260,7 @@ test("canonical S3 migration and fifteen reviewed security migrations have uniqu
     "20261119101500_unit_manager_announcement_authority.sql",
     "20261119103000_announcement_author_rls_access.sql",
     "20261119104500_current_day_cutoff_activation.sql",
+    "20261119131500_personal_weekly_plans.sql",
   ];
   for (const migration of stagedIntegratedSecurity) {
     assert.ok(migrations.includes(migration), "Missing single-candidate Stage 2 migration: " + migration);
@@ -425,4 +426,21 @@ test("Stage 2 Technical Support case metadata meets the 12px readability floor o
     `Technical Support contains unreadable CSS font sizes: ${pixelFontSizes.filter((size) => size < 12)}`);
   assert.match(css, /@media\(max-width:590px\)/);
   assert.match(css, /\.s2-support-summary small\{font-size:12px/);
+});
+
+test("This Week offers staff their own plans without authorising edits to departmental plans", () => {
+  const migration = read("supabase/migrations/20261119131500_personal_weekly_plans.sql");
+  const page = read("src/screens/WeeklyWorkPlan.jsx");
+  const reader = read("src/lib/weeklyWorkPlan.js");
+  assert.ok(migration.includes("owner_id=(select auth.uid())"));
+  assert.match(migration, /values\(org,unit,actor,week\) on conflict do nothing/);
+  assert.match(migration, /not personal and exists/);
+  assert.match(migration, /personal and owner=actor/);
+  assert.match(migration, /owner_id is null and unit_id in\(select public.app_managed_units\(\)\)/);
+  assert.match(page, /Create my plan/);
+  assert.match(page, /Open my plan/);
+  assert.match(page, /personal: true, unit: me.unit_id \|\| null, week/);
+  assert.match(page, /isPersonal \? plan.owner_id === me.id/);
+  assert.match(reader, /personal \? query.eq\("assignee_id", me.id\)/);
+  assert.match(reader, /eq\("owner_id", me.id\)/);
 });
