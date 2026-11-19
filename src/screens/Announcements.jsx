@@ -30,7 +30,13 @@ function AnnouncementWorkspace({ me, back, createRequest = false, onCreateHandle
   const [senders,setSenders] = useState([]);
   const [selected, setSelected] = useState(null);
   const [form, setForm] = useState(null);
-  const grantedCanPublish = Boolean(me.is_admin || me.is_exec || (me.capability_grants || []).some((grant) => grant.capability === "post_announcement" && !grant.scope_unit_id));
+  const globalPublisher = Boolean(me.is_admin || me.is_exec || (me.capability_grants || []).some((grant) => grant.capability === "post_announcement" && !grant.scope_unit_id));
+  const managedUnitIds = (me.memberships || []).filter(member => member.role === "manager").map(member => member.unit_id).filter(Boolean);
+  const managerOnlyPublisher = !globalPublisher && managedUnitIds.length > 0;
+  const grantedCanPublish = globalPublisher || managerOnlyPublisher;
+  const newAnnouncementForm = () => managerOnlyPublisher
+    ? { ...blankForm(), allOrg: false, audienceMode: "departments", unitIds: managedUnitIds }
+    : blankForm();
   const [canPublish, setCanPublish] = useState(grantedCanPublish);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -51,7 +57,7 @@ function AnnouncementWorkspace({ me, back, createRequest = false, onCreateHandle
   useEffect(() => {
     if (createRequest && canPublish) {
       // A delayed create intent must not erase a draft already being typed.
-      setForm((current) => current ?? blankForm());
+      setForm((current) => current ?? newAnnouncementForm());
       onCreateHandled?.();
     }
   }, [createRequest, canPublish]);
@@ -93,7 +99,7 @@ function AnnouncementWorkspace({ me, back, createRequest = false, onCreateHandle
         setRows((current) => current.map((row) => row.id === announcement.id ? announcement : row));
       }
       setSelected(announcement);
-      if (grantedCanPublish && announcement.status === "published") {
+      if (grantedCanPublish && (globalPublisher || announcement.author_id === me.id) && announcement.status === "published") {
         const announcementId=announcement.id;
         void supabase.rpc("announcement_audience_counts",{p_announcement_id:announcementId})
           .then(({data,error:countError})=>{
@@ -207,7 +213,7 @@ function AnnouncementWorkspace({ me, back, createRequest = false, onCreateHandle
       <h1 className="h1" style={me.is_exec ? undefined : { marginTop: 6 }}>Announcements</h1>
       <p className="screen-note">Important messages for the organisation, your role or your unit.</p>
       </div>
-      {canPublish && <button className="btn" style={me.is_exec ? undefined : { marginTop: 14, width: "fit-content", alignSelf: "flex-start" }} onClick={() => setForm(blankForm())}>New announcement</button>}
+      {canPublish && <button className="btn" style={me.is_exec ? undefined : { marginTop: 14, width: "fit-content", alignSelf: "flex-start" }} onClick={() => setForm(newAnnouncementForm())}>New announcement</button>}
     </header>
 
     {error && <div className="flag flag-brick" style={{ marginTop: 14 }}><h4>Could not complete that</h4>{error}<button className="btn btn-ghost btn-sm" style={{ marginTop: 10 }} onClick={load}>Try again</button></div>}
@@ -239,7 +245,7 @@ function AnnouncementWorkspace({ me, back, createRequest = false, onCreateHandle
             <div style={{fontSize:13,color:"light-dark(#4f6378,#aeb8c5)"}}><strong>{author.name}</strong>{author.detail?" · "+author.detail:""}</div>
             <div style={{fontSize:13,lineHeight:1.5,color:"light-dark(#62768b,#aeb8c5)",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",overflow:"hidden",whiteSpace:"pre-wrap"}}>{selected?.id===announcement.id ? null : announcement.body}</div>
           </button>
-          {canPublish && <div style={{display:"flex",gap:7,flexWrap:"wrap",alignItems:"center",marginTop:12}}>
+          {canPublish && (globalPublisher || announcement.author_id === me.id) && <div style={{display:"flex",gap:7,flexWrap:"wrap",alignItems:"center",marginTop:12}}>
             {announcement.status==="draft" && <><button className="btn btn-ghost btn-sm" onClick={()=>editAnnouncement(announcement)}>Edit</button><button className="btn btn-sm" onClick={()=>changeStatus(announcement,"publish")} disabled={busy}>Publish</button></>}
             {announcement.status==="published" && <button className="btn btn-ghost btn-sm" onClick={()=>changeStatus(announcement,"close")} disabled={busy}>Close</button>}
             {announcement.requires_acknowledgement && <small style={{color:"light-dark(#6c7e91,#aeb8c5)"}}>Acknowledgement requested</small>}
@@ -253,7 +259,7 @@ function AnnouncementWorkspace({ me, back, createRequest = false, onCreateHandle
       <div className="eyebrow">{selected.priority!=="normal"?selected.priority+" · ":""}{selected.status==="published"?"Official announcement":selected.status}</div>
       {!me.is_admin && <div className="h2" style={{ marginTop: 5 }}>{selected.title}</div>}
       <div className="row-m"><strong>{publisher(selected).name}</strong>{publisher(selected).detail ? " · "+publisher(selected).detail : ""} · {formatDate(selected.published_at || selected.created_at)}</div>
-      {canPublish&&selected.counts&&<p className="row-m" aria-label="Announcement reach">{selected.counts.read_count||0} read{selected.requires_acknowledgement?` · ${selected.counts.acknowledged_count||0} of ${selected.counts.target_count||0} acknowledged`:""}</p>}
+      {canPublish&&(globalPublisher || selected.author_id === me.id)&&selected.counts&&<p className="row-m" aria-label="Announcement reach">{selected.counts.read_count||0} read{selected.requires_acknowledgement?` · ${selected.counts.acknowledged_count||0} of ${selected.counts.target_count||0} acknowledged`:""}</p>}
       <div style={{ whiteSpace: "pre-wrap", lineHeight: 1.6, marginTop: 18 }}>{selected.body}</div>
       <OperationalFileList
         contextType="announcement"
@@ -286,18 +292,18 @@ function AnnouncementWorkspace({ me, back, createRequest = false, onCreateHandle
 
       <div className="reference-audience">
         <span className="label">Who should receive this? *</span>
-        <p className="screen-note" style={{ margin: "5px 0 10px", fontSize: 12 }}>Staff only is the default. Volunteers receive announcements only when deliberately included.</p>
+        <p className="screen-note" style={{ margin: "5px 0 10px", fontSize: 12 }}>{managerOnlyPublisher ? "Your announcement is limited to departments you manage. Choose whether it reaches staff, volunteers or both." : "Staff only is the default. Volunteers receive announcements only when deliberately included."}</p>
         <div className="reference-audience-options" role="group" aria-label="Employment audience" style={{ marginBottom: 12 }}>
           {[["staff", "Staff only"], ["volunteers", "Volunteers only"], ["both", "Staff and volunteers"]].map(([scope, label]) =>
             <label key={scope} className="reference-chip-check"><input type="radio" name="announcement-employment-audience" checked={form.scope === scope} onChange={() => setForm(current => ({ ...current, scope }))} /><span>{label}</span></label>)}
         </div>
         <div className="reference-audience-pills">
-          <button type="button" className={form.audienceMode === "everyone" ? "is-active" : ""} onClick={() => setForm((current) => ({ ...current, audienceMode: "everyone", allOrg: true, unitIds: [], roles: [] }))}>Entire selected audience</button>
+          {globalPublisher && <button type="button" className={form.audienceMode === "everyone" ? "is-active" : ""} onClick={() => setForm((current) => ({ ...current, audienceMode: "everyone", allOrg: true, unitIds: [], roles: [] }))}>Entire selected audience</button>}
           <button type="button" className={form.audienceMode === "departments" ? "is-active" : ""} onClick={() => setForm((current) => ({ ...current, audienceMode: "departments", allOrg: false, roles: [] }))}>Select departments</button>
-          <button type="button" className={form.audienceMode === "roles" ? "is-active" : ""} onClick={() => setForm((current) => ({ ...current, audienceMode: "roles", allOrg: false, unitIds: [] }))}>Select roles</button>
+          {globalPublisher && <button type="button" className={form.audienceMode === "roles" ? "is-active" : ""} onClick={() => setForm((current) => ({ ...current, audienceMode: "roles", allOrg: false, unitIds: [] }))}>Select roles</button>}
         </div>
         {form.audienceMode === "departments" && <div className="reference-audience-options">
-          {units.map((unit) => <label className="reference-chip-check" key={unit.id}><input type="checkbox" checked={form.unitIds.includes(unit.id)} onChange={() => toggleList("unitIds", unit.id)} /><span>{unit.name}</span></label>)}
+          {units.filter(unit => !managerOnlyPublisher || managedUnitIds.includes(unit.id)).map((unit) => <label className="reference-chip-check" key={unit.id}><input type="checkbox" checked={form.unitIds.includes(unit.id)} onChange={() => toggleList("unitIds", unit.id)} /><span>{unit.name}</span></label>)}
         </div>}
         {form.audienceMode === "roles" && <div className="reference-audience-options">
           {ROLE_OPTIONS.map(([role, label]) => <label className="reference-chip-check" key={role}><input type="checkbox" checked={form.roles.includes(role)} onChange={() => toggleList("roles", role)} /><span>{label}</span></label>)}
