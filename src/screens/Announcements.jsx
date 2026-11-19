@@ -17,7 +17,7 @@ function formatDate(value) {
 }
 
 function blankForm() {
-  return { draftKey: Symbol(), id: null, title: "", body: "", priority: "normal", requiresAck: false, expiresAt: "", allOrg: true, unitIds: [], roles: [], files: [], audienceMode: "everyone" };
+  return { draftKey: Symbol(), id: null, title: "", body: "", priority: "normal", requiresAck: false, expiresAt: "", allOrg: true, unitIds: [], roles: [], files: [], audienceMode: "everyone", scope: "staff" };
 }
 
 export default function Announcements(props) {
@@ -61,7 +61,7 @@ function AnnouncementWorkspace({ me, back, createRequest = false, onCreateHandle
     try {
       const [announcementResult, unitResult, directoryResult] = await Promise.all([
         supabase.from("announcements")
-          .select("id,author_id,title,body,priority,status,requires_acknowledgement,published_at,expires_at,created_at,profiles!announcements_author_id_fkey(full_name),announcement_receipts(profile_id,read_at,acknowledged_at),announcement_audiences(id,audience_type,unit_id,audience_role,units(name))")
+          .select("id,author_id,title,body,audience_scope,priority,status,requires_acknowledgement,published_at,expires_at,created_at,profiles!announcements_author_id_fkey(full_name),announcement_receipts(profile_id,read_at,acknowledged_at),announcement_audiences(id,audience_type,unit_id,audience_role,units(name))")
           .order("created_at", { ascending: false }),
         supabase.from("units").select("id,name").eq("org_id", me.org_id).eq("active", true).order("position"),
         supabase.rpc("memo_recipient_directory"),
@@ -127,7 +127,7 @@ function AnnouncementWorkspace({ me, back, createRequest = false, onCreateHandle
       id: announcement.id, title: announcement.title, body: announcement.body, priority: announcement.priority,
       requiresAck: announcement.requires_acknowledgement,
       expiresAt: announcement.expires_at ? new Date(announcement.expires_at).toISOString().slice(0, 16) : "",
-      allOrg, unitIds, roles, files: [],
+      allOrg, unitIds, roles, files: [], scope: announcement.audience_scope || "staff",
       audienceMode: allOrg ? "everyone" : unitIds.length ? "departments" : "roles",
     });
   }
@@ -146,7 +146,8 @@ function AnnouncementWorkspace({ me, back, createRequest = false, onCreateHandle
         p_title: form.title.trim(), p_body: form.body.trim(), p_priority: form.priority,
         p_requires_acknowledgement: form.requiresAck,
         p_expires_at: form.expiresAt ? new Date(form.expiresAt).toISOString() : null,
-        p_all_org: form.allOrg, p_unit_ids: form.unitIds, p_roles: form.roles,
+        p_all_org: form.allOrg, p_unit_ids: form.unitIds,
+        p_roles: [...form.roles, ...(form.scope === "volunteers" ? ["audience_volunteers"] : form.scope === "both" ? ["audience_both"] : [])],
       };
       const result = form.id
         ? await supabase.rpc("update_announcement", { p_announcement_id: form.id, ...args })
@@ -284,9 +285,14 @@ function AnnouncementWorkspace({ me, back, createRequest = false, onCreateHandle
       </div>
 
       <div className="reference-audience">
-        <span className="label">Audience *</span>
+        <span className="label">Who should receive this? *</span>
+        <p className="screen-note" style={{ margin: "5px 0 10px", fontSize: 12 }}>Staff only is the default. Volunteers receive announcements only when deliberately included.</p>
+        <div className="reference-audience-options" role="group" aria-label="Employment audience" style={{ marginBottom: 12 }}>
+          {[["staff", "Staff only"], ["volunteers", "Volunteers only"], ["both", "Staff and volunteers"]].map(([scope, label]) =>
+            <label key={scope} className="reference-chip-check"><input type="radio" name="announcement-employment-audience" checked={form.scope === scope} onChange={() => setForm(current => ({ ...current, scope }))} /><span>{label}</span></label>)}
+        </div>
         <div className="reference-audience-pills">
-          <button type="button" className={form.audienceMode === "everyone" ? "is-active" : ""} onClick={() => setForm((current) => ({ ...current, audienceMode: "everyone", allOrg: true, unitIds: [], roles: [] }))}>Everyone</button>
+          <button type="button" className={form.audienceMode === "everyone" ? "is-active" : ""} onClick={() => setForm((current) => ({ ...current, audienceMode: "everyone", allOrg: true, unitIds: [], roles: [] }))}>Entire selected audience</button>
           <button type="button" className={form.audienceMode === "departments" ? "is-active" : ""} onClick={() => setForm((current) => ({ ...current, audienceMode: "departments", allOrg: false, roles: [] }))}>Select departments</button>
           <button type="button" className={form.audienceMode === "roles" ? "is-active" : ""} onClick={() => setForm((current) => ({ ...current, audienceMode: "roles", allOrg: false, unitIds: [] }))}>Select roles</button>
         </div>
@@ -304,7 +310,7 @@ function AnnouncementWorkspace({ me, back, createRequest = false, onCreateHandle
         <VoiceInput compact label="Speak announcement message" onResult={(text) => setForm((current) => ({ ...current, body: current.body ? current.body + " " + text : text }))} />
       </div>
 
-      {me.is_admin&&<details className="reference-disclosure"><summary>Preview message</summary><div className="reference-disclosure-body"><h2>{form.title||"Untitled draft"}</h2><p style={{whiteSpace:"pre-wrap"}}>{form.body||"Write a message to preview it here."}</p><small>{form.allOrg?"Everyone in the organisation":form.unitIds.length?`${form.unitIds.length} selected departments`:form.roles.length?`${form.roles.length} selected roles`:"Choose an audience"}</small></div></details>}
+      {me.is_admin&&<details className="reference-disclosure"><summary>Preview message</summary><div className="reference-disclosure-body"><h2>{form.title||"Untitled draft"}</h2><p style={{whiteSpace:"pre-wrap"}}>{form.body||"Write a message to preview it here."}</p><small>{(form.scope === "staff" ? "Staff" : form.scope === "volunteers" ? "Volunteers" : "Staff and volunteers") + " · " + (form.allOrg ? "organisation-wide" : form.unitIds.length ? `${form.unitIds.length} selected departments` : form.roles.length ? `${form.roles.length} selected roles` : "Choose an audience")}</small></div></details>}
       <details className="reference-disclosure">
         <summary><span>Attachments</span><span>+ Add file · {(form.files || []).length}</span></summary>
         <div className="reference-disclosure-body">
