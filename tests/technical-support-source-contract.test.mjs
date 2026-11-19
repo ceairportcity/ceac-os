@@ -427,3 +427,19 @@ test("Stage 2 Technical Support case metadata meets the 12px readability floor o
   assert.match(css, /@media\(max-width:590px\)/);
   assert.match(css, /\.s2-support-summary small\{font-size:12px/);
 });
+
+test("This Week offers staff their own plans without authorising edits to departmental plans", () => {
+  const migration = read("supabase/migrations/20261119131500_personal_weekly_plans.sql");
+  const page = read("src/screens/WeeklyWorkPlan.jsx");
+  const reader = read("src/lib/weeklyWorkPlan.js");
+  assert.match(migration, /owner_id=(select auth.uid\(\))/);
+  assert.match(migration, /values\(org,unit,actor,week\) on conflict do nothing/);
+  assert.match(migration, /not personal and exists/);
+  assert.match(migration, /personal and owner=actor/);
+  assert.match(migration, /owner_id is null and unit_id in\(select public.app_managed_units\(\)\)/);
+  assert.match(page, /Create my weekly plan/);
+  assert.match(page, /personal: true, unit: me.unit_id \|\| null, week/);
+  assert.match(page, /isPersonal \? plan.owner_id === me.id/);
+  assert.match(reader, /personal \? query.eq\("assignee_id", me.id\)/);
+  assert.match(reader, /eq\("owner_id", me.id\)/);
+});
