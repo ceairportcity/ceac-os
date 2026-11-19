@@ -261,6 +261,7 @@ test("canonical S3 migration and fifteen reviewed security migrations have uniqu
     "20261119103000_announcement_author_rls_access.sql",
     "20261119104500_current_day_cutoff_activation.sql",
     "20261119131500_personal_weekly_plans.sql",
+    "20261119155000_announcement_expiry_draft_validation.sql",
   ];
   for (const migration of stagedIntegratedSecurity) {
     assert.ok(migrations.includes(migration), "Missing single-candidate Stage 2 migration: " + migration);
@@ -443,4 +444,18 @@ test("This Week offers staff their own plans without authorising edits to depart
   assert.match(page, /isPersonal \? plan.owner_id === me.id/);
   assert.match(reader, /personal \? query.eq\("assignee_id", me.id\)/);
   assert.match(reader, /eq\("owner_id", me.id\)/);
+});
+
+test("Announcement expiry repair blocks past dates without publishing or changing the original HR draft", () => {
+  const screen = read("src/screens/Announcements.jsx");
+  const migration = read("supabase/migrations/20261119155000_announcement_expiry_draft_validation.sql");
+  assert.match(screen, /function hasExpired\(value\)/);
+  assert.match(screen, /function localDateTime\(value\)/);
+  assert.match(screen, /hasExpired\(announcement\.expires_at\)/);
+  assert.match(screen, /Fix expiry/);
+  assert.match(screen, /Remove expiry/);
+  assert.match(screen, /disabled=\{busy \|\| hasExpired\(form\.expiresAt\)/);
+  assert.match(screen, /A draft cannot be published with a past expiry/);
+  assert.equal((migration.match(/p_expires_at is not null and p_expires_at<=now\(\)/g) || []).length, 2);
+  assert.ok(migration.includes("Choose a future time or leave the expiry blank."));
 });
