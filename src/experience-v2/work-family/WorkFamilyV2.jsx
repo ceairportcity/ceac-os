@@ -40,6 +40,8 @@ export function WorkPageHeader({
   actionIcon = "create",
   secondaryActionLabel,
   onSecondaryAction,
+  weeklyActionLabel,
+  onWeeklyAction,
 }) {
   return (
     <header className="ev2w-header">
@@ -48,7 +50,7 @@ export function WorkPageHeader({
         <h1>{title}</h1>
         {description ? <p>{description}</p> : null}
       </div>
-      {(actionLabel || secondaryActionLabel) ? (
+      {(actionLabel || secondaryActionLabel || weeklyActionLabel) ? (
         <div className="ev2w-header-actions">
           {actionLabel ? <Button className="ev2w-header-action"
             variant={secondaryActionLabel ? "secondary" : "primary"}
@@ -57,6 +59,7 @@ export function WorkPageHeader({
           {secondaryActionLabel ? <Button className="ev2w-header-action"
             variant="primary" size="compact" icon="create"
             onClick={onSecondaryAction}>{secondaryActionLabel}</Button> : null}
+          {weeklyActionLabel ? <Button className="ev2w-header-action ev2w-weekly-action" variant="secondary" size="compact" onClick={onWeeklyAction}>{weeklyActionLabel}</Button> : null}
         </div>
       ) : null}
     </header>

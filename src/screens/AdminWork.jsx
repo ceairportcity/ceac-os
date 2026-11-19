@@ -18,7 +18,7 @@ import {
 
 const CLOSED = new Set(["completed", "self_certified", "cancelled"]);
 
-export default function AdminWork({ me, openItem, goAssign }) {
+export default function AdminWork({ me, openItem, goAssign, openWeeklyPlan }) {
   const [view, setView] = useState("mine");
   const [addingMyWork, setAddingMyWork] = useEditorPosition(me, "admin-own-work", false);
   const [selectedWorkId, setSelectedWorkId] = useState(null);
@@ -103,6 +103,8 @@ export default function AdminWork({ me, openItem, goAssign }) {
       onAction={() => goAssign?.()}
       secondaryActionLabel="Add my work"
       onSecondaryAction={() => setAddingMyWork(true)}
+      weeklyActionLabel="This Week"
+      onWeeklyAction={openWeeklyPlan}
     />
     {addingMyWork && !scopedLoading && <SelfWorkComposer me={me}
       onClose={() => setAddingMyWork(false)}

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, Check, CalendarDays, Plus, Send, ListTodo, Link2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Check, CalendarDays, Plus, Send, Link2, X } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { humanError } from "../lib/productLanguage";
 import {
@@ -64,6 +64,7 @@ export default function WeeklyWorkPlan({ me, selection, openPlan, openItem, clos
   const [editor, setEditor] = useState(null);
   const [newUnit, setNewUnit] = useState("");
   const [linkWork, setLinkWork] = useState("");
+  const [addMode, setAddMode] = useState("quick");
   const [error, setError] = useState("");
   const [editorError, setEditorError] = useState("");
   const [notice, setNotice] = useState("");
@@ -85,6 +86,7 @@ export default function WeeklyWorkPlan({ me, selection, openPlan, openItem, clos
     setEditorData(null);
     setEditorError("");
     setLinkWork("");
+    setAddMode("quick");
     (async () => {
       try {
         const plans = await readWeeklyPlans(supabase, week, viewId);
@@ -120,6 +122,9 @@ export default function WeeklyWorkPlan({ me, selection, openPlan, openItem, clos
   const selectedEditor = editor?.scope === scope ? editor : null;
   const live = activeItems(rows);
   const editableWeek = [todayWeek, shiftPlanDay(todayWeek, 7)].includes(week);
+  const doneCount = live.filter(isPlanItemDone).length;
+  const openCount = live.length - doneCount;
+  const availableLinks = tool?.linkable.filter(work => !linked.has(work.id + ":")) || [];
 
   async function write(action, { planId = plan?.id, itemId = null, values = {} } = {}) {
     if (writing.current) return null;
@@ -148,6 +153,7 @@ export default function WeeklyWorkPlan({ me, selection, openPlan, openItem, clos
   }
 
   function startEdit(item = null) {
+    setAddMode(item?.work_id ? "linked" : "quick");
     setEditor({ scope, item, id: item?.id || crypto.randomUUID(), ...blankEditor, owner: item?.owner_id || (memberName(me.id) ? me.id : ""),
       title: item?.title || "", day: item?.planned_on || "", blocker: item?.blocker || "", decision: Boolean(item?.decision_requested) });
   }
@@ -158,7 +164,7 @@ export default function WeeklyWorkPlan({ me, selection, openPlan, openItem, clos
     const result = await write("save", { itemId: item?.id || selectedEditor.id, values: {
       title, owner, day: day || null, blocker, decision, updated_at: item?.updated_at,
     } });
-    if (result) setEditor(null);
+    if (result) { setEditor(null); setLinkWork(""); setAddMode("quick"); }
   }
 
   function openSuggestion(work) {
@@ -194,7 +200,7 @@ export default function WeeklyWorkPlan({ me, selection, openPlan, openItem, clos
           }}><span><strong>{titleFor(item)}</strong><small>{source.units?.name} · {item.blocker}</small></span><ChevronRight size={18} /></a></li>;
         })}</ul> : <p>No decisions requested for this week.</p>}
       </section>}
-      <section className="weekly-panel weekly-plans-panel"><div className="weekly-section-heading"><div><span className="weekly-section-kicker">OVERVIEW</span><h2>{pastor ? "Team plans" : "Department plans"}</h2></div></div>
+      <section className="weekly-panel weekly-plans-panel"><div className="weekly-section-heading"><div><span className="weekly-section-kicker">OVERVIEW</span><h2>{pastor ? "Department plans" : "Your department plans"}</h2></div></div>
         {current.plans.length ? <ul className="weekly-team-list">{current.plans.map(row => {
           const items = live.filter(item => item.plan_id === row.id);
           const decisions = items.filter(needsDecision).length;
@@ -216,46 +222,89 @@ export default function WeeklyWorkPlan({ me, selection, openPlan, openItem, clos
       </section>
     </>}
     {plan && <>
-      {canEdit && <section className="weekly-panel">
-        <header className="weekly-section-heading"><div><span className="weekly-section-kicker">PLAN BUILDER</span><h2>Add work</h2><p>Assign a checklist item or include existing work.</p></div>
-          {tool && <button type="button" className="weekly-primary-action" disabled={working} onClick={() => startEdit()}><Plus size={16} /> New item</button>}</header>
-        {editorError && <ProductNotice tone="error" title="Plan suggestions">{editorError}</ProductNotice>}
-        {!tool && !editorError && <p role="status">Loading suggestions…</p>}
-        {selectedEditor && <form className="weekly-editor" onSubmit={save}><div className="weekly-editor-heading"><strong>{selectedEditor.item ? "Edit item" : "New checklist item"}</strong><button type="button" aria-label="Close editor" onClick={() => setEditor(null)}>Cancel</button></div>
-          {selectedEditor.item?.work_id ? <strong>{titleFor(selectedEditor.item)}</strong> : <>
-            <label>Task name<input className="field" required maxLength={240} value={selectedEditor.title} onChange={event => changeEditor("title", event.target.value)} /></label>
-            <label>Assigned to<select className="field" required value={selectedEditor.owner} onChange={event => changeEditor("owner", event.target.value)}>
-              <option value="">Choose an owner</option>
-              {tool?.members.map(member => <option key={member.profile_id} value={member.profile_id}>{member.profiles.full_name}</option>)}
-            </select></label>
-          </>}
-          <label>Day of the week<input className="field" type="date" value={selectedEditor.day} min={plan.week_start}
-            max={shiftPlanDay(plan.week_start, 6)} onChange={event => changeEditor("day", event.target.value)} /></label>
-          <label className="weekly-editor-wide">Notes or decision needed<textarea className="field" maxLength={1000} required={selectedEditor.decision}
-            value={selectedEditor.blocker} onChange={event => changeEditor("blocker", event.target.value)} /></label>
-          <label className="weekly-editor-wide weekly-checkbox"><input type="checkbox" checked={selectedEditor.decision} onChange={event => changeEditor("decision", event.target.checked)} /> Ask Group Pastor for a decision</label>
-          <div className="weekly-editor-actions"><button className="weekly-primary-action" disabled={working}>Save item</button><button type="button" className="weekly-secondary-action" onClick={() => setEditor(null)}>Cancel</button></div>
-        </form>}
-        {tool?.linkable.some(work => !linked.has(work.id + ":")) && <form className="weekly-create" onSubmit={async event => {
+      {canEdit && <section className="weekly-panel weekly-build-surface" aria-label="Weekly plan editor">
+        <header className="weekly-section-heading">
+          <div><h2>Plan your week</h2><p>Add what your team will work on. You can edit items before or after sharing.</p></div>
+          {!editor && <button type="button" className="weekly-primary-action" disabled={working || !tool} onClick={() => startEdit()}><Plus size={16} /> Add work</button>}
+        </header>
+        {editorError && <ProductNotice tone="error" title="Unable to load department work">{editorError}</ProductNotice>}
+        {!tool && !editorError && <p role="status">Loading your department’s assignments…</p>}
+        {selectedEditor && <form className="weekly-editor weekly-one-form" onSubmit={async event => {
           event.preventDefault();
-          if (linkWork && await openSuggestion({ id: linkWork })) setLinkWork("");
+          if (!selectedEditor.item && addMode === "linked") {
+            if (!linkWork) return;
+            const result = await write("save", { itemId: selectedEditor.id, values: {
+              work: linkWork, day: selectedEditor.day || null,
+              blocker: selectedEditor.blocker, decision: selectedEditor.decision,
+            } });
+            if (result) { setEditor(null); setLinkWork(""); setAddMode("quick"); }
+            return;
+          }
+          await save(event);
         }}>
-          <select className="field" aria-label="Existing work" value={linkWork} onChange={event => setLinkWork(event.target.value)}>
-            <option value="">Choose existing work</option>
-            {tool.linkable.filter(work => !linked.has(work.id + ":")).map(work => <option key={work.id} value={work.id}>{work.title}</option>)}
-          </select>
-          <button type="submit" className="weekly-secondary-action" disabled={working || !linkWork}><Link2 size={15} /> Add linked work</button>
+          <div className="weekly-editor-heading">
+            <strong>{selectedEditor.item ? "Edit planned work" : "Add to weekly plan"}</strong>
+            <button type="button" onClick={() => {setEditor(null);setLinkWork("");}} aria-label="Close form"><X size={18}/></button>
+          </div>
+          {!selectedEditor.item && <fieldset className="weekly-kind-select">
+            <legend>Where is this work coming from?</legend>
+            <div role="group" aria-label="Work source">
+              <button type="button" aria-pressed={addMode === "quick"} className={addMode === "quick" ? "is-active" : ""} onClick={() => setAddMode("quick")}>New checklist item</button>
+              <button type="button" aria-pressed={addMode === "linked"} className={addMode === "linked" ? "is-active" : ""} onClick={() => setAddMode("linked")}>Existing assignment</button>
+            </div>
+          </fieldset>}
+          {(selectedEditor.item?.work_id || (!selectedEditor.item && addMode === "linked")) ?
+            selectedEditor.item?.work_id ?
+              <div className="weekly-linked-name"><Link2 size={16}/><strong>{titleFor(selectedEditor.item)}</strong></div> :
+              <label className="weekly-editor-wide">Choose an assignment
+                <select className="field" value={linkWork} required onChange={event => setLinkWork(event.target.value)}>
+                  <option value="">Select work already assigned to your department</option>
+                  {availableLinks.map(work => <option key={work.id} value={work.id}>{work.title}</option>)}
+                </select>
+              </label>
+          : <>
+            <label className="weekly-editor-wide">What needs to be done?
+              <input className="field" required maxLength={240} placeholder="e.g. Finalise Sunday's production schedule"
+                value={selectedEditor.title} onChange={event => changeEditor("title", event.target.value)}/>
+            </label>
+            <label>Who will handle it?
+              <select className="field" value={selectedEditor.owner} required onChange={event => changeEditor("owner", event.target.value)}>
+                <option value="">Select a team member</option>
+                {tool?.members.map(member => <option key={member.profile_id} value={member.profile_id}>{member.profiles.full_name}</option>)}
+              </select>
+            </label>
+          </>}
+          <label>When this week?
+            <select className="field" value={selectedEditor.day} onChange={event => changeEditor("day", event.target.value)}>
+              <option value="">No specific day</option>
+              {Array.from({length:7},(_,i)=>shiftPlanDay(plan.week_start,i)).map(date=><option key={date} value={date}>{planDayLabel(date)}</option>)}
+            </select>
+          </label>
+          <label className="weekly-editor-wide">Notes or help needed <span className="weekly-optional">(optional)</span>
+            <textarea className="field" rows={3} maxLength={1000} placeholder="Add useful details for your team"
+              required={selectedEditor.decision} value={selectedEditor.blocker} onChange={event => changeEditor("blocker", event.target.value)} />
+          </label>
+          <label className="weekly-editor-wide weekly-checkbox">
+            <input type="checkbox" checked={selectedEditor.decision} onChange={event => changeEditor("decision", event.target.checked)}/>
+            <span><strong>Request a decision from Group Pastor</strong><small>Use this only when you need a response, not for ordinary updates.</small></span>
+          </label>
+          <div className="weekly-editor-actions">
+            <button type="submit" className="weekly-primary-action" disabled={working || !tool || (!selectedEditor.item && addMode === "linked" && !linkWork)}>Save to plan</button>
+            <button type="button" className="weekly-secondary-action" onClick={() => {setEditor(null);setLinkWork("");}}>Cancel</button>
+          </div>
         </form>}
-        {(suggestions.length > 0 || lastItems.length > 0) && <details className="weekly-history" open={!live.length || undefined}><summary>Suggested work ({suggestions.length + lastItems.length})</summary>
+        {!selectedEditor && live.length === 0 && <p className="weekly-getting-started">Start by adding the first item for your team. You can then send the plan to Group Pastor.</p>}
+        {(suggestions.length > 0 || lastItems.length > 0) && <details className="weekly-history weekly-suggestion-drawer">
+          <summary>Bring in suggested or unfinished work <span>{suggestions.length + lastItems.length}</span></summary>
           <ul className="weekly-suggestions">
             {suggestions.map(work => <li key={work.id + ":" + (work.routine || "")}><span><strong>{work.title}</strong><small>{planDayLabel(work.day)} · {work.kind === "routine" ? "Routine" : "Due this week"}</small></span>
-              <button type="button" className="btn btn-ghost btn-sm" disabled={working} onClick={() => openSuggestion(work)}>Add</button></li>)}
+              <button type="button" className="weekly-secondary-action" disabled={working} onClick={() => openSuggestion(work)}>Add to plan</button></li>)}
             {lastItems.map(item => <li key={item.id}><span><strong>{titleFor(item)}</strong><small>Unfinished from last week</small></span>
-              <button type="button" className="btn btn-ghost btn-sm" disabled={working} onClick={() => carry(item)}>Carry forward</button></li>)}
+              <button type="button" className="weekly-secondary-action" disabled={working} onClick={() => carry(item)}>Carry forward</button></li>)}
           </ul>
         </details>}
       </section>}
-      <section className="weekly-panel weekly-commitments"><header className="weekly-section-heading"><div><span className="weekly-section-kicker">YOUR CHECKLIST</span><h2>Commitments</h2></div><span className="weekly-count">{live.filter(isPlanItemDone).length} / {live.length} complete</span></header>
+      <section className="weekly-panel weekly-commitments"><header className="weekly-section-heading"><div><span className="weekly-section-kicker">WEEKLY CHECKLIST</span><h2>Work to be done</h2></div><span className="weekly-count">{doneCount} of {live.length} complete</span></header>
         {live.length ? <ul className="weekly-plan-list">{live.map(item => <PlanItem key={item.id} item={item} me={me} canEdit={canEdit} canCarry={canCarry} working={working}
           onEdit={startEdit} onDrop={row => write("drop", { itemId: row.id, values: { updated_at: row.updated_at } })} onCarry={carry} openItem={openItem}
           onTick={(row, done) => write("tick", { itemId: row.id, values: { done } })}

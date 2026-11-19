@@ -1,4 +1,3 @@
-import { CalendarDays, ChevronRight } from "lucide-react";
 import { guideRole, guideTours } from "./guide/guideTours";
 import "./experience-v2/ApprovedWorkspace.css";
 import { clearEditorPositions, useEditorPosition } from "./lib/useEditorPosition";
@@ -604,12 +603,12 @@ export default function App() {
       if (weeklyPlan) return <WeeklyWorkPlan key={managerScopeKey} me={me} selection={weeklyPlan} openPlan={openWeeklyPlan}
         openItem={openItem} close={() => go("work")} />;
       return <>
-        <nav className="weekly-plan-entry" aria-label="Weekly work"><button className="weekly-plan-launch" type="button" onClick={() => openWeeklyPlan("current")}><span className="weekly-plan-launch-icon" aria-hidden="true"><CalendarDays size={19} /></span><span className="weekly-plan-launch-copy"><strong>This Week</strong><small>Weekly plans and checklists</small></span><ChevronRight size={18} aria-hidden="true" /></button></nav>
-        {isExec ? <ExecutiveWork key={managerScopeKey} me={me} openItem={openItem} goAssign={startAssignment} />
-          : isAdmin ? <AdminWork key={managerScopeKey} me={me} openItem={openItem} goAssign={startAssignment} />
+
+        {isExec ? <ExecutiveWork key={managerScopeKey} me={me} openItem={openItem} goAssign={startAssignment} openWeeklyPlan={() => openWeeklyPlan("current")} />
+          : isAdmin ? <AdminWork key={managerScopeKey} me={me} openItem={openItem} goAssign={startAssignment} openWeeklyPlan={() => openWeeklyPlan("current")} />
           : <AssignedProjects key={managerScopeKey} me={me} openItem={openItem}>
-            {isUnitManager ? <ManagerWork key={managerScopeKey} me={me} openItem={openItem} goAssign={startAssignment} />
-              : <Work key={managerScopeKey} me={me} isManager={false} openItem={openItem} />}
+            {isUnitManager ? <ManagerWork key={managerScopeKey} me={me} openItem={openItem} goAssign={startAssignment} openWeeklyPlan={() => openWeeklyPlan("current")} />
+              : <Work key={managerScopeKey} me={me} isManager={false} openItem={openItem} openWeeklyPlan={() => openWeeklyPlan("current")} />}
           </AssignedProjects>}
       </>;
     }
