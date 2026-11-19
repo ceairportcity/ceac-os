@@ -209,4 +209,3 @@ begin
   (extract(epoch from clock_timestamp()-v_started)*1000)::integer);
 end;
 $function$
-
