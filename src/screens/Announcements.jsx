@@ -16,6 +16,18 @@ function formatDate(value) {
   return value ? new Date(value).toLocaleString("en-GB", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "—";
 }
 
+// An optional expiry must be strictly later than now; compare actual instants, not date labels.
+function hasExpired(value) {
+  return Boolean(value) && (!Number.isFinite(new Date(value).getTime()) || new Date(value).getTime() <= Date.now());
+}
+function localDateTime(value) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (!Number.isFinite(date.getTime())) return "";
+  const pad = number => String(number).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth()+1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
 function blankForm() {
   return { draftKey: Symbol(), id: null, title: "", body: "", priority: "normal", requiresAck: false, expiresAt: "", allOrg: true, unitIds: [], roles: [], files: [], audienceMode: "everyone", scope: "staff" };
 }
@@ -132,7 +144,7 @@ function AnnouncementWorkspace({ me, back, createRequest = false, onCreateHandle
       draftKey: Symbol(),
       id: announcement.id, title: announcement.title, body: announcement.body, priority: announcement.priority,
       requiresAck: announcement.requires_acknowledgement,
-      expiresAt: announcement.expires_at ? new Date(announcement.expires_at).toISOString().slice(0, 16) : "",
+      expiresAt: localDateTime(announcement.expires_at),
       allOrg, unitIds, roles, files: [], scope: announcement.audience_scope || "staff",
       audienceMode: allOrg ? "everyone" : unitIds.length ? "departments" : "roles",
     });
@@ -144,6 +156,10 @@ function AnnouncementWorkspace({ me, back, createRequest = false, onCreateHandle
 
   async function saveDraft() {
     if (!form || busy || savePending.current) return;
+    if (hasExpired(form.expiresAt)) {
+      setError("The expiry has already passed. Choose a future time or remove the expiry before saving.");
+      return;
+    }
     const submitted = form;
     savePending.current = true;
     setBusy(true); setError(null); setSavedDraft(null);
@@ -189,6 +205,12 @@ function AnnouncementWorkspace({ me, back, createRequest = false, onCreateHandle
   }
 
   async function changeStatus(announcement, action) {
+    if (action === "publish" && hasExpired(announcement.expires_at)) {
+      editAnnouncement(announcement);
+      setSelected(null);
+      setError("This draft has an expiry time that has already passed. Update or remove the expiry, save the draft, then publish.");
+      return;
+    }
     setBusy(true); setError(null);
     try {
       const { error: actionError } = await supabase.rpc(action === "publish" ? "publish_announcement" : "close_announcement", { p_announcement_id: announcement.id });
@@ -239,6 +261,7 @@ function AnnouncementWorkspace({ me, back, createRequest = false, onCreateHandle
               {unread && <strong style={{color:"light-dark(#145e9b,#aeb8c5)"}}>Unread</strong>}
               {priority && <strong style={{color:priority==="Urgent"?"#a23a33":"#816129"}}>{priority}</strong>}
               <span>{announcement.status==="published"?"Published":announcement.status==="draft"?"Draft":"Closed"}</span>
+              {announcement.status==="draft" && hasExpired(announcement.expires_at) && <strong style={{color:"#a23a33"}}>Expiry needs updating</strong>}
               <time style={{marginLeft:"auto"}}>{formatDate(announcement.published_at||announcement.created_at)}</time>
             </div>
             <h2 style={{margin:0,color:"light-dark(#20384f,#e8ecf1)",fontSize:17,fontWeight:700,lineHeight:1.4}}>{announcement.title}</h2>
@@ -246,7 +269,7 @@ function AnnouncementWorkspace({ me, back, createRequest = false, onCreateHandle
             <div style={{fontSize:13,lineHeight:1.5,color:"light-dark(#62768b,#aeb8c5)",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",overflow:"hidden",whiteSpace:"pre-wrap"}}>{selected?.id===announcement.id ? null : announcement.body}</div>
           </button>
           {canPublish && (globalPublisher || announcement.author_id === me.id) && <div style={{display:"flex",gap:7,flexWrap:"wrap",alignItems:"center",marginTop:12}}>
-            {announcement.status==="draft" && <><button className="btn btn-ghost btn-sm" onClick={()=>editAnnouncement(announcement)}>Edit</button><button className="btn btn-sm" onClick={()=>changeStatus(announcement,"publish")} disabled={busy}>Publish</button></>}
+            {announcement.status==="draft" && <><button className="btn btn-ghost btn-sm" onClick={()=>editAnnouncement(announcement)}>Edit</button><button className="btn btn-sm" onClick={()=>changeStatus(announcement,"publish")} disabled={busy}>{hasExpired(announcement.expires_at) ? "Fix expiry" : "Publish"}</button></>}
             {announcement.status==="published" && <button className="btn btn-ghost btn-sm" onClick={()=>changeStatus(announcement,"close")} disabled={busy}>Close</button>}
             {announcement.requires_acknowledgement && <small style={{color:"light-dark(#6c7e91,#aeb8c5)"}}>Acknowledgement requested</small>}
           </div>}
@@ -280,9 +303,17 @@ function AnnouncementWorkspace({ me, back, createRequest = false, onCreateHandle
       title={form.id ? "Edit announcement draft" : "New announcement"}
       description={null}
       panelClassName="reference-composer reference-announcement-composer"
-      footer={<button className="btn" onClick={saveDraft} disabled={busy || !form.title.trim() || !form.body.trim() || (!form.allOrg && form.unitIds.length === 0 && form.roles.length === 0)}>{busy ? "Saving..." : form.id ? "Save changes" : "Save draft"}</button>}
+      footer={<button className="btn" onClick={saveDraft} disabled={busy || hasExpired(form.expiresAt) || !form.title.trim() || !form.body.trim() || (!form.allOrg && form.unitIds.length === 0 && form.roles.length === 0)}>{busy ? "Saving..." : form.id ? "Save changes" : "Save draft"}</button>}
     >
-      {me.is_admin && error && <ProductNotice tone="error" title="Announcement draft not saved">{error}</ProductNotice>}
+      {error && <ProductNotice tone="error" title="Announcement draft needs attention">{error}</ProductNotice>}
+      {hasExpired(form.expiresAt) && <div className="flag flag-brick" role="alert" style={{marginBottom:14}}>
+        <strong>Expiry time has passed</strong>
+        <p style={{margin:"6px 0 10px",fontSize:13,lineHeight:1.5}}>A draft cannot be published with a past expiry. Choose a later date below, or remove the expiry if the announcement should stay available until you close it.</p>
+        <button type="button" className="btn btn-ghost btn-sm" onClick={() => {
+          setForm(current => ({ ...current, expiresAt: "" }));
+          setError(null);
+        }}>Remove expiry</button>
+      </div>}
       {savedDraft === form.draftKey && <p role="status" className="screen-note">Submitted version saved. Your later changes are not saved yet.</p>}
       <label className="label" htmlFor="announcement-title">Title *</label>
       <div className="assistive-inline">
@@ -325,8 +356,16 @@ function AnnouncementWorkspace({ me, back, createRequest = false, onCreateHandle
       </details>
 
       <FieldGroup label="Available until (optional)">
-        <input id="announcement-expiry" className="field" type="datetime-local" value={form.expiresAt} onChange={(event) => { const value = event.target.value; setForm((current) => ({ ...current, expiresAt: value })); }} />
-        <span className="field-hint">The announcement remains a draft until it is explicitly published.</span>
+        <input id="announcement-expiry" className="field" type="datetime-local"
+          min={localDateTime(new Date(Date.now() + 60000))}
+          aria-invalid={hasExpired(form.expiresAt)}
+          value={form.expiresAt} onChange={(event) => {
+            const value = event.target.value;
+            setForm((current) => ({ ...current, expiresAt: value }));
+            setError(null);
+          }} />
+        {hasExpired(form.expiresAt) && <span className="field-hint" role="alert" style={{color:"#a23a33"}}>This time is in the past. Choose a future expiry or leave it blank.</span>}
+        <span className="field-hint">Optional. Leave blank for no automatic expiry. Saving a draft does not publish it.</span>
       </FieldGroup>
 
       <details className="reference-disclosure">
