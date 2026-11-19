@@ -299,6 +299,10 @@ insert into s2_expected_authenticated_definers(signature) values
 insert into s2_expected_authenticated_definers(signature) values
  ('public.create_individually_assigned_project(p_assigned_person_id uuid, p_name text, p_purpose text, p_starts_on date, p_ends_on date)');
 
+-- Weekly work plan mutations recheck organisation, team, item and actor authority.
+insert into s2_expected_authenticated_definers(signature) values
+ ('public.update_weekly_work_plan(p_action text, p_plan uuid, p_item uuid, p_values jsonb)');
+
 do $allowlist$
 declare
   v_unexpected text;
@@ -348,7 +352,7 @@ begin
 
   -- The three new Executive-only projections have explicit signatures and
   -- actor/tenant/no-anon/read-only checks above.
-  if v_actual<>196 or v_expected<>196 or v_unexpected is not null or v_missing is not null then
+  if v_actual<>197 or v_expected<>197 or v_unexpected is not null or v_missing is not null then
     raise exception E'S2 SECURITY DEFINER allowlist mismatch. actual=% expected=%\nunexpected:\n%\nmissing:\n%',
       v_actual,v_expected,coalesce(v_unexpected,'(none)'),coalesce(v_missing,'(none)');
   end if;

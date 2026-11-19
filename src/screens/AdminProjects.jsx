@@ -59,7 +59,7 @@ export default function AdminProjects({ me, scheduleMeeting, openItem, initialPr
 
   const selected = projects.find(project => project.id === selectedProjectId);
   if (selectedProjectId && !selected) return <div className="body admin-projects"><button className="back" onClick={()=>openProject?.(null)}>← Projects</button><ProductNotice tone="error" title="Project unavailable">This project could not be verified in your organisation.</ProductNotice></div>;
-  if (selected && (me.is_exec || selected.assigned_person_id && !selected.lead_unit_id)) return <div className="body admin-projects ev2-project-page executive-project-layout">
+  if (selected && (me.is_exec || selected.assigned_person_id && !selected.lead_unit_id)) return <div className="executive-project-frame"><div className="body admin-projects ev2-project-page executive-project-layout">
     <aside className="meeting-register ceac-project-register" aria-label="Projects">
       <header><h2>Projects</h2></header>
       {projects.filter(project => Boolean(project.archived_at) === Boolean(selected.archived_at)).map(project =>
@@ -76,7 +76,7 @@ export default function AdminProjects({ me, scheduleMeeting, openItem, initialPr
     <Stage2ProjectReader key={`${me.org_id}:${me.id}:${selected.id}`}
       projectId={selected.id} me={me} openItem={openItem} onBack={()=>openProject?.(null)} goAssign={goAssign} onAssignmentChanged={load} />
     </div>
-  </div>;
+  </div></div>;
   if (selected) return <ManagerProjects key={`${me.org_id}:${me.id}:${selected.id}`} me={me} projectUnitId={selected.lead_unit_id}
     initialProjectId={selected.id} back={()=>openProject?.(null)} openItem={openItem}
     goAssign={context=>goAssign?.({...context,unitId:selected.lead_unit_id})} openRoom={openRoom} scheduleMeeting={scheduleMeeting} />;

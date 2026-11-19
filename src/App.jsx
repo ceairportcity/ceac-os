@@ -49,6 +49,7 @@ const PersonalAchievements = lazy(() => import("./screens/PersonalAchievements")
 const ExecutiveHome = lazy(() => import("./screens/ExecutiveHome"));
 const ExecutiveProjectsWorkspace = lazy(() => import("./screens/ExecutiveProjectsWorkspace"));
 const ExecutiveWork = lazy(() => import("./screens/ExecutiveWork"));
+const WeeklyWorkPlan = lazy(() => import("./screens/WeeklyWorkPlan"));
 const ExecutiveOrganisation = lazy(() => import("./screens/ExecutiveOrganisation"));
 const ExecutiveFinance = lazy(() => import("./screens/ExecutiveFinance"));
 const ExecutiveReports = lazy(() => import("./screens/ExecutiveReports"));
@@ -121,6 +122,7 @@ function routeFromLocation() {
     settingsReturn: params.get("settingsReturn") === "people" ? "people" : null,
     leaveRequestId: params.get("tab") === "attendance" ? params.get("leave") : null,
     workforceSection: params.get("tab") === "attendance" && params.get("workforce") === "setup" ? "setup" : null,
+    weeklyPlan: params.get("tab") === "work" && /^(current|[0-9a-f-]{36})$/i.test(params.get("weeklyPlan") || "") ? params.get("weeklyPlan") : null,
     itemId: params.get("item"),
     routineDate: params.get("item") ? validRoutineDate(params.get("routineDate")) : null,
     projectId: params.get("project"),
@@ -146,6 +148,7 @@ export default function App() {
   const [settingsReturn, setSettingsReturn] = useState(initialRoute.settingsReturn);
   const [leaveRequestId, setLeaveRequestId] = useState(initialRoute.leaveRequestId);
   const [workforceSection, setWorkforceSection] = useState(initialRoute.workforceSection);
+  const [weeklyPlan, setWeeklyPlan] = useState(initialRoute.weeklyPlan);
   const [itemId, setItemId] = useState(initialRoute.itemId);
   const [itemRoutineDate,setItemRoutineDate] = useState(initialRoute.routineDate);
   const [goalId, setGoalId] = useState(null);
@@ -307,6 +310,7 @@ export default function App() {
     setSettingsReturn(route.settingsReturn || null);
     setLeaveRequestId(route.tab === "attendance" ? route.leaveRequestId || null : null);
     setWorkforceSection(route.tab === "attendance" && route.workforceSection === "setup" ? "setup" : null);
+    setWeeklyPlan(route.tab === "work" ? route.weeklyPlan || null : null);
     setItemId(route.itemId || null);
     setItemRoutineDate(route.itemId ? validRoutineDate(route.routineDate) : null);
     setProjectId(route.projectId || null);
@@ -332,6 +336,7 @@ export default function App() {
       settingsReturn: route.settingsReturn === "people" ? "people" : null,
       leaveRequestId: route.tab === "attendance" ? route.leaveRequestId || null : null,
       workforceSection: route.tab === "attendance" && route.workforceSection === "setup" ? "setup" : null,
+      weeklyPlan: (route.tab || tab) === "work" ? route.weeklyPlan || null : null,
       itemId: route.itemId || null,
       routineDate: route.itemId ? validRoutineDate(route.routineDate) : null,
       projectId: route.projectId || null,
@@ -345,6 +350,7 @@ export default function App() {
     if (next.settingsReturn) params.set("settingsReturn", next.settingsReturn);
     if (next.leaveRequestId) params.set("leave", next.leaveRequestId);
     if (next.workforceSection) params.set("workforce", next.workforceSection);
+    if (next.weeklyPlan) params.set("weeklyPlan", next.weeklyPlan);
     if (next.itemId) params.set("item", next.itemId);
     if (next.itemId && next.routineDate) params.set("routineDate",next.routineDate);
     if (next.projectId) params.set("project", next.projectId);
@@ -370,7 +376,7 @@ export default function App() {
 
   function closeUrlOverlay() {
     if (window.history.state?.ceacRoute) window.history.back();
-    else navigate({ tab, projectId }, { replace: true });
+    else navigate({ tab, projectId, weeklyPlan }, { replace: true });
   }
 
   function go(t, options = {}) {
@@ -415,7 +421,7 @@ export default function App() {
     navigate({ tab: "people" });
     setPeopleAccessIntent(intent);
   }
-  function openItem(id,routineDate=null) { navigate({ tab, itemId: id, routineDate, projectId }); }
+  function openItem(id,routineDate=null) { navigate({ tab, itemId: id, routineDate, projectId, weeklyPlan }); }
   function openProject(id) { navigate({ tab, projectId: id }); }
   function openMeeting(id) { navigate({ tab, meetingId: id }); }
 
@@ -593,12 +599,18 @@ export default function App() {
       ? <Team key={managerScopeKey} me={me} openPerson={(id, focus) => setPerson({ id, focus })} openItem={openItem} goAssign={startAssignment} canManage={managesCurrentUnit} selection={teamSelection?.scope === managerScopeKey ? teamSelection.id : null} onSelect={id => setTeamSelection({ scope: managerScopeKey, id })} openRoom={() => openRoom({ kind: "unit", unitId: me.unit_id })} />
       : <StaffTeam me={me} openRoom={() => openRoom({ kind: "unit", unitId: me.unit_id })} />;
     if (tab === "work") {
-      if (isExec) return <ExecutiveWork key={managerScopeKey} me={me} openItem={openItem} goAssign={startAssignment} />;
-      if (isAdmin) return <AdminWork key={managerScopeKey} me={me} openItem={openItem} goAssign={startAssignment} />;
-      return <AssignedProjects key={managerScopeKey} me={me} openItem={openItem}>
-        {isUnitManager ? <ManagerWork key={managerScopeKey} me={me} openItem={openItem} goAssign={startAssignment} />
-          : <Work key={managerScopeKey} me={me} isManager={false} openItem={openItem} />}
-      </AssignedProjects>;
+      const openWeeklyPlan = id => navigate({ tab: "work", weeklyPlan: id });
+      if (weeklyPlan) return <WeeklyWorkPlan key={managerScopeKey} me={me} selection={weeklyPlan} openPlan={openWeeklyPlan}
+        openItem={openItem} close={() => go("work")} />;
+      return <>
+        <div className="weekly-plan-entry"><button className="btn btn-ghost" type="button" onClick={() => openWeeklyPlan("current")}>This Week</button></div>
+        {isExec ? <ExecutiveWork key={managerScopeKey} me={me} openItem={openItem} goAssign={startAssignment} />
+          : isAdmin ? <AdminWork key={managerScopeKey} me={me} openItem={openItem} goAssign={startAssignment} />
+          : <AssignedProjects key={managerScopeKey} me={me} openItem={openItem}>
+            {isUnitManager ? <ManagerWork key={managerScopeKey} me={me} openItem={openItem} goAssign={startAssignment} />
+              : <Work key={managerScopeKey} me={me} isManager={false} openItem={openItem} />}
+          </AssignedProjects>}
+      </>;
     }
     if (tab === "personal-calendar") return <StaffCalendar onGuideTour={openCalendarGuide} statusLabel="My calendar" key={window.location.search} me={me} openItem={openItem} openMeeting={openMeeting} initialDate={new URLSearchParams(window.location.search).get("date")} />;
     if (tab === "staff-calendar" && isStaff) return <StaffCalendar onGuideTour={openCalendarGuide} me={me} openItem={openItem} openMeeting={openMeeting} initialDate={calendarFocusDate} onFocusHandled={()=>setCalendarFocusDate(null)} />;
@@ -610,6 +622,7 @@ export default function App() {
       startWorkFromMessage={isManager || isExec ? startAssignment : null}
       openRoom={openRoom}
       openItem={(id) => navigate({ tab: "work", itemId: id })}
+      openWeeklyPlan={id => navigate({ tab: "work", weeklyPlan: id })}
       openAnnouncements={() => go("announcements")}
       initialView={openUpdatesIntent ? "updates" : createIntent === "message_room" ? "rooms" : null}
       notificationCounts={notificationCounts}

@@ -4,6 +4,8 @@ import { LoadingState, ProductNotice } from "./bits";
 import ExecutiveProjectDepartments from "./ExecutiveProjectDepartments";
 import ExecutiveProjectPerson from "./ExecutiveProjectPerson";
 import Stage2ProjectOverview from "./Stage2ProjectOverview";
+import ExecutiveProjectTasks, { isActiveProjectTask } from "./ExecutiveProjectTasks";
+import { useEditorPosition } from "../lib/useEditorPosition";
 import { ProjectTabs, ProjectWorkspaceHeader } from "../experience-v2/project-family/ProjectFamilyV2";
 
 /**
@@ -14,7 +16,7 @@ import { ProjectTabs, ProjectWorkspaceHeader } from "../experience-v2/project-fa
  */
 export default function Stage2ProjectReader({ projectId, openItem, onBack, me, goAssign, onAssignmentChanged }) {
   const [reload, setReload] = useState(0);
-  const [view, setView] = useState("overview");
+  const [view, setView] = useEditorPosition(me, `executive-project-section:${projectId}`, "overview");
   const [project, setProject] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -69,6 +71,8 @@ export default function Stage2ProjectReader({ projectId, openItem, onBack, me, g
     return () => { current = false; };
   }, [projectId, reload, me?.id, me?.org_id]);
 
+  const canAssign = project && me?.is_exec && ["planned","active"].includes(project.status) && !project.archived_at && goAssign;
+
   return <div className="ev2-project-page ev2-project-workspace s2-project-reader ceac-premium-project-reader">
     {loading && <LoadingState label="Loading authorised project details…" />}
     {error && <ProductNotice tone="error" title="Project details unavailable">{error}</ProductNotice>}
@@ -76,7 +80,7 @@ export default function Stage2ProjectReader({ projectId, openItem, onBack, me, g
       <ProjectWorkspaceHeader kind={project.kind} title={project.name} purpose={project.purpose}
         status={project.status} context={project.assignee?.full_name || (project.assigned_person_id === me?.id ? me.full_name : null) || project.units?.name || "Lead unit not recorded"} onBack={onBack} />
       <p className="screen-note">This page shows the project updates available to you. Private employee information stays private.</p>
-      {me?.is_exec && ["planned","active"].includes(project.status) && !project.archived_at && <div className="s2-project-quick-actions" aria-label="Project actions">
+      {canAssign && view !== "work" && <div className="s2-project-quick-actions" aria-label="Project actions">
         <button type="button" className="btn btn-sm" onClick={() => goAssign?.({projectId:project.id})}>Assign project work</button>
         <ExecutiveProjectPerson me={me} project={project} onSaved={() => {
           if (onAssignmentChanged) void onAssignmentChanged();
@@ -87,10 +91,12 @@ export default function Stage2ProjectReader({ projectId, openItem, onBack, me, g
       <ProjectTabs ariaLabel="Executive project details" items={[
         ["overview", "Progress"],
         ["people", "People & departments", project.participants.length],
-        ["work", "Work", project.work.filter(row => row.kind === "task").length],
+        ["work", me?.is_exec ? "Tasks" : "Work", project.work.filter(me?.is_exec ? isActiveProjectTask : row => row.kind === "task").length],
         ["milestones", "Milestones", project.milestones?.length ?? undefined],
       ]} value={view} onChange={setView} />
-      <Stage2ProjectOverview key={project.id} project={project} section={view} openWork={openItem} canAssign={false} />
+      {me?.is_exec && view === "work"
+        ? <ExecutiveProjectTasks me={me} project={project} openItem={openItem} assign={canAssign ? () => goAssign({ projectId: project.id }) : null} />
+        : <Stage2ProjectOverview key={project.id} project={project} section={view} openWork={openItem} canAssign={false} showWork={me?.is_exec && view === "overview" ? () => setView("work") : undefined} />}
     </>}
     {!project && (loading || error) && <button type="button" className="btn btn-ghost" onClick={onBack}>Back to projects</button>}
   </div>;
