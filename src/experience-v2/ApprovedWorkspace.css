@@ -328,8 +328,17 @@
 .ceac-exec-task-name small { color: var(--ws-muted); }
 .ceac-exec-task-overdue { color: var(--danger, light-dark(#a12c1b, #ffa28f)); }
 
-.weekly-plan-entry { margin: 12px 16px 0; }
-.weekly-plan-entry .btn { min-height: 44px; }
+/* A compact, recognisable destination rather than a detached ghost button. */
+.weekly-plan-entry { margin: 12px 16px 16px; display: flex; min-width: 0; }
+.weekly-plan-launch { display: flex; align-items: center; gap: 12px; min-width: min(100%, 340px); max-width: 100%; min-height: 64px; padding: 10px 14px; background: var(--ws-panel); border: 1px solid var(--ws-line); border-radius: 14px; color: var(--ws-ink); text-align: left; cursor: pointer; font: inherit; transition: background .16s ease, border-color .16s ease; }
+.weekly-plan-launch:hover { background: var(--ws-tint); border-color: var(--ws-accent); }
+.weekly-plan-launch:focus-visible { outline: 3px solid var(--ws-accent); outline-offset: 3px; }
+.weekly-plan-launch-icon { width: 40px; height: 40px; flex: none; display: grid; place-items: center; background: var(--ws-bg); color: var(--ws-accent); border-radius: 10px; }
+.weekly-plan-launch-copy { display: grid; gap: 3px; min-width: 0; flex: 1; }
+.weekly-plan-launch-copy strong { font-size: 15px; font-weight: 700; line-height: 1.2; letter-spacing: -.015em; }
+.weekly-plan-launch-copy small { font-size: 12px; color: var(--ws-muted); line-height: 1.35; }
+.weekly-plan-launch > svg { color: var(--ws-muted); flex: none; }
+@media (max-width: 540px) { .weekly-plan-entry { margin: 10px 12px 14px; } .weekly-plan-launch { width: 100%; } }
 
 .ev2-work-executive { container: executive-work / inline-size; }
 @container executive-work (max-width: 800px) {
