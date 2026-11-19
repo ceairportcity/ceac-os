@@ -12,7 +12,7 @@ AS $function$
     or public.app_has_capability('post_announcement',null)
     or exists(select 1 from public.app_managed_units())
   );
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.create_announcement(p_title text, p_body text, p_priority text DEFAULT 'normal'::text, p_requires_acknowledgement boolean DEFAULT false, p_expires_at timestamp with time zone DEFAULT NULL::timestamp with time zone, p_all_org boolean DEFAULT true, p_unit_ids uuid[] DEFAULT '{}'::uuid[], p_roles text[] DEFAULT '{}'::text[])
  RETURNS uuid
@@ -24,10 +24,15 @@ declare
   v_id uuid;
   v_unit uuid;
   v_role text;
+  v_scope text;
 begin
   if not public.app_can_publish_announcements() then
     raise exception 'You are not allowed to publish announcements.' using errcode='42501';
   end if;
+  if ('audience_volunteers'=any(coalesce(p_roles,'{}'::text[])) and 'audience_both'=any(coalesce(p_roles,'{}'::text[]))) then
+    raise exception 'Choose one announcement audience.';
+  end if;
+  v_scope := case when 'audience_volunteers'=any(coalesce(p_roles,'{}'::text[])) then 'volunteers' when 'audience_both'=any(coalesce(p_roles,'{}'::text[])) then 'both' else 'staff' end;
   if not (public.app_is_admin() or public.app_is_exec() or public.app_has_capability('post_announcement',null)) then
     if p_all_org or coalesce(cardinality(p_unit_ids),0)=0
       or exists(select 1 from unnest(coalesce(p_unit_ids,'{}'::uuid[])) requested(id)
@@ -51,12 +56,13 @@ begin
   ) then raise exception 'An audience unit is not available in your organisation.'; end if;
   if exists (
     select 1 from unnest(coalesce(p_roles,'{}'::text[])) requested(role)
-    where requested.role not in ('staff','sub_team_lead','manager','admin','exec')
+    where requested.role not in ('staff','sub_team_lead','manager','admin','exec','audience_volunteers','audience_both')
   ) then raise exception 'Choose a valid audience role.'; end if;
 
   insert into public.announcements(org_id,author_id,title,body,priority,requires_acknowledgement,expires_at)
   values(public.app_org_id(),auth.uid(),btrim(p_title),btrim(p_body),p_priority,p_requires_acknowledgement,p_expires_at)
   returning id into v_id;
+  update public.announcements set audience_scope=v_scope where id=v_id;
 
   if p_all_org then
     insert into public.announcement_audiences(announcement_id,audience_type)
@@ -67,13 +73,14 @@ begin
     values(v_id,'unit',v_unit) on conflict do nothing;
   end loop;
   foreach v_role in array coalesce(p_roles,'{}'::text[]) loop
+    if v_role in ('audience_volunteers','audience_both') then continue; end if;
     insert into public.announcement_audiences(announcement_id,audience_type,audience_role)
     values(v_id,'role',v_role) on conflict do nothing;
   end loop;
 
   return v_id;
 end;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.update_announcement(p_announcement_id uuid, p_title text, p_body text, p_priority text, p_requires_acknowledgement boolean, p_expires_at timestamp with time zone, p_all_org boolean, p_unit_ids uuid[], p_roles text[])
  RETURNS void
@@ -85,6 +92,7 @@ declare
   a public.announcements;
   v_unit uuid;
   v_role text;
+  v_scope text;
 begin
   if not public.app_can_publish_announcements() then
     raise exception 'You are not allowed to edit announcements.' using errcode='42501';
@@ -114,6 +122,10 @@ begin
       raise exception 'Unit heads may announce only to their managed departments.' using errcode='42501';
     end if;
   end if;
+  if ('audience_volunteers'=any(coalesce(p_roles,'{}'::text[])) and 'audience_both'=any(coalesce(p_roles,'{}'::text[]))) then
+    raise exception 'Choose one announcement audience.';
+  end if;
+  v_scope := case when 'audience_volunteers'=any(coalesce(p_roles,'{}'::text[])) then 'volunteers' when 'audience_both'=any(coalesce(p_roles,'{}'::text[])) then 'both' else 'staff' end;
   if nullif(btrim(p_title),'') is null or nullif(btrim(p_body),'') is null then raise exception 'Add a title and message.'; end if;
   if p_priority not in ('normal','important','urgent') then raise exception 'Choose a valid priority.'; end if;
   if not p_all_org and coalesce(cardinality(p_unit_ids),0)=0 and coalesce(cardinality(p_roles),0)=0 then
@@ -126,13 +138,13 @@ begin
   ) then raise exception 'An audience unit is not available in your organisation.'; end if;
   if exists (
     select 1 from unnest(coalesce(p_roles,'{}'::text[])) requested(role)
-    where requested.role not in ('staff','sub_team_lead','manager','admin','exec')
+    where requested.role not in ('staff','sub_team_lead','manager','admin','exec','audience_volunteers','audience_both')
   ) then raise exception 'Choose a valid audience role.'; end if;
 
   update public.announcements
   set title=btrim(p_title),body=btrim(p_body),priority=p_priority,
       requires_acknowledgement=p_requires_acknowledgement,
-      expires_at=p_expires_at,updated_at=now()
+      expires_at=p_expires_at,audience_scope=v_scope,updated_at=now()
   where id=a.id;
 
   delete from public.announcement_audiences where announcement_id=a.id;
@@ -145,11 +157,12 @@ begin
     values(a.id,'unit',v_unit) on conflict do nothing;
   end loop;
   foreach v_role in array coalesce(p_roles,'{}'::text[]) loop
+    if v_role in ('audience_volunteers','audience_both') then continue; end if;
     insert into public.announcement_audiences(announcement_id,audience_type,audience_role)
     values(a.id,'role',v_role) on conflict do nothing;
   end loop;
 end;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.publish_announcement(p_announcement_id uuid)
  RETURNS void
@@ -184,7 +197,7 @@ begin
   values(a.org_id,auth.uid(),'announcement_published','announcement',a.id,
     jsonb_build_object('requires_acknowledgement',a.requires_acknowledgement));
 end;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.close_announcement(p_announcement_id uuid)
  RETURNS void
@@ -215,7 +228,7 @@ begin
   insert into public.activity_events(org_id,actor_id,verb,object_type,object_id,meta)
   values(a.org_id,auth.uid(),'announcement_closed','announcement',a.id,'{}'::jsonb);
 end;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.announcement_audience_counts(p_announcement_id uuid)
  RETURNS TABLE(target_count bigint, read_count bigint, acknowledged_count bigint)
@@ -269,7 +282,7 @@ begin
   left join private.content_live_announcement_receipts r
     on r.announcement_id=p_announcement_id and r.profile_id=t.id;
 end;
-$function$
+$function$;
 
 alter policy announcements_read on public.announcements using
   ((org_id=public.app_org_id()) and (
