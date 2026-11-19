@@ -13,6 +13,7 @@ import {
 } from "../experience-v2/work-family/WorkFamilyV2";
 
 const MODES = [
+  ["weekly", "This Week"],
   ["all", "My work"],
   ["assigned", "Assigned"],
   ["agreed", "Created by me"],
@@ -46,7 +47,7 @@ function minutesLabel(value) {
   return hours ? `${hours}h ${rest}m` : `${rest}m`;
 }
 
-export default function Work({ me, isManager = false, openItem }) {
+export default function Work({ me, isManager = false, openItem, openWeeklyPlan }) {
   const viewKey = `ceac-work-view:v2:${me.id}`;
   let savedView = null;
   try { savedView = JSON.parse(sessionStorage.getItem(viewKey) || "null"); } catch { savedView = null; }
@@ -415,7 +416,7 @@ export default function Work({ me, isManager = false, openItem }) {
     {loading && <LoadingState label="Loading your work…" />}
     {!loading && !loadError && <WorkRegisterLayout me={me} selectedId={selectedInView} rows={visibleItems} role="staff"
       onClose={() => setSelectedWorkId("none")} openItem={openItem} recordCount={visibleItems.length}
-      tabs={<WorkTabs items={MODES} value={mode} onChange={nextMode=>{setMode(nextMode);setStatusFilter("all");}} ariaLabel="Work source" />}>
+      tabs={<WorkTabs items={MODES} value={mode} onChange={nextMode=>{if(nextMode==="weekly"){openWeeklyPlan?.();return;}setMode(nextMode);setStatusFilter("all");}} ariaLabel="Work source" />}>
       <ResponsibilityRegister key={mode} rows={visibleItems} selectedId={selectedInView}
         onSelect={setSelectedWorkId} onAdd={()=>openCreate(mode === "private" ? "private" : "unit")} />
     </WorkRegisterLayout>}
