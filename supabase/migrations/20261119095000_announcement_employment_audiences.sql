@@ -34,7 +34,7 @@ AS $function$
           )
       )
   );
-$function$
+$function$;
 
 
 CREATE OR REPLACE FUNCTION public.create_announcement(p_title text, p_body text, p_priority text DEFAULT 'normal'::text, p_requires_acknowledgement boolean DEFAULT false, p_expires_at timestamp with time zone DEFAULT NULL::timestamp with time zone, p_all_org boolean DEFAULT true, p_unit_ids uuid[] DEFAULT '{}'::uuid[], p_roles text[] DEFAULT '{}'::text[])
@@ -94,7 +94,7 @@ begin
 
   return v_id;
 end;
-$function$
+$function$;
 
 
 CREATE OR REPLACE FUNCTION public.update_announcement(p_announcement_id uuid, p_title text, p_body text, p_priority text, p_requires_acknowledgement boolean, p_expires_at timestamp with time zone, p_all_org boolean, p_unit_ids uuid[], p_roles text[])
@@ -155,4 +155,4 @@ begin
     values(a.id,'role',v_role) on conflict do nothing;
   end loop;
 end;
-$function$
+$function$;
