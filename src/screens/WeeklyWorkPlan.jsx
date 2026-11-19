@@ -205,7 +205,14 @@ export default function WeeklyWorkPlan({ me, selection, openPlan, openItem, clos
           }}><span><strong>{titleFor(item)}</strong><small>{source.units?.name} · {item.blocker}</small></span><ChevronRight size={18} /></a></li>;
         })}</ul> : <p>No decisions requested for this week.</p>}
       </section>}
-      <section className="weekly-panel weekly-plans-panel"><div className="weekly-section-heading"><div><span className="weekly-section-kicker">OVERVIEW</span><h2>{leadershipViewer ? "Weekly plans awaiting review" : "Your weekly plans"}</h2></div></div>
+      <section className="weekly-panel weekly-plans-panel"><div className="weekly-section-heading"><div><span className="weekly-section-kicker">OVERVIEW</span><h2>{leadershipViewer ? "Weekly plans awaiting review" : "Your weekly plans"}</h2></div>
+        {editableWeek && <button type="button" className="weekly-primary-action" disabled={working} onClick={async () => {
+          const existing = current?.plans.find(row => row.owner_id === me.id);
+          if (existing) { openPlan(existing.id); return; }
+          const id = await write("create", { values: { personal: true, unit: me.unit_id || null, week } });
+          if (id) openPlan(id);
+        }}><Plus size={16} /> {hasOwnPlan ? "Open my plan" : "Create my plan"}</button>}
+      </div>
         {current.plans.length ? <ul className="weekly-team-list">{current.plans.map(row => {
           const items = live.filter(item => item.plan_id === row.id);
           const decisions = items.filter(needsDecision).length;
@@ -214,13 +221,6 @@ export default function WeeklyWorkPlan({ me, selection, openPlan, openItem, clos
           }}><span><strong>{row.owner_id ? row.owner_id === me.id ? "My weekly plan" : "Personal weekly plan" : row.units?.name || "Department"}</strong><small>{items.filter(isPlanItemDone).length} of {items.length} done
             {decisions ? " · " + decisions + " awaiting decision" : ""}{!row.shared_at && " · Draft"}</small></span><ChevronRight size={18} /></a></li>;
         })}</ul> : <p>{leadershipViewer ? "No plans have been shared for this week." : "No plans yet for this week."}</p>}
-        {editableWeek && !hasOwnPlan && <form className="weekly-create" onSubmit={async event => {
-          event.preventDefault();
-          const id = await write("create", { values: { personal: true, unit: me.unit_id || null, week } });
-          if (id) openPlan(id);
-        }}>
-          <button type="submit" className="weekly-primary-action" disabled={working}><Plus size={16} /> Create my weekly plan</button>
-        </form>}
         {editableWeek && selectedUnit && <form className="weekly-create" onSubmit={async event => {
           event.preventDefault();
           const id = await write("create", { values: { unit: selectedUnit, week } });
