@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, Check } from "lucide-react";
+import { ChevronLeft, ChevronRight, Check, CalendarDays, Plus, Send, ListTodo, Link2 } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { humanError } from "../lib/productLanguage";
 import {
@@ -44,7 +44,7 @@ function PlanItem({ item, me, canEdit, canCarry, working, onEdit, onDrop, onCarr
           <button type="submit" className="btn btn-sm" disabled={working}>Send response</button>
           <button type="button" className="btn btn-ghost btn-sm" onClick={() => setResponding(false)}>Cancel</button>
         </form> : <button type="button" className="btn btn-ghost btn-sm" onClick={() => setResponding(true)}>Respond</button>)}
-      {canEdit && !item.dropped_at && !item.carried_at && <div className="weekly-row-actions">
+      {canEdit && !item.dropped_at && !item.carried_at && <div className="weekly-row-actions" aria-label="Item actions">
         {editable && <button type="button" className="btn btn-ghost btn-sm" onClick={() => onEdit(item)} disabled={working}>Edit</button>}
         {canCarry && !checked && (!item.work_id || (item.work && item.work.status !== "cancelled" && item.routine?.state !== "skipped"))
           && <button type="button" className="btn btn-ghost btn-sm" disabled={working} onClick={() => onCarry(item)}>Carry forward</button>}
@@ -171,10 +171,10 @@ export default function WeeklyWorkPlan({ me, selection, openPlan, openItem, clos
 
   return <div className="body ev2-work-page weekly-work-plan">
     <header className="weekly-page-header">
-      <div><button type="button" className="btn btn-ghost btn-sm" onClick={viewId ? () => { if (plan) setWeek(plan.week_start); openPlan("current"); } : close}><ChevronLeft size={16} /> {viewId ? "All weekly plans" : "Work"}</button>
-        <h1>{plan?.units?.name || "This Week"}</h1>
+      <div className="weekly-heading"><button type="button" className="weekly-back" onClick={viewId ? () => { if (plan) setWeek(plan.week_start); openPlan("current"); } : close}><ChevronLeft size={17} /> {viewId ? "Weekly plans" : "Work"}</button>
+        <span className="weekly-eyebrow"><CalendarDays size={14} /> WEEKLY WORK</span><h1>{plan?.units?.name || "This Week"}</h1>
         <p>{weekLabel(plan?.week_start || week)}{plan && (plan.shared_at ? " · Shared" : " · Draft")}</p></div>
-      {canEdit && !plan.shared_at && <button type="button" className="btn" disabled={working || !live.length} onClick={() => write("share")}>Share with Group Pastor</button>}
+      {canEdit && !plan.shared_at && <button type="button" className="weekly-primary-action" disabled={working || !live.length} onClick={() => write("share")}><Send size={16} /> Share plan</button>}
     </header>
     {error && <ProductNotice tone="error" title="Weekly plan update"><p>{error}</p><button className="btn btn-ghost btn-sm" onClick={() => setReload(count => count + 1)}>Reload</button></ProductNotice>}
     {notice && <p role="status" className="weekly-notice">{notice}</p>}
@@ -194,7 +194,7 @@ export default function WeeklyWorkPlan({ me, selection, openPlan, openItem, clos
           }}><span><strong>{titleFor(item)}</strong><small>{source.units?.name} · {item.blocker}</small></span><ChevronRight size={18} /></a></li>;
         })}</ul> : <p>No decisions requested for this week.</p>}
       </section>}
-      <section className="weekly-panel"><h2>{pastor ? "Team plans" : "Weekly plans"}</h2>
+      <section className="weekly-panel weekly-plans-panel"><div className="weekly-section-heading"><div><span className="weekly-section-kicker">OVERVIEW</span><h2>{pastor ? "Team plans" : "Department plans"}</h2></div></div>
         {current.plans.length ? <ul className="weekly-team-list">{current.plans.map(row => {
           const items = live.filter(item => item.plan_id === row.id);
           const decisions = items.filter(needsDecision).length;
@@ -211,30 +211,30 @@ export default function WeeklyWorkPlan({ me, selection, openPlan, openItem, clos
           {optionUnits.length > 1 && <select className="field" aria-label="Department" value={selectedUnit} onChange={event => setNewUnit(event.target.value)}>
             {optionUnits.map(member => <option key={member.unit_id} value={member.unit_id}>{member.units?.name || member.unit_name || "Department"}</option>)}
           </select>}
-          <button type="submit" className="btn" disabled={working}>Start weekly plan</button>
+          <button type="submit" className="weekly-primary-action" disabled={working}><Plus size={16} /> Create plan</button>
         </form>}
       </section>
     </>}
     {plan && <>
       {canEdit && <section className="weekly-panel">
-        <header><div><h2>Build the plan</h2><p>Add a quick item or link work already in CEAC OS.</p></div>
-          {tool && <button type="button" className="btn btn-ghost" disabled={working} onClick={() => startEdit()}>Add quick item</button>}</header>
+        <header className="weekly-section-heading"><div><span className="weekly-section-kicker">PLAN BUILDER</span><h2>Add work</h2><p>Assign a checklist item or include existing work.</p></div>
+          {tool && <button type="button" className="weekly-primary-action" disabled={working} onClick={() => startEdit()}><Plus size={16} /> New item</button>}</header>
         {editorError && <ProductNotice tone="error" title="Plan suggestions">{editorError}</ProductNotice>}
         {!tool && !editorError && <p role="status">Loading suggestions…</p>}
-        {selectedEditor && <form className="weekly-editor" onSubmit={save}>
+        {selectedEditor && <form className="weekly-editor" onSubmit={save}><div className="weekly-editor-heading"><strong>{selectedEditor.item ? "Edit item" : "New checklist item"}</strong><button type="button" aria-label="Close editor" onClick={() => setEditor(null)}>Cancel</button></div>
           {selectedEditor.item?.work_id ? <strong>{titleFor(selectedEditor.item)}</strong> : <>
-            <label>Item<input className="field" required maxLength={240} value={selectedEditor.title} onChange={event => changeEditor("title", event.target.value)} /></label>
-            <label>Owner<select className="field" required value={selectedEditor.owner} onChange={event => changeEditor("owner", event.target.value)}>
+            <label>Task name<input className="field" required maxLength={240} value={selectedEditor.title} onChange={event => changeEditor("title", event.target.value)} /></label>
+            <label>Assigned to<select className="field" required value={selectedEditor.owner} onChange={event => changeEditor("owner", event.target.value)}>
               <option value="">Choose an owner</option>
               {tool?.members.map(member => <option key={member.profile_id} value={member.profile_id}>{member.profiles.full_name}</option>)}
             </select></label>
           </>}
-          <label>Planned day<input className="field" type="date" value={selectedEditor.day} min={plan.week_start}
+          <label>Day of the week<input className="field" type="date" value={selectedEditor.day} min={plan.week_start}
             max={shiftPlanDay(plan.week_start, 6)} onChange={event => changeEditor("day", event.target.value)} /></label>
-          <label className="weekly-editor-wide">Blocker or decision needed<textarea className="field" maxLength={1000} required={selectedEditor.decision}
+          <label className="weekly-editor-wide">Notes or decision needed<textarea className="field" maxLength={1000} required={selectedEditor.decision}
             value={selectedEditor.blocker} onChange={event => changeEditor("blocker", event.target.value)} /></label>
           <label className="weekly-editor-wide weekly-checkbox"><input type="checkbox" checked={selectedEditor.decision} onChange={event => changeEditor("decision", event.target.checked)} /> Ask Group Pastor for a decision</label>
-          <div><button className="btn" disabled={working}>Save item</button> <button type="button" className="btn btn-ghost" onClick={() => setEditor(null)}>Cancel</button></div>
+          <div className="weekly-editor-actions"><button className="weekly-primary-action" disabled={working}>Save item</button><button type="button" className="weekly-secondary-action" onClick={() => setEditor(null)}>Cancel</button></div>
         </form>}
         {tool?.linkable.some(work => !linked.has(work.id + ":")) && <form className="weekly-create" onSubmit={async event => {
           event.preventDefault();
@@ -244,7 +244,7 @@ export default function WeeklyWorkPlan({ me, selection, openPlan, openItem, clos
             <option value="">Choose existing work</option>
             {tool.linkable.filter(work => !linked.has(work.id + ":")).map(work => <option key={work.id} value={work.id}>{work.title}</option>)}
           </select>
-          <button type="submit" className="btn btn-ghost" disabled={working || !linkWork}>Link work</button>
+          <button type="submit" className="weekly-secondary-action" disabled={working || !linkWork}><Link2 size={15} /> Add linked work</button>
         </form>}
         {(suggestions.length > 0 || lastItems.length > 0) && <details className="weekly-history" open={!live.length || undefined}><summary>Suggested work ({suggestions.length + lastItems.length})</summary>
           <ul className="weekly-suggestions">
@@ -255,7 +255,7 @@ export default function WeeklyWorkPlan({ me, selection, openPlan, openItem, clos
           </ul>
         </details>}
       </section>}
-      <section className="weekly-panel"><header><div><h2>Commitments</h2><p>{live.filter(isPlanItemDone).length} of {live.length} done</p></div></header>
+      <section className="weekly-panel weekly-commitments"><header className="weekly-section-heading"><div><span className="weekly-section-kicker">YOUR CHECKLIST</span><h2>Commitments</h2></div><span className="weekly-count">{live.filter(isPlanItemDone).length} / {live.length} complete</span></header>
         {live.length ? <ul className="weekly-plan-list">{live.map(item => <PlanItem key={item.id} item={item} me={me} canEdit={canEdit} canCarry={canCarry} working={working}
           onEdit={startEdit} onDrop={row => write("drop", { itemId: row.id, values: { updated_at: row.updated_at } })} onCarry={carry} openItem={openItem}
           onTick={(row, done) => write("tick", { itemId: row.id, values: { done } })}
