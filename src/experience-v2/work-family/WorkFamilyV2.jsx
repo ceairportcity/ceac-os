@@ -1,3 +1,4 @@
+import { CalendarDays, ChevronRight } from "lucide-react";
 import { CeacIcon } from "../icons";
 import { Button, StatusBadge } from "../components";
 
@@ -51,15 +52,27 @@ export function WorkPageHeader({
         {description ? <p>{description}</p> : null}
       </div>
       {(actionLabel || secondaryActionLabel || weeklyActionLabel) ? (
-        <div className="ev2w-header-actions">
-          {actionLabel ? <Button className="ev2w-header-action"
-            variant={secondaryActionLabel ? "secondary" : "primary"}
-            size={secondaryActionLabel ? "compact" : undefined}
-            icon={actionIcon} onClick={onAction}>{actionLabel}</Button> : null}
-          {secondaryActionLabel ? <Button className="ev2w-header-action"
-            variant="primary" size="compact" icon="create"
-            onClick={onSecondaryAction}>{secondaryActionLabel}</Button> : null}
-          {weeklyActionLabel ? <Button className="ev2w-header-action ev2w-weekly-action" variant="secondary" size="compact" onClick={onWeeklyAction}>{weeklyActionLabel}</Button> : null}
+        <div className={`ev2w-header-actions${weeklyActionLabel ? " ev2w-header-actions-with-weekly" : ""}`}>
+          <div className="ev2w-header-action-row">
+            {actionLabel ? <Button className="ev2w-header-action"
+              variant={secondaryActionLabel ? "secondary" : "primary"}
+              size={secondaryActionLabel ? "compact" : undefined}
+              icon={actionIcon} onClick={onAction}>{actionLabel}</Button> : null}
+            {secondaryActionLabel ? <Button className="ev2w-header-action"
+              variant="primary" size="compact" icon="create"
+              onClick={onSecondaryAction}>{secondaryActionLabel}</Button> : null}
+          </div>
+          {weeklyActionLabel ? (
+            <button type="button" className="ev2w-weekly-feature" onClick={onWeeklyAction}
+              aria-label="Open This Week — weekly plans and checklists">
+              <span className="ev2w-weekly-feature-icon" aria-hidden="true"><CalendarDays size={20} strokeWidth={1.85} /></span>
+              <span className="ev2w-weekly-feature-copy">
+                <strong>{weeklyActionLabel}</strong>
+                <small>Weekly plans and checklists</small>
+              </span>
+              <ChevronRight size={18} className="ev2w-weekly-feature-arrow" aria-hidden="true" />
+            </button>
+          ) : null}
         </div>
       ) : null}
     </header>
