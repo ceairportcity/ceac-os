@@ -37,9 +37,13 @@ export default function WorkSessionCutoff({ me, session, setSession }) {
   }, [me.org_id, me.id, session?.id, session?.flags?.overtime_until, busy, setSession]);
 
   const clock = accraClock();
-  const sessionDay = session?.started_at && new Intl.DateTimeFormat("en-CA",
-    {timeZone:"Africa/Accra",year:"numeric",month:"2-digit",day:"2-digit"})
-    .format(new Date(session.started_at));
+  const sessionDay = session?.started_at && (() => {
+    const parts = new Intl.DateTimeFormat("en-GB", {
+      timeZone: "Africa/Accra", year: "numeric", month: "2-digit", day: "2-digit",
+    }).formatToParts(new Date(session.started_at));
+    const field = type => parts.find(part => part.type === type)?.value;
+    return field("year") + "-" + field("month") + "-" + field("day");
+  })();
   const overtime = session?.flags?.overtime_until ? new Date(session.flags.overtime_until) : null;
   const overtimeActive = overtime && overtime.getTime() > now;
   if (!session?.id || sessionDay !== clock.day || (clock.minutes < 16*60+55 && !overtimeActive)) return null;
