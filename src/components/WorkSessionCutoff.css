@@ -11,3 +11,10 @@
 .ceac-work-cutoff-actions button:disabled{opacity:.5;cursor:not-allowed}
 .ceac-work-cutoff-actions button:focus-visible{outline:3px solid var(--ws-accent,#0066cc);outline-offset:2px}
 @media(max-width:620px){.ceac-work-cutoff{margin:10px 12px;padding:12px}.ceac-work-cutoff-actions{width:100%}.ceac-work-cutoff-actions button{flex:1}}
+
+.ceac-work-cutoff-correction{align-items:flex-start}
+.ceac-work-cutoff-correction>.ceac-work-cutoff-finish{min-height:40px;padding:9px 12px;font-size:12px;font-weight:650;border:1px solid var(--ws-line,#e5e5ea);border-radius:9px;color:var(--ws-ink,#1d1d1f);background:var(--ws-bg,#fff);cursor:pointer}
+.ceac-work-cutoff-correct-form{display:grid;gap:12px;margin-top:14px;max-width:520px}
+.ceac-work-cutoff-correct-form label{display:grid;gap:6px;font-size:12px;color:var(--ws-muted,#626268);font-weight:650}
+.ceac-work-cutoff-correct-form input,.ceac-work-cutoff-correct-form textarea{min-height:42px;background:var(--ws-bg,#fff);color:var(--ws-ink,#1d1d1f);border:1px solid var(--ws-line,#e5e5ea);border-radius:9px;padding:9px 11px;font:inherit;font-size:14px}
+.ceac-work-cutoff-correct-form textarea{resize:vertical;min-height:76px}
