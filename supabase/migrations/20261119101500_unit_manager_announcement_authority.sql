@@ -295,3 +295,40 @@ alter policy announcement_audiences_read on public.announcement_audiences using
     or exists(select 1 from public.announcements a where a.id=announcement_id and a.author_id=auth.uid()
        and public.app_can_publish_announcements())
     or private.can_read_announcement(announcement_id));
+
+-- No employment identity means no announcement content: fail closed.
+CREATE OR REPLACE FUNCTION private.can_read_announcement(p_announcement_id uuid)
+ RETURNS boolean
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public', 'private'
+AS $function$
+  select exists (
+    select 1 from public.announcements a
+    where a.id=p_announcement_id
+      and a.org_id=public.app_org_id()
+      and a.status='published'
+      and a.published_at<=now()
+      and (a.expires_at is null or a.expires_at>now())
+      and exists (select 1 from public.employment_records er
+        where er.profile_id=auth.uid() and er.org_id=a.org_id and er.employment_status='active'
+          and ((er.employment_type='volunteer' and a.audience_scope in ('volunteers','both'))
+            or (er.employment_type<>'volunteer' and a.audience_scope in ('staff','both'))))
+      and exists (
+        select 1 from public.announcement_audiences aa
+        where aa.announcement_id=a.id
+          and (
+            aa.audience_type='organisation'
+            or (aa.audience_type='unit' and aa.unit_id in (select public.app_my_units()))
+            or (aa.audience_type='role' and (
+              (aa.audience_role in ('staff','sub_team_lead','manager') and exists (
+                select 1 from public.unit_memberships m
+                where m.profile_id=auth.uid() and m.role=aa.audience_role
+              ))
+              or (aa.audience_role='admin' and public.app_is_admin())
+              or (aa.audience_role='exec' and public.app_is_exec())
+            ))
+          )
+      )
+  );
+$function$;
