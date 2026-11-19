@@ -603,7 +603,7 @@ export default function App() {
       if (weeklyPlan) return <WeeklyWorkPlan key={managerScopeKey} me={me} selection={weeklyPlan} openPlan={openWeeklyPlan}
         openItem={openItem} close={() => go("work")} />;
       return <>
-        
+
         {isExec ? <ExecutiveWork key={managerScopeKey} me={me} openItem={openItem} goAssign={startAssignment} openWeeklyPlan={() => openWeeklyPlan("current")} />
           : isAdmin ? <AdminWork key={managerScopeKey} me={me} openItem={openItem} goAssign={startAssignment} openWeeklyPlan={() => openWeeklyPlan("current")} />
           : <AssignedProjects key={managerScopeKey} me={me} openItem={openItem}>
