@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Clock3, CheckCircle2 } from "lucide-react";
 import { openSession, reconcileWorkSession, endWork } from "../lib/session";
+import { supabase } from "../lib/supabase";
 import "./WorkSessionCutoff.css";
 
 const accraClock = () => {
@@ -13,10 +14,15 @@ const accraClock = () => {
     day: field("year") + "-" + field("month") + "-" + field("day") };
 };
 
-export default function WorkSessionCutoff({ me, session, setSession }) {
+export default function WorkSessionCutoff({ me, session, setSession, showCorrections = false }) {
   const [now, setNow] = useState(() => Date.now());
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
+  const [autoRecord, setAutoRecord] = useState(null);
+  const [correcting, setCorrecting] = useState(false);
+  const [actualFinish, setActualFinish] = useState("");
+  const [correctionNote, setCorrectionNote] = useState("");
+  const [correctionRevision, setCorrectionRevision] = useState(0);
   useEffect(() => {
     if (!session?.id) return;
     let active = true;
@@ -36,6 +42,34 @@ export default function WorkSessionCutoff({ me, session, setSession }) {
     return () => { active = false; window.clearInterval(timer); document.removeEventListener("visibilitychange", handleFocus); };
   }, [me.org_id, me.id, session?.id, session?.flags?.overtime_until, busy, setSession]);
 
+  useEffect(() => {
+    if (!showCorrections || session?.id) { setAutoRecord(null); return; }
+    let active = true;
+    const cutoff = new Date(Date.now()-7*86400000).toISOString();
+    supabase.from("work_sessions").select("id,started_at,ended_at,end_reason")
+      .eq("org_id",me.org_id).eq("profile_id",me.id).eq("end_reason","auto")
+      .gte("ended_at",cutoff).order("ended_at",{ascending:false}).limit(1)
+      .then(({data,error}) => { if (active && !error) setAutoRecord(data?.[0] || null); })
+      .catch(() => {});
+    return () => {active=false;};
+  }, [showCorrections,session?.id,me.org_id,me.id,correctionRevision]);
+
+  async function saveCorrection(event) {
+    event.preventDefault();
+    if (!autoRecord?.id || busy || !actualFinish || !correctionNote.trim()) return;
+    setBusy(true); setMessage("");
+    try {
+      const result = await reconcileWorkSession(autoRecord.id,"correct_auto",
+        new Date(actualFinish+":00Z").toISOString(),correctionNote.trim());
+      if (result?.id !== autoRecord.id || result.end_reason !== "reconciled")
+        throw new Error("The correction could not be verified.");
+      setAutoRecord(null); setCorrecting(false); setActualFinish(""); setCorrectionNote("");
+      setCorrectionRevision(n=>n+1);
+      setMessage("Corrected finish time saved with an audit record.");
+    } catch (error) {setMessage(error.message || "The correction could not be saved.");}
+    finally {setBusy(false);}
+  }
+
   const clock = accraClock();
   const sessionDay = session?.started_at && (() => {
     const parts = new Intl.DateTimeFormat("en-GB", {
@@ -46,7 +80,29 @@ export default function WorkSessionCutoff({ me, session, setSession }) {
   })();
   const overtime = session?.flags?.overtime_until ? new Date(session.flags.overtime_until) : null;
   const overtimeActive = overtime && overtime.getTime() > now;
-  if (!session?.id || sessionDay !== clock.day || (clock.minutes < 16*60+55 && !overtimeActive)) return null;
+  if (!session?.id) {
+    if (!showCorrections) return null;
+    if (!autoRecord) return message ? <p className="ceac-work-cutoff-message" role="status">{message}</p> : null;
+    return <section className="ceac-work-cutoff ceac-work-cutoff-correction" aria-label="Review an automatically ended workday">
+      <span className="ceac-work-cutoff-symbol" aria-hidden="true"><Clock3 size={20}/></span>
+      <div className="ceac-work-cutoff-info">
+        <strong>Review your automatically ended work session</strong>
+        <small>Recorded finish: {new Date(autoRecord.ended_at).toLocaleString("en-GB",{timeZone:"Africa/Accra",day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})}. This is an administrative cutoff, not verified attendance.</small>
+        {correcting && <form className="ceac-work-cutoff-correct-form" onSubmit={saveCorrection}>
+          <label>Actual finish time (Accra)<input type="datetime-local" required value={actualFinish} onChange={e=>setActualFinish(e.target.value)}/></label>
+          <label>Reason for the correction<textarea required maxLength={500} rows={2} value={correctionNote} onChange={e=>setCorrectionNote(e.target.value)} placeholder="Explain when and why you finished at this time."/></label>
+          <div className="ceac-work-cutoff-actions"><button className="ceac-work-cutoff-extend" type="submit" disabled={busy}>Save correction</button>
+            <button className="ceac-work-cutoff-finish" type="button" onClick={()=>setCorrecting(false)}>Cancel</button></div>
+        </form>}
+        {message && <span className="ceac-work-cutoff-message" role="status">{message}</span>}
+      </div>
+      {!correcting && <button type="button" className="ceac-work-cutoff-finish" onClick={()=>{
+        setCorrecting(true);setMessage("");
+        setActualFinish(new Date(autoRecord.ended_at).toISOString().slice(0,16));
+      }}>Correct time</button>}
+    </section>;
+  }
+  if (sessionDay !== clock.day || (clock.minutes < 16*60+55 && !overtimeActive)) return null;
 
   async function extend() {
     if (busy || !session?.id) return;
