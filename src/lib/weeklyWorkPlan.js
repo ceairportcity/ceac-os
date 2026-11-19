@@ -35,7 +35,7 @@ async function readAll(makeQuery) {
 
 export async function readWeeklyPlans(client, week, id) {
   return readAll(() => {
-    const query = client.from("weekly_work_plans").select("id,unit_id,week_start,shared_at,original_plan,units(name)", { count: "exact" });
+    const query = client.from("weekly_work_plans").select("id,unit_id,owner_id,week_start,shared_at,original_plan,units(name)", { count: "exact" });
     return (id ? query.eq("id", id) : query.eq("week_start", week)).order("id");
   });
 }
@@ -103,17 +103,26 @@ export async function readPlanItems(client, plans) {
   })).sort((a, b) => (a.planned_on || "9999").localeCompare(b.planned_on || "9999"));
 }
 
-export async function readPlanEditor(client, plan) {
+export async function readPlanEditor(client, plan, me) {
   const end = shiftPlanDay(plan.week_start, 6);
   const next = shiftPlanDay(plan.week_start, 7);
+  const personal = Boolean(plan.owner_id);
   const [members, work, previous] = await Promise.all([
-    readAll(() => client.from("unit_memberships").select("profile_id,profiles!inner(full_name,active)", { count: "exact" })
-      .eq("unit_id", plan.unit_id).eq("profiles.active", true).order("id")),
-    readAll(() => client.from("work_items").select(workFields, { count: "exact" })
-      .eq("unit_id", plan.unit_id).eq("visibility", "unit").eq("confidential", false)
-      .not("status", "in", "(completed,self_certified,cancelled)").order("id")),
-    readAll(() => client.from("weekly_work_plans").select("id", { count: "exact" })
-      .eq("unit_id", plan.unit_id).eq("week_start", shiftPlanDay(plan.week_start, -7)).order("id")),
+    personal
+      ? Promise.resolve([{ profile_id: me.id, profiles: { full_name: me.full_name, active: true } }])
+      : readAll(() => client.from("unit_memberships").select("profile_id,profiles!inner(full_name,active)", { count: "exact" })
+          .eq("unit_id", plan.unit_id).eq("profiles.active", true).order("id")),
+    readAll(() => {
+      const query = client.from("work_items").select(workFields, { count: "exact" })
+        .eq("visibility", "unit").eq("confidential", false)
+        .not("status", "in", "(completed,self_certified,cancelled)");
+      return (personal ? query.eq("assignee_id", me.id) : query.eq("unit_id", plan.unit_id)).order("id");
+    }),
+    readAll(() => {
+      const query = client.from("weekly_work_plans").select("id", { count: "exact" })
+        .eq("week_start", shiftPlanDay(plan.week_start, -7));
+      return (personal ? query.eq("owner_id", me.id) : query.eq("unit_id", plan.unit_id).is("owner_id", null)).order("id");
+    }),
   ]);
   const active = work.filter(row => !closed.has(row.status));
   const [schedules, lastItems] = await Promise.all([
