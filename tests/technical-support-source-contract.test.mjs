@@ -437,7 +437,8 @@ test("This Week offers staff their own plans without authorising edits to depart
   assert.match(migration, /not personal and exists/);
   assert.match(migration, /personal and owner=actor/);
   assert.match(migration, /owner_id is null and unit_id in\(select public.app_managed_units\(\)\)/);
-  assert.match(page, /Create my weekly plan/);
+  assert.match(page, /Create my plan/);
+  assert.match(page, /Open my plan/);
   assert.match(page, /personal: true, unit: me.unit_id \|\| null, week/);
   assert.match(page, /isPersonal \? plan.owner_id === me.id/);
   assert.match(reader, /personal \? query.eq\("assignee_id", me.id\)/);
